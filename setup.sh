@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${BRP_REPO_URL:-https://github.com/gustyle/BRP-Cyber.git}"
+REPO_URL="${BRP_REPO_URL:-https://github.com/piyawatSritavong/brp-cyber.git}"
 BRANCH="${BRP_BRANCH:-main}"
 INSTALL_DIR="${BRP_INSTALL_DIR:-$HOME/brp-cyber}"
 START_STACK="${BRP_START_STACK:-true}"

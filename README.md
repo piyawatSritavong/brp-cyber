@@ -6,13 +6,13 @@ AI-driven Red/Blue/Purple Orchestration platform (enterprise-scale, multi-tenant
 Run from a fresh machine:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gustyle/BRP-Cyber/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/setup.sh | bash
 ```
 
 Optional overrides:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gustyle/BRP-Cyber/main/setup.sh | \
+curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/setup.sh | \
   BRP_INSTALL_DIR="$HOME/brp-cyber" BRP_BRANCH="main" BRP_START_STACK="true" bash
 ```
 
