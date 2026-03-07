@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #d9eef7;
+  background:
+    radial-gradient(1100px 600px at 90% -10%, rgba(23, 201, 100, 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 100%, rgba(53, 145, 255, 0.18), transparent 60%),
+    linear-gradient(180deg, #040b14 0%, #071220 100%);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.grid-noise {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.card {
+  border: 1px solid rgba(140, 196, 230, 0.2);
+  background: linear-gradient(180deg, rgba(9, 20, 31, 0.95), rgba(8, 17, 27, 0.9));
+  border-radius: 14px;
+}
+
+.pulse {
+  animation: pulseGlow 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(23, 201, 100, 0);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(23, 201, 100, 0.25);
+  }
+}

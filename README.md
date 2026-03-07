@@ -1,0 +1,447 @@
+# BRP-Cyber
+
+AI-driven Red/Blue/Purple Orchestration platform (enterprise-scale, multi-tenant).
+
+## One-Line Setup
+Run from a fresh machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gustyle/BRP-Cyber/main/setup.sh | bash
+```
+
+Optional overrides:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gustyle/BRP-Cyber/main/setup.sh | \
+  BRP_INSTALL_DIR="$HOME/brp-cyber" BRP_BRANCH="main" BRP_START_STACK="true" bash
+```
+
+## Current Status
+- Phase 0-5 baseline complete
+- Phase 6 complete with production-grade control-plane operations
+- Phase 7 complete: objective-gate validation + dashboard panel
+- Phase 8 complete: identity federation and immutable retention validation
+- Phase 9 complete: control-plane governance and policy-as-code
+- Phase 10 complete: cryptographic hardening and external trust
+- Phase 11 complete: independent assurance and external audit pack
+- Phase 12 complete: external trust anchors and immutable publication
+- Phase 13 complete: transparency and legal notarization
+- Phase 14 complete: public assurance surface and regulatory profiles
+- Phase 15 complete: enterprise orchestration assurance aggregation
+- Phase 16 complete: signed public assurance feed and verification
+- Phase 17 complete: customer assurance SLA profiles and evidence contracts
+- Phase 18 complete: assurance breach auto-remediation and escalation
+- Phase 19 complete: tenant remediation policy packs and approval integration
+- Phase 20 complete: remediation effectiveness scoring and rollback guardrails
+- Phase 21 complete: cross-tenant risk heatmap and adaptive policy loop
+- Phase 22 complete: tenant assurance SLO, breach budget, and executive digest
+- Phase 23 complete: executive digest signing and customer risk bulletin
+- Phase 24 complete: signed bulletin distribution policy and receipt tracking
+- Phase 25 complete: delivery retry/backoff policy and signed delivery proof
+- Phase 26 complete: public delivery-proof verification and auditor proof index
+- Phase 27 complete: tenant verifier kit and one-click evidence package index
+- Phase 28 complete: signed tenant evidence package chain and public verification
+- Phase 29 complete: external verifier import and zero-trust attestation
+- Phase 30 complete: verifier API keys and signed receipt registry
+- Phase 31 complete: verifier policy enforcement and multi-verifier quorum
+- Phase 32 complete: weighted trust scoring and disagreement guardrails
+- Phase 33 complete: one-click orchestration activation and auto scheduler
+- Phase 34 complete: pilot session hardening and objective-gated start
+- Phase 35 complete: self-serve pilot onboarding and scoped operator roles
+- Phase 36 complete: pilot safety auto-stop and incident escalation
+- Phase 37 complete: multi-tenant pilot concurrency guardrails and rate budgets
+- Phase 38 complete: fairness scheduling, priority tiers, and backpressure controls
+- Phase 39 complete: tenant rollout rings and canary orchestration controls
+- Phase 40 complete: KPI-driven rollout auto promote/demote and rollback signals
+- Phase 41 complete: rollout anti-flapping hysteresis and cooldown windows
+- Phase 42 complete: rollout policy contracts and approval gates
+- Phase 43 complete: dual-control rollout approval and signed evidence
+- Phase 44 complete: rollout evidence chain verification and integrity ops
+- Phase 45 complete: notarized rollout evidence bundles and export ops
+- Phase 46 complete: public verifier bundle and third-party audit hand-off
+- Phase 47 complete: time-bound handoff sessions, IP allowlist, and access receipts
+- Phase 48 complete: handoff access anomaly detection and auto-revoke policies
+- Phase 49 complete: risk-scored handoff trust model and adaptive session hardening
+- Phase 50 complete: handoff risk governance and auto-containment playbooks
+- Phase 51 complete: cross-tenant handoff risk federation and enterprise escalation matrix
+- Phase 52 complete: handoff federation SLO, breach budget, and auto-escalation notifications
+- Phase 53 complete: signed federation SLO digest chain and verification
+- Phase 54 complete: public federation verifier bundle and external verification surface
+- Phase 55 complete: federation policy drift detection and auto-reconciliation
+- Phase 56 complete: cross-region orchestration failover resilience and signed drills
+- Phase 57 complete: cost guardrails and model routing optimization controls
+- Phase 58 complete: runtime cost guardrail enforcement and public verifier surface
+- Phase 59 complete: cost anomaly detection and preemptive throttling controls
+- Phase 60 complete: cost anomaly federation and production v1 final go-live closure
+- Phase 61 complete: post-go-live SLO burn-rate guard and auto rollback gate
+- Phase 63 in progress: universal integration layer (OCSF-compatible adapters + webhook + Purple ISO gap template)
+
+## Control Plane Auth Flow
+- `CONTROL_PLANE_AUTH_PROVIDER=local`: issue local scoped token via bootstrap token
+- `CONTROL_PLANE_AUTH_PROVIDER=idp`: validate Bearer token via IdP introspection endpoint
+- Production guardrail: when `ENVIRONMENT=production` and `CONTROL_PLANE_REQUIRE_IDP_IN_PRODUCTION=true`, local bootstrap token issue is disabled
+
+Issue local scoped token:
+```bash
+curl -X POST http://localhost:8000/control-plane/auth/token \
+  -H 'X-Bootstrap-Token: change-me-bootstrap-token' \
+  -H 'content-type: application/json' \
+  -d '{"scopes":["control_plane:read","control_plane:write","admin:token:write"],"ttl_seconds":3600,"tenant_scope":"acb"}'
+```
+
+## Key Control-Plane APIs
+- `POST /control-plane/auth/token`
+- `GET /control-plane/auth/posture`
+- `POST /control-plane/auth/rotate`
+- `POST /control-plane/auth/revoke`
+- `GET /control-plane/auth/introspect`
+- `POST /control-plane/onboard`
+- `POST /control-plane/tenant/status`
+- `POST /control-plane/tenant/rotate-key`
+- `GET /control-plane/audit?limit=`
+- `POST /control-plane/audit/export`
+- `GET /control-plane/audit/export-status`
+- `GET /control-plane/audit/failed-batches`
+- `POST /control-plane/audit/replay?limit=`
+- `GET /control-plane/audit/recovery-status`
+- `POST /control-plane/audit/ack`
+- `GET /control-plane/audit/reconcile`
+- `GET /control-plane/audit/archive-status`
+- `GET /control-plane/audit/archive-verify?limit=`
+- `GET /control-plane/audit/immutable-status`
+- `POST /control-plane/audit/immutable-snapshot?destination_dir=`
+- `POST /control-plane/audit/offload?limit=`
+- `GET /control-plane/audit/offload-status`
+- `GET /control-plane/audit/offload/s3-object-lock-validate?dry_run=true`
+- `GET /control-plane/compliance/evidence`
+- `GET /control-plane/governance/policy`
+- `GET /control-plane/governance/dashboard?limit=`
+- `POST /control-plane/governance/attest?limit=`
+- `GET /control-plane/governance/attestation-status?limit=`
+- `GET /control-plane/governance/attestation-verify?limit=`
+- `POST /control-plane/governance/attestation-export?destination_dir=`
+- `POST /control-plane/audit-pack/generate?limit=&destination_dir=`
+- `GET /control-plane/audit-pack/status?limit=`
+- `POST /control-plane/audit-pack/verify?manifest_path=`
+- `POST /control-plane/audit-pack/publish?dry_run=`
+- `GET /control-plane/audit-pack/publication-status?limit=`
+- `POST /control-plane/audit-pack/transparency/publish?dry_run=`
+- `GET /control-plane/audit-pack/transparency/status?limit=`
+- `POST /control-plane/audit-pack/legal-evidence/export?destination_dir=`
+- `POST /control-plane/audit-pack/public-assurance/sign?destination_dir=&limit=`
+- `GET /control-plane/audit-pack/public-assurance/sign-status?limit=`
+- `GET /control-plane/audit-pack/public-assurance/sign-verify?limit=`
+- `POST /control-plane/assurance/contracts/upsert`
+- `GET /control-plane/assurance/contracts/{tenant_code}`
+- `GET /control-plane/assurance/contracts/{tenant_code}/evaluate?limit=`
+- `POST /control-plane/assurance/contracts/{tenant_code}/remediate?limit=&auto_apply=`
+- `GET /control-plane/assurance/contracts/{tenant_code}/remediation-status?limit=`
+- `POST /control-plane/assurance/policy-packs/upsert`
+- `GET /control-plane/assurance/policy-packs/{tenant_code}`
+- `POST /control-plane/assurance/contracts/{tenant_code}/approve`
+- `GET /control-plane/assurance/contracts/{tenant_code}/effectiveness?limit=`
+- `GET /control-plane/assurance/risk/heatmap?limit=`
+- `GET /control-plane/assurance/risk/recommendations?limit=`
+- `POST /control-plane/assurance/risk/recommendations/apply?limit=&max_tier=&dry_run=`
+- `POST /control-plane/assurance/slo/upsert`
+- `GET /control-plane/assurance/slo/{tenant_code}`
+- `GET /control-plane/assurance/slo/{tenant_code}/evaluate?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/breaches?limit=`
+- `GET /control-plane/assurance/slo/executive-digest?limit=`
+- `POST /control-plane/assurance/slo/executive-digest/sign?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/executive-digest/sign-status?limit=`
+- `GET /control-plane/assurance/slo/executive-digest/sign-verify?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/bulletin/sign?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/bulletin/sign-status?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/bulletin/sign-verify?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/distribution/upsert`
+- `GET /control-plane/assurance/slo/{tenant_code}/distribution`
+- `POST /control-plane/assurance/slo/{tenant_code}/bulletin/deliver?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/bulletin/receipts?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/bulletin/proof/export?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/bulletin/proof/status?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/bulletin/proof/verify?limit=`
+- `GET /control-plane/assurance/proof-index?limit=`
+- `POST /control-plane/assurance/proof-index/export?destination_dir=&limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/verifier-kit/export?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/verifier-kit/status?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/evidence-package/export?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/evidence-package/status?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/evidence-package/sign?destination_dir=&limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/evidence-package/sign-status?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/evidence-package/sign-verify?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/external-verifier/import?source=`
+- `GET /control-plane/assurance/slo/{tenant_code}/external-verifier/status?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/zero-trust/attest?limit=&freshness_hours=`
+- `GET /control-plane/assurance/slo/{tenant_code}/zero-trust/status?limit=`
+- `GET /control-plane/assurance/zero-trust/overview?limit=`
+- `POST /control-plane/assurance/slo/{tenant_code}/external-verifier/tokens/issue?verifier_name=&ttl_seconds=`
+- `POST /control-plane/assurance/slo/{tenant_code}/external-verifier/tokens/revoke?token=`
+- `POST /control-plane/assurance/slo/{tenant_code}/external-verifier/policy/upsert`
+- `GET /control-plane/assurance/slo/{tenant_code}/external-verifier/policy`
+- `GET /control-plane/assurance/slo/{tenant_code}/external-verifier/receipts?limit=`
+- `GET /control-plane/assurance/slo/{tenant_code}/external-verifier/receipts/verify?limit=`
+- `POST /control-plane/orchestrator/pilot/operators/issue`
+- `POST /control-plane/orchestrator/pilot/operators/revoke`
+- `POST /control-plane/orchestrator/pilot/onboarding/upsert`
+- `GET /control-plane/orchestrator/pilot/onboarding/{tenant_id}`
+- `GET /control-plane/orchestrator/pilot/onboarding/{tenant_id}/checklist`
+- `POST /control-plane/orchestrator/pilot/safety-policy/upsert`
+- `GET /control-plane/orchestrator/pilot/safety-policy/{tenant_id}`
+- `POST /control-plane/orchestrator/pilot/rate-budget/upsert`
+- `GET /control-plane/orchestrator/pilot/rate-budget/{tenant_id}`
+- `GET /control-plane/orchestrator/pilot/rate-budget/{tenant_id}/usage?hour_epoch=`
+- `POST /control-plane/orchestrator/pilot/scheduler-profile/upsert`
+- `GET /control-plane/orchestrator/pilot/scheduler-profile/{tenant_id}`
+- `POST /control-plane/orchestrator/pilot/rollout-profile/upsert`
+- `GET /control-plane/orchestrator/pilot/rollout-profile/{tenant_id}`
+- `POST /control-plane/orchestrator/pilot/rollout/evaluate/{tenant_id}?apply=`
+- `GET /control-plane/orchestrator/pilot/rollout/decisions/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout/guard/{tenant_id}`
+- `POST /control-plane/orchestrator/pilot/rollout-policy/upsert`
+- `GET /control-plane/orchestrator/pilot/rollout-policy/{tenant_id}`
+- `GET /control-plane/orchestrator/pilot/rollout/pending/{tenant_id}?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout/pending/approve`
+- `GET /control-plane/orchestrator/pilot/rollout/evidence/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout/evidence/verify/{tenant_id}?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout/evidence/export?tenant_id=&destination_dir=&limit=&notarize=`
+- `GET /control-plane/orchestrator/pilot/rollout/evidence/export-status/{tenant_id}?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/issue`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/revoke`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/receipts/{tenant_id}?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/policy/upsert`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy/{tenant_id}`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/anomalies/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/risk-events/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/risk/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/containment/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/governance/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/heatmap?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/escalation-matrix?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/federation/escalation/apply?limit=&min_tier=&dry_run=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/upsert`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/{tenant_code}`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/{tenant_code}/evaluate?limit=&dry_run_escalation=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/{tenant_code}/breaches?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/executive-digest?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/executive-digest/sign?destination_dir=&limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/executive-digest/sign-status?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/federation/slo/executive-digest/sign-verify?limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/baseline/upsert`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/baseline`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/heatmap?limit=&notify=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/{tenant_id}?tenant_code=&limit=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/reconcile?limit=&min_severity=&dry_run=`
+- `POST /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/sign?destination_dir=&limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/sign-status?limit=`
+- `GET /control-plane/orchestrator/pilot/rollout-handoff/policy-drift/sign-verify?limit=`
+- `POST /control-plane/orchestrator/failover/profile/upsert`
+- `GET /control-plane/orchestrator/failover/profile/{tenant_id}`
+- `GET /control-plane/orchestrator/failover/state/{tenant_id}`
+- `GET /control-plane/orchestrator/failover/health/{tenant_id}?tenant_code=&allow_auto_failover=`
+- `POST /control-plane/orchestrator/failover/drill/{tenant_id}?tenant_code=&reason=&dry_run=`
+- `GET /control-plane/orchestrator/failover/events/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/failover/enterprise-snapshot?limit=`
+- `POST /control-plane/orchestrator/failover/sign?destination_dir=&limit=`
+- `GET /control-plane/orchestrator/failover/sign-status?limit=`
+- `GET /control-plane/orchestrator/failover/sign-verify?limit=`
+- `POST /control-plane/orchestrator/cost-guardrail/profile/upsert`
+- `GET /control-plane/orchestrator/cost-guardrail/profile/{tenant_id}`
+- `GET /control-plane/orchestrator/cost-guardrail/evaluate/{tenant_id}?tenant_code=&apply_actions=`
+- `GET /control-plane/orchestrator/cost-guardrail/events/{tenant_id}?limit=`
+- `GET /control-plane/orchestrator/cost-guardrail/routing-override/{tenant_id}`
+- `GET /control-plane/orchestrator/cost-guardrail/throttle-override/{tenant_id}`
+- `GET /control-plane/orchestrator/cost-guardrail/anomaly-state/{tenant_id}`
+- `GET /control-plane/orchestrator/cost-guardrail/enterprise-snapshot?limit=&apply_actions=`
+- `POST /control-plane/orchestrator/cost-guardrail/sign?destination_dir=&limit=`
+- `GET /control-plane/orchestrator/cost-guardrail/sign-status?limit=`
+- `GET /control-plane/orchestrator/cost-guardrail/sign-verify?limit=`
+- `GET /control-plane/orchestrator/cost-guardrail/federation/heatmap?limit=`
+- `GET /control-plane/orchestrator/cost-guardrail/federation/policy-matrix?limit=`
+- `POST /control-plane/orchestrator/cost-guardrail/federation/policy-apply?limit=&min_tier=&dry_run=`
+- `POST /control-plane/production-v1/runbook/upsert`
+- `GET /control-plane/production-v1/runbook/{tenant_code}`
+- `GET /control-plane/production-v1/readiness-final/{tenant_code}?max_monthly_cost_usd=`
+- `POST /control-plane/production-v1/go-live/close`
+- `GET /control-plane/production-v1/go-live/closure-history?tenant_code=&limit=`
+- `POST /control-plane/production-v1/burn-rate/profile/upsert`
+- `GET /control-plane/production-v1/burn-rate/profile/{tenant_code}`
+- `POST /control-plane/production-v1/burn-rate/evaluate/{tenant_code}?apply=`
+- `GET /control-plane/production-v1/burn-rate/history?tenant_code=&limit=`
+
+## Enterprise Objective Gate API
+- `GET /enterprise/objective-gate/{tenant_id}`
+- `GET /enterprise/objective-gate-history/{tenant_id}`
+- `GET /enterprise/objective-gate-remediation/{tenant_id}`
+- `GET /enterprise/objective-gate-blockers/{tenant_id}`
+- `GET /enterprise/objective-gate-dashboard?limit=`
+
+## Site Operations API
+- `GET /sites?tenant_code=&limit=`
+- `POST /sites`
+- `POST /sites/{site_id}/red/scan`
+- `GET /sites/{site_id}/red/scans?limit=`
+- `POST /sites/{site_id}/blue/events`
+- `GET /sites/{site_id}/blue/events?limit=`
+- `POST /sites/{site_id}/blue/events/{event_id}/apply`
+- `POST /sites/{site_id}/purple/analyze`
+- `GET /sites/{site_id}/purple/reports?limit=`
+
+## Orchestrator Activation API
+- `POST /orchestrator/activate`
+- `POST /orchestrator/pause/{tenant_id}`
+- `POST /orchestrator/deactivate/{tenant_id}`
+- `GET /orchestrator/activation/{tenant_id}`
+- `GET /orchestrator/activations?limit=`
+- `POST /orchestrator/tick?limit=`
+- `GET /orchestrator/autonomous/status`
+- `POST /orchestrator/autonomous/start`
+- `POST /orchestrator/autonomous/stop`
+- `POST /orchestrator/autonomous/run-once`
+- `POST /orchestrator/pilot/activate`
+- `POST /orchestrator/pilot/deactivate/{tenant_id}?reason=`
+- `GET /orchestrator/pilot/status/{tenant_id}`
+- `GET /orchestrator/pilot/sessions?limit=`
+- `POST /orchestrator/pilot/secure/activate`
+- `POST /orchestrator/pilot/secure/deactivate/{tenant_id}`
+- `GET /orchestrator/pilot/secure/status/{tenant_id}`
+- `POST /orchestrator/pilot/safety-policy`
+- `GET /orchestrator/pilot/safety-policy/{tenant_id}`
+- `GET /orchestrator/pilot/incidents/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/secure/incidents/{tenant_id}?limit=`
+- `POST /orchestrator/pilot/rate-budget`
+- `GET /orchestrator/pilot/rate-budget/{tenant_id}`
+- `GET /orchestrator/pilot/rate-budget/{tenant_id}/usage?hour_epoch=`
+- `GET /orchestrator/pilot/secure/rate-budget/{tenant_id}/usage?hour_epoch=`
+- `POST /orchestrator/pilot/scheduler-profile`
+- `GET /orchestrator/pilot/scheduler-profile/{tenant_id}`
+- `GET /orchestrator/pilot/secure/scheduler-profile/{tenant_id}`
+- `POST /orchestrator/pilot/rollout-profile`
+- `GET /orchestrator/pilot/rollout-profile/{tenant_id}`
+- `GET /orchestrator/pilot/secure/rollout-profile/{tenant_id}`
+- `POST /orchestrator/pilot/rollout/evaluate/{tenant_id}?apply=`
+- `GET /orchestrator/pilot/rollout/decisions/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/secure/rollout/decisions/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/rollout/guard/{tenant_id}`
+- `GET /orchestrator/pilot/secure/rollout/guard/{tenant_id}`
+- `POST /orchestrator/pilot/rollout-policy/upsert`
+- `GET /orchestrator/pilot/rollout-policy/{tenant_id}`
+- `GET /orchestrator/pilot/rollout/pending/{tenant_id}?limit=`
+- `POST /orchestrator/pilot/rollout/pending/approve`
+- `GET /orchestrator/pilot/rollout/evidence/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/rollout/evidence/verify/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/secure/rollout-policy/{tenant_id}`
+- `GET /orchestrator/pilot/secure/rollout/pending/{tenant_id}?limit=`
+- `POST /orchestrator/pilot/secure/rollout/pending/approve`
+- `GET /orchestrator/pilot/secure/rollout/evidence/{tenant_id}?limit=`
+- `GET /orchestrator/pilot/secure/rollout/evidence/verify/{tenant_id}?limit=`
+
+## Public Assurance API
+- `GET /assurance/public/summary`
+- `GET /assurance/public/transparency?limit=`
+- `GET /assurance/public/orchestration/objectives?limit=`
+- `GET /assurance/public/orchestration/readiness?limit=`
+- `GET /assurance/public/signed-summary?limit=`
+- `GET /assurance/public/signed-summary/verify?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/bulletin?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/bulletin/verify?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/delivery-proof?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/delivery-proof/verify?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/evidence-package?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/evidence-package/signed?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/evidence-package/signed/verify?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/zero-trust-attestation?limit=`
+- `GET /assurance/public/zero-trust/overview?limit=`
+- `POST /assurance/public/verifier/import/{tenant_code}`
+- `GET /assurance/public/tenant/{tenant_code}/external-verifier-receipts?limit=`
+- `GET /assurance/public/tenant/{tenant_code}/external-verifier-receipts/verify?limit=`
+- `GET /assurance/public/orchestrator/rollout-verifier/{tenant_id}?limit=` (`X-Rollout-Handoff-Token`)
+- `GET /assurance/public/orchestrator/rollout-verifier/{tenant_id}/verify?limit=` (`X-Rollout-Handoff-Token`)
+- `GET /assurance/public/orchestrator/rollout-federation/digest?limit=`
+- `GET /assurance/public/orchestrator/rollout-federation/digest/verify?limit=`
+- `GET /assurance/public/orchestrator/rollout-federation/verifier-bundle?limit=`
+- `POST /assurance/public/orchestrator/rollout-federation/verifier-bundle/verify`
+- `GET /assurance/public/orchestrator/cost-guardrail/report?limit=`
+- `GET /assurance/public/orchestrator/cost-guardrail/report/verify?limit=`
+- `GET /assurance/public/orchestrator/cost-guardrail/verifier-bundle?limit=`
+- `POST /assurance/public/orchestrator/cost-guardrail/verifier-bundle/verify`
+`X-Forwarded-For` is evaluated against handoff token `allowed_ip_cidrs`
+- `GET /assurance/public/regulatory/frameworks`
+- `GET /assurance/public/regulatory/{framework}`
+- `GET /assurance/public/regulatory/{framework}/scorecard`
+- `GET /assurance/public/regulatory-overview`
+
+## Scheduled Ops
+- Main CI: `.github/workflows/ci.yml`
+- DR smoke: `.github/workflows/dr-smoke.yml`
+- Admin activity report: `.github/workflows/admin-activity-report.yml`
+- SIEM export: `.github/workflows/siem-export.yml`
+- SIEM replay: `.github/workflows/siem-replay.yml`
+- Archive offload: `.github/workflows/audit-offload.yml`
+- Objective gate snapshot: `.github/workflows/objective-gate-snapshot.yml`
+- S3 Object Lock validate: `.github/workflows/s3-object-lock-validate.yml`
+- Control-plane compliance evidence: `.github/workflows/control-plane-compliance-evidence.yml`
+- Control-plane governance report: `.github/workflows/control-plane-governance-report.yml`
+- Control-plane governance attestation: `.github/workflows/control-plane-governance-attestation.yml`
+- External audit pack: `.github/workflows/external-audit-pack.yml`
+- External audit pack publication: `.github/workflows/external-audit-pack-publication.yml`
+- Transparency + legal evidence: `.github/workflows/transparency-and-legal-evidence.yml`
+- Public assurance signing: `.github/workflows/public-assurance-signing.yml`
+- Assurance contract evaluation: `.github/workflows/assurance-contract-evaluation.yml`
+- Assurance remediation: `.github/workflows/assurance-remediation.yml`
+- Assurance policy-pack bootstrap: `.github/workflows/assurance-policy-pack-bootstrap.yml`
+- Assurance effectiveness report: `.github/workflows/assurance-effectiveness-report.yml`
+- Assurance risk loop: `.github/workflows/assurance-risk-loop.yml`
+- Assurance SLO digest: `.github/workflows/assurance-slo-digest.yml`
+- Assurance digest signing: `.github/workflows/assurance-digest-signing.yml`
+- Assurance bulletin delivery: `.github/workflows/assurance-bulletin-delivery.yml`
+- Assurance verifier kit: `.github/workflows/assurance-verifier-kit.yml`
+- Assurance evidence package signing: `.github/workflows/assurance-evidence-package-signing.yml`
+- Assurance zero-trust attestation: `.github/workflows/assurance-zero-trust-attestation.yml`
+- Assurance external verifier receipts: `.github/workflows/assurance-external-verifier-receipts.yml`
+- Orchestration activation tick: `.github/workflows/orchestration-activation-tick.yml`
+- Orchestration pilot report: `.github/workflows/orchestration-pilot-report.yml`
+- Orchestration pilot onboarding checklist: `.github/workflows/orchestration-pilot-onboarding-checklist.yml`
+- Orchestration pilot safety incidents: `.github/workflows/orchestration-pilot-safety-incidents.yml`
+- Orchestration pilot rate budget: `.github/workflows/orchestration-pilot-rate-budget.yml`
+- Orchestration pilot scheduler profile: `.github/workflows/orchestration-pilot-scheduler-profile.yml`
+- Orchestration pilot rollout profile: `.github/workflows/orchestration-pilot-rollout-profile.yml`
+- Orchestration pilot rollout auto adjust: `.github/workflows/orchestration-pilot-rollout-auto-adjust.yml`
+- Orchestration pilot rollout guard: `.github/workflows/orchestration-pilot-rollout-guard.yml`
+- Orchestration pilot rollout policy: `.github/workflows/orchestration-pilot-rollout-policy.yml`
+- Orchestration pilot rollout evidence: `.github/workflows/orchestration-pilot-rollout-evidence.yml`
+- Orchestration pilot rollout evidence verify: `.github/workflows/orchestration-pilot-rollout-evidence-verify.yml`
+- Orchestration pilot rollout evidence export: `.github/workflows/orchestration-pilot-rollout-evidence-export.yml`
+- Orchestration rollout handoff preview: `.github/workflows/orchestration-rollout-handoff-preview.yml`
+- Orchestration rollout handoff receipts: `.github/workflows/orchestration-rollout-handoff-receipts.yml`
+- Orchestration rollout handoff anomalies: `.github/workflows/orchestration-rollout-handoff-anomalies.yml`
+- Orchestration rollout handoff risk: `.github/workflows/orchestration-rollout-handoff-risk.yml`
+- Orchestration rollout handoff governance: `.github/workflows/orchestration-rollout-handoff-governance.yml`
+- Orchestration rollout handoff federation: `.github/workflows/orchestration-rollout-handoff-federation.yml`
+- Orchestration rollout handoff federation SLO: `.github/workflows/orchestration-rollout-handoff-federation-slo.yml`
+- Orchestration rollout handoff federation digest signing: `.github/workflows/orchestration-rollout-handoff-federation-digest-signing.yml`
+- Orchestration rollout handoff federation verifier bundle: `.github/workflows/orchestration-rollout-handoff-federation-verifier-bundle.yml`
+- Orchestration rollout handoff policy drift: `.github/workflows/orchestration-rollout-handoff-policy-drift.yml`
+- Orchestration rollout handoff policy drift signing: `.github/workflows/orchestration-rollout-handoff-policy-drift-signing.yml`
+- Orchestration failover snapshot: `.github/workflows/orchestration-failover-snapshot.yml`
+- Orchestration failover signing: `.github/workflows/orchestration-failover-signing.yml`
+- Orchestration cost guardrail snapshot: `.github/workflows/orchestration-cost-guardrail-snapshot.yml`
+- Orchestration cost guardrail signing: `.github/workflows/orchestration-cost-guardrail-signing.yml`
+- Orchestration cost guardrail verifier bundle: `.github/workflows/orchestration-cost-guardrail-verifier-bundle.yml`
+- Orchestration cost guardrail anomaly report: `.github/workflows/orchestration-cost-guardrail-anomaly-report.yml`
+- Orchestration cost federation: `.github/workflows/orchestration-cost-federation.yml`
+- Production v1 readiness gate: `.github/workflows/production-v1-readiness-gate.yml`
+- Production v1 burn-rate guard: `.github/workflows/production-v1-burn-rate-guard.yml`
+
+## Execution Rule
+Red mode in this project is implemented as **authorized simulation/emulation only**.
+
+## Autonomous Runtime (No Manual Tick Script)
+- API service can run orchestration scheduler ticks automatically in-process (Red/Blue/Purple loop) once a tenant is activated.
+- Default config is enabled for local dev:
+  - `AUTONOMOUS_ORCHESTRATION_ENABLED=true`
+  - `AUTONOMOUS_TICK_INTERVAL_SECONDS=30`
+  - `AUTONOMOUS_TICK_LIMIT=200`
+  - `AUTONOMOUS_RED_SCHEDULE_TICK_ENABLED=true`
+  - `AUTONOMOUS_RED_SCHEDULE_LIMIT=100`
+- Use `/orchestrator/autonomous/status` to verify runtime state.

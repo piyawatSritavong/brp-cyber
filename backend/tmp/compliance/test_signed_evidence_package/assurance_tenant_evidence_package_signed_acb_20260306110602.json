@@ -1,0 +1,32 @@
+{
+  "bundle_version": "1.0",
+  "snapshot_id": "1-0",
+  "scope": "assurance_tenant_evidence_package:acb",
+  "generated_at": "2026-03-06T11:06:02.468072+00:00",
+  "message": "2026-03-06T11:06:02.468072+00:00|ff5f87f3ea668bc17797c9ff23a18f05032c00928b922f42c15d21fd3fc31b24||10|assurance_tenant_evidence_package:acb",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:06:02.468072+00:00",
+    "payload_hash": "ff5f87f3ea668bc17797c9ff23a18f05032c00928b922f42c15d21fd3fc31b24",
+    "prev_signature": "",
+    "limit": 10,
+    "scope": "assurance_tenant_evidence_package:acb"
+  },
+  "signature": {
+    "value": "sig:2026-03-06T11:06:02.468072+00:00|ff5f87f3ea668bc17797c9ff23a18f05032c00928b922f42c15d21fd3fc31b24||10|assurance_tenant_evidence_package:acb",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "tenant_code": "acb",
+    "evidence_package_index": {
+      "index_id": "idx-1",
+      "path": "./tmp/compliance/test_evidence.json",
+      "package": {
+        "tenant_code": "acb",
+        "generated_at": "2026-01-01T00:00:00+00:00"
+      }
+    }
+  }
+}

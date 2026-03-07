@@ -1,0 +1,22 @@
+name: orchestration-cost-guardrail-signing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cost-signing:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate signed orchestration cost guardrail report
+        run: python scripts/generate_signed_orchestration_cost_guardrail_report.py --limit 200 || true
+      - name: Verify signed orchestration cost guardrail report chain
+        run: python scripts/verify_signed_orchestration_cost_guardrail_report.py --limit 1000 || true

@@ -1,0 +1,22 @@
+name: orchestration-rollout-handoff-federation-digest-signing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  digest-signing:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate signed federation digest
+        run: python scripts/generate_signed_rollout_handoff_federation_digest.py --limit 200 || true
+      - name: Verify signed federation digest chain
+        run: python scripts/verify_signed_rollout_handoff_federation_digest.py --limit 1000 || true

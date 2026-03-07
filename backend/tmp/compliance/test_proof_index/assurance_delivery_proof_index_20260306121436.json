@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-03-06T12:14:36.842425+00:00",
+  "count": 2,
+  "valid_chain_count": 1,
+  "invalid_chain_count": 1,
+  "rows": [
+    {
+      "tenant_id": "1776f0b2-e65c-48df-8b3f-756168529ed8",
+      "tenant_code": "acb",
+      "has_proof": true,
+      "latest_snapshot_id": "1-0",
+      "latest_generated_at": "2026-01-01T00:00:00+00:00",
+      "latest_receipt_status": "delivered",
+      "proof_chain_valid": true
+    },
+    {
+      "tenant_id": "f6ed48f1-4a7d-47d4-98d3-db08b89e0afa",
+      "tenant_code": "xyz",
+      "has_proof": false,
+      "latest_snapshot_id": "1-0",
+      "latest_generated_at": "2026-01-01T00:00:00+00:00",
+      "latest_receipt_status": "delivered",
+      "proof_chain_valid": false
+    }
+  ]
+}

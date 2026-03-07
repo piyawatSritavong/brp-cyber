@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: brp-cyber-config
+  namespace: brp-cyber
+data:
+  ENVIRONMENT: "prod"
+  REDIS_URL: "redis://redis:6379/0"
+  QUEUE_PARTITIONS: "8"
+  QUEUE_STREAM_PREFIX: "scan_tasks"
+  QUEUE_WORKER_GROUP: "scan-workers"
+  QUEUE_BATCH_SIZE: "50"
+  AUTOSCALE_LAG_PER_WORKER_THRESHOLD: "1000"
+  AUTOSCALE_MAX_WORKERS: "200"
+  AUTOSCALE_MIN_WORKERS: "2"

@@ -1,0 +1,19 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: brp-scan-worker-keda
+  namespace: brp-cyber
+spec:
+  scaleTargetRef:
+    name: brp-scan-worker
+  pollingInterval: 15
+  cooldownPeriod: 60
+  minReplicaCount: 2
+  maxReplicaCount: 200
+  triggers:
+    - type: redis-streams
+      metadata:
+        address: redis:6379
+        stream: scan_tasks:p0
+        consumerGroup: scan-workers
+        pendingEntriesCount: "1000"

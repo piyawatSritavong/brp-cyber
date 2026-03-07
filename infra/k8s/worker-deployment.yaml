@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brp-scan-worker
+  namespace: brp-cyber
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: brp-scan-worker
+  template:
+    metadata:
+      labels:
+        app: brp-scan-worker
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: brp-scan-worker
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: brp-scan-worker
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: scan-worker
+          image: ghcr.io/example/brp-cyber-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.workers.scan_worker"]
+          envFrom:
+            - configMapRef:
+                name: brp-cyber-config
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

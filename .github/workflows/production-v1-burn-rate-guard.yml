@@ -1,0 +1,34 @@
+name: production-v1-burn-rate-guard
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant_code:
+        description: Tenant code
+        required: true
+        default: acb
+      apply:
+        description: Apply auto rollback when thresholds are breached
+        required: true
+        default: "false"
+
+jobs:
+  burn-rate-guard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Evaluate Production v1 burn-rate guard
+        run: |
+          if [ "${{ github.event.inputs.apply }}" = "true" ]; then
+            python scripts/report_production_v1_burn_rate_guard.py --tenant-code "${{ github.event.inputs.tenant_code }}" --apply || true
+          else
+            python scripts/report_production_v1_burn_rate_guard.py --tenant-code "${{ github.event.inputs.tenant_code }}" || true
+          fi

@@ -1,0 +1,27 @@
+{
+  "profile_version": "1.0",
+  "generated_at": "2026-03-06T10:45:15.512869+00:00",
+  "audit_pack": {
+    "pack_id": "audit-pack-1",
+    "manifest_path": "./tmp/compliance/test_manifest.json",
+    "manifest_sha256": "abc",
+    "verification": {
+      "status": "verified",
+      "valid": true,
+      "failure_count": 0
+    }
+  },
+  "transparency": {
+    "count": 1,
+    "rows": [
+      {
+        "id": "1-0"
+      }
+    ]
+  },
+  "notarization": {
+    "status": "notarized",
+    "provider": "local_digest",
+    "receipt_id": "local-1"
+  }
+}

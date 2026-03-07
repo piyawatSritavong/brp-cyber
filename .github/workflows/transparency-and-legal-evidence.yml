@@ -1,0 +1,28 @@
+name: transparency-and-legal-evidence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 3 * * 1'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate and publish external audit pack
+        run: |
+          python scripts/generate_external_audit_pack.py --limit 5000
+          python scripts/publish_external_audit_pack.py
+      - name: Publish transparency log entry
+        run: python scripts/publish_transparency_log.py
+      - name: Export legal evidence profile
+        run: python scripts/export_legal_evidence_profile.py

@@ -1,0 +1,24 @@
+name: assurance-external-verifier-receipts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '10 3 * * *'
+
+jobs:
+  verifier_receipts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Issue external verifier token (sample)
+        run: python scripts/issue_external_verifier_token.py --tenant-code acb --verifier-name workflow_auditor || true
+      - name: Verify external verifier receipt chain
+        run: python scripts/verify_external_verifier_receipts.py --tenant-code acb || true

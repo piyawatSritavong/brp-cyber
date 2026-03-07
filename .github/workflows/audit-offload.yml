@@ -1,0 +1,44 @@
+name: Control Plane Audit Archive Offload
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 * * * *"
+
+jobs:
+  offload:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run archive offload
+        env:
+          REDIS_URL: redis://localhost:6379/0
+          CONTROL_PLANE_OFFLOAD_MODE: ${{ vars.CONTROL_PLANE_OFFLOAD_MODE }}
+          CONTROL_PLANE_OFFLOAD_FILESYSTEM_DIR: ./tmp/immutable_offload
+          CONTROL_PLANE_OFFLOAD_S3_BUCKET: ${{ vars.CONTROL_PLANE_OFFLOAD_S3_BUCKET }}
+          CONTROL_PLANE_OFFLOAD_S3_REGION: ${{ vars.CONTROL_PLANE_OFFLOAD_S3_REGION }}
+          CONTROL_PLANE_OFFLOAD_S3_ENDPOINT_URL: ${{ vars.CONTROL_PLANE_OFFLOAD_S3_ENDPOINT_URL }}
+          CONTROL_PLANE_OFFLOAD_S3_OBJECT_LOCK_ENABLED: ${{ vars.CONTROL_PLANE_OFFLOAD_S3_OBJECT_LOCK_ENABLED }}
+          CONTROL_PLANE_OFFLOAD_S3_RETENTION_DAYS: ${{ vars.CONTROL_PLANE_OFFLOAD_S3_RETENTION_DAYS }}
+          CONTROL_PLANE_OFFLOAD_S3_ACCESS_KEY: ${{ secrets.CONTROL_PLANE_OFFLOAD_S3_ACCESS_KEY }}
+          CONTROL_PLANE_OFFLOAD_S3_SECRET_KEY: ${{ secrets.CONTROL_PLANE_OFFLOAD_S3_SECRET_KEY }}
+        run: |
+          cd backend
+          python scripts/offload_control_plane_archive.py --limit 500

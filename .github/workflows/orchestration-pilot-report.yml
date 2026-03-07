@@ -1,0 +1,22 @@
+name: orchestration-pilot-report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 * * * *'
+
+jobs:
+  pilot_report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate pilot session report
+        run: python scripts/generate_pilot_sessions_report.py --limit 1000 || true

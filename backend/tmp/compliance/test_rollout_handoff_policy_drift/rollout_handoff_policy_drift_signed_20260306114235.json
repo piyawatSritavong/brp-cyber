@@ -1,0 +1,37 @@
+{
+  "bundle_version": "1.0",
+  "snapshot_id": "1-0",
+  "scope": "rollout_handoff_policy_drift_report",
+  "generated_at": "2026-03-06T11:42:35.618355+00:00",
+  "message": "2026-03-06T11:42:35.618355+00:00|309e5fe2e6a667e50fbd467aa7441df18a993cbc78427dcbedd5d2cc552ec46b||10|rollout_handoff_policy_drift_report",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:42:35.618355+00:00",
+    "payload_hash": "309e5fe2e6a667e50fbd467aa7441df18a993cbc78427dcbedd5d2cc552ec46b",
+    "prev_signature": "",
+    "limit": 10,
+    "scope": "rollout_handoff_policy_drift_report"
+  },
+  "signature": {
+    "value": "sig:2026-03-06T11:42:35.618355+00:00|309e5fe2e6a667e50fbd467aa7441df18a993cbc78427dcbedd5d2cc552ec46b||10|rollout_handoff_policy_drift_report",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "baseline": {
+      "status": "ok",
+      "baseline": {
+        "profile_version": "1.0"
+      }
+    },
+    "heatmap": {
+      "count": 1,
+      "rows": [
+        {
+          "tenant_code": "acb"
+        }
+      ]
+    }
+  }
+}

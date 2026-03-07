@@ -1,0 +1,36 @@
+name: external-audit-pack-publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run publication in dry-run mode"
+        required: false
+        default: "false"
+  schedule:
+    - cron: '20 3 * * 1'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate latest external audit pack
+        run: python scripts/generate_external_audit_pack.py --limit 5000
+      - name: Publish latest external audit pack
+        run: |
+          if [ "${{ github.event.inputs.dry_run || 'false' }}" = "true" ]; then
+            python scripts/publish_external_audit_pack.py --dry-run
+          else
+            python scripts/publish_external_audit_pack.py
+          fi
+      - name: Publication status
+        run: python scripts/external_audit_publication_status.py --limit 20

@@ -1,0 +1,15 @@
+{
+  "pack_id": "audit-pack-1",
+  "generated_at": "2026-01-01T00:00:00+00:00",
+  "manifest_sha256": "23c73fb8fd5953d084de94881727fcdddfd67fc4bc20f0240676b46c732fd9d1",
+  "overall_pass": true,
+  "verification": {
+    "valid": true,
+    "failure_count": 0
+  },
+  "trust_anchor": {
+    "type": "unknown"
+  },
+  "published_at": "2026-03-06T09:10:43.695664+00:00",
+  "publication_mode": "filesystem"
+}

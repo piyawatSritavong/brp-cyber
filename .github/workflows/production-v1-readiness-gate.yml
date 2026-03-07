@@ -1,0 +1,25 @@
+name: production-v1-readiness-gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant_code:
+        description: Tenant code
+        required: true
+        default: acb
+
+jobs:
+  production-readiness:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Evaluate Production v1 readiness final gate
+        run: python scripts/report_production_v1_readiness.py --tenant-code "${{ github.event.inputs.tenant_code }}" --close || true

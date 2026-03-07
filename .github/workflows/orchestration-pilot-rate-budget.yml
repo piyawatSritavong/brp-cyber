@@ -1,0 +1,20 @@
+name: orchestration-pilot-rate-budget
+
+on:
+  workflow_dispatch:
+
+jobs:
+  budget:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Report pilot rate budget (sample tenant UUID)
+        run: python scripts/report_pilot_rate_budget.py --tenant-id 00000000-0000-0000-0000-000000000001 --hour-epoch 0 || true

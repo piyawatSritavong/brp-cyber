@@ -1,0 +1,26 @@
+name: external-audit-pack
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate external audit pack
+        run: python scripts/generate_external_audit_pack.py --limit 5000
+      - name: Verify latest external audit pack
+        run: |
+          latest_manifest=$(ls -t ./tmp/compliance/audit_packs/*/manifest.json | head -n 1)
+          python scripts/verify_external_audit_pack.py --manifest-path "$latest_manifest"

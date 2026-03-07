@@ -1,0 +1,29 @@
+{
+  "bundle_version": "1.0",
+  "attestation_id": "1-0",
+  "generated_at": "2026-03-06T11:21:23.212373+00:00",
+  "message": "2026-03-06T11:21:23.212373+00:00|af000916163fd46fa29edbacad9f2df77897040030f7cfe992244ac1e9e4e945||200",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:21:23.212373+00:00",
+    "report_hash": "af000916163fd46fa29edbacad9f2df77897040030f7cfe992244ac1e9e4e945",
+    "prev_signature": "",
+    "limit": 200
+  },
+  "signature": {
+    "value": "aae6136d1622f9c65060fd7ec6223b836b5f325a800c8ea073038b9024300968",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "report_hash": "af000916163fd46fa29edbacad9f2df77897040030f7cfe992244ac1e9e4e945",
+    "summary": {
+      "events_analyzed": 10,
+      "override_actions": 0,
+      "policy_denies": 0,
+      "policy_warnings": 1,
+      "production_promotions": 1
+    }
+  }
+}

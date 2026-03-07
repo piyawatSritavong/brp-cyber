@@ -1,0 +1,24 @@
+name: assurance-verifier-kit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 2 * * *'
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Export verifier kit (example tenant)
+        run: python scripts/export_verifier_kit.py --tenant-code acb --limit 1000 || true
+      - name: Export compliance evidence package index (example tenant)
+        run: python scripts/export_compliance_evidence_package_index.py --tenant-code acb --limit 100 || true

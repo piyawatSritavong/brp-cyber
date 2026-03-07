@@ -1,0 +1,135 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "BRP-Cyber API"
+    environment: str = "dev"
+    database_url: str = "postgresql+psycopg://brp:brp@postgres:5432/brp_cyber"
+    redis_url: str = "redis://redis:6379/0"
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    auto_init_db_on_startup: bool = True
+    cors_allow_origins: str = "http://localhost:3000,http://localhost:3001"
+    cors_allow_methods: str = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    cors_allow_headers: str = "*"
+    autonomous_orchestration_enabled: bool = True
+    autonomous_tick_interval_seconds: int = 30
+    autonomous_tick_limit: int = 200
+    autonomous_red_schedule_tick_enabled: bool = True
+    autonomous_red_schedule_limit: int = 100
+    integration_webhook_hmac_secret: str = ""
+    integration_default_event_kind: str = "security_event"
+
+    blue_failed_login_threshold_per_minute: int = 10
+    blue_failure_window_seconds: int = 60
+    blue_incident_cooldown_seconds: int = 120
+
+    firewall_api_base_url: str = ""
+    firewall_api_key: str = ""
+    response_retry_attempts: int = 3
+    response_retry_backoff_seconds: float = 0.5
+
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
+    allowlist_ips: str = "127.0.0.1"
+    allowlist_cidrs: str = "10.0.0.0/8,192.168.0.0/16"
+    allowlist_usernames: str = ""
+    allowlist_asns: str = ""
+    purple_correlation_window_seconds: int = 300
+    purple_target_mttr_seconds: int = 120
+    red_allowed_targets: str = "acb.example.com/admin-login,acb.example.com/ssh-gateway"
+    red_max_events_per_run: int = 100
+    red_min_delay_ms: int = 50
+    red_default_source_ips: str = "203.0.113.10,203.0.113.11,203.0.113.12"
+    red_default_usernames: str = "admin,root,ops"
+    orchestrator_conflict_cooldown_seconds: int = 60
+    orchestrator_scheduler_max_executions_per_tick: int = 50
+    orchestrator_rollout_allowed_stages: str = "alpha,beta,ga"
+    orchestrator_rollout_auto_adjust_enabled: bool = True
+    orchestrator_rollout_auto_promote_kpi_samples: int = 3
+    orchestrator_rollout_auto_promote_min_coverage: float = 0.95
+    orchestrator_rollout_promote_streak_required: int = 2
+    orchestrator_rollout_demote_streak_required: int = 1
+    orchestrator_rollout_decision_cooldown_seconds: int = 900
+    orchestrator_rollout_evidence_hmac_key: str = "change-me-rollout-evidence-hmac-key"
+    tenant_default_events_per_month: int = 1_000_000
+    tenant_default_actions_per_day: int = 20_000
+    tenant_default_tokens_per_month: int = 20_000_000
+    model_processing: str = "llama3.1-8b-instruct"
+    model_reasoning: str = "gpt-4o"
+    model_fallback_when_over_quota: str = "slm-lite"
+    cost_processing_per_1k_tokens: float = 0.0008
+    cost_reasoning_per_1k_tokens: float = 0.0100
+    cost_fallback_per_1k_tokens: float = 0.0002
+    queue_partitions: int = 8
+    queue_stream_prefix: str = "scan_tasks"
+    queue_worker_group: str = "scan-workers"
+    queue_batch_size: int = 50
+    autoscale_lag_per_worker_threshold: int = 1000
+    autoscale_max_workers: int = 200
+    autoscale_min_workers: int = 1
+    autoscale_apply_cooldown_seconds: int = 30
+    control_plane_bootstrap_token: str = "change-me-bootstrap-token"
+    control_plane_admin_token_ttl_seconds: int = 3600
+    control_plane_siem_webhook_url: str = ""
+    control_plane_siem_api_key: str = ""
+    control_plane_audit_export_batch_size: int = 500
+    control_plane_audit_archive_hmac_key: str = "change-me-audit-archive-hmac-key"
+    control_plane_audit_archive_dir: str = "./tmp/audit_archive"
+    control_plane_immutable_store_dir: str = "./tmp/immutable_store"
+    control_plane_offload_mode: str = "filesystem"
+    control_plane_offload_filesystem_dir: str = "./tmp/immutable_offload"
+    control_plane_offload_s3_bucket: str = ""
+    control_plane_offload_s3_region: str = ""
+    control_plane_offload_s3_endpoint_url: str = ""
+    control_plane_offload_s3_access_key: str = ""
+    control_plane_offload_s3_secret_key: str = ""
+    control_plane_offload_s3_object_lock_enabled: bool = False
+    control_plane_offload_s3_retention_days: int = 30
+    control_plane_auth_provider: str = "local"
+    control_plane_allow_local_bootstrap: bool = True
+    control_plane_require_idp_in_production: bool = True
+    control_plane_policy_mode: str = "permissive"
+    control_plane_policy_require_change_ticket_for_override: bool = True
+    control_plane_policy_require_change_ticket_for_production: bool = True
+    control_plane_policy_require_reason_for_key_rotation: bool = True
+    control_plane_governance_signer_provider: str = "hmac"
+    control_plane_governance_attestation_hmac_key: str = "change-me-governance-attestation-hmac-key"
+    control_plane_governance_attestation_dir: str = "./tmp/compliance/attestations"
+    control_plane_governance_signer_kms_key_id: str = ""
+    control_plane_governance_signer_kms_signing_algorithm: str = "RSASSA_PSS_SHA_256"
+    control_plane_governance_signer_kms_region: str = ""
+    control_plane_governance_signer_kms_endpoint_url: str = ""
+    control_plane_governance_signer_kms_access_key: str = ""
+    control_plane_governance_signer_kms_secret_key: str = ""
+    control_plane_audit_pack_publication_mode: str = "filesystem"
+    control_plane_audit_pack_publication_require_valid_pack: bool = True
+    control_plane_audit_pack_publication_filesystem_dir: str = "./tmp/compliance/published_audit_packs"
+    control_plane_audit_pack_publication_s3_bucket: str = ""
+    control_plane_audit_pack_publication_s3_region: str = ""
+    control_plane_audit_pack_publication_s3_endpoint_url: str = ""
+    control_plane_audit_pack_publication_s3_access_key: str = ""
+    control_plane_audit_pack_publication_s3_secret_key: str = ""
+    control_plane_audit_pack_publication_s3_object_lock_enabled: bool = False
+    control_plane_audit_pack_publication_s3_retention_days: int = 30
+    control_plane_audit_pack_publication_s3_prefix: str = "audit-pack-publication"
+    control_plane_transparency_mode: str = "filesystem"
+    control_plane_transparency_filesystem_dir: str = "./tmp/compliance/transparency_log"
+    control_plane_transparency_s3_bucket: str = ""
+    control_plane_transparency_s3_region: str = ""
+    control_plane_transparency_s3_endpoint_url: str = ""
+    control_plane_transparency_s3_access_key: str = ""
+    control_plane_transparency_s3_secret_key: str = ""
+    control_plane_transparency_s3_prefix: str = "transparency-log"
+    control_plane_notarization_provider: str = "local_digest"
+    control_plane_notarization_webhook_url: str = ""
+    control_plane_notarization_api_key: str = ""
+    control_plane_idp_introspection_url: str = ""
+    control_plane_idp_client_id: str = ""
+    control_plane_idp_client_secret: str = ""
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+
+settings = Settings()

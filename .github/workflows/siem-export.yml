@@ -1,0 +1,37 @@
+name: Control Plane Audit SIEM Export
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run export batch
+        env:
+          REDIS_URL: redis://localhost:6379/0
+          CONTROL_PLANE_SIEM_WEBHOOK_URL: ${{ secrets.CONTROL_PLANE_SIEM_WEBHOOK_URL }}
+          CONTROL_PLANE_SIEM_API_KEY: ${{ secrets.CONTROL_PLANE_SIEM_API_KEY }}
+        run: |
+          cd backend
+          python scripts/export_control_plane_audit.py --batch-size 500

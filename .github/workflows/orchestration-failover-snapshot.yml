@@ -1,0 +1,20 @@
+name: orchestration-failover-snapshot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  failover-snapshot:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Report orchestration failover snapshot
+        run: python scripts/report_orchestration_failover_snapshot.py --limit 200 || true

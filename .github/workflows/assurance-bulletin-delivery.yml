@@ -1,0 +1,30 @@
+name: assurance-bulletin-delivery
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 2 * * *'
+
+jobs:
+  deliver_and_report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Deliver signed tenant bulletins
+        run: python scripts/deliver_signed_tenant_bulletins.py --limit 1
+      - name: Generate bulletin delivery receipts report
+        run: python scripts/generate_bulletin_delivery_receipts_report.py --limit 100
+      - name: Export signed delivery proof bundles (example tenant)
+        run: python scripts/export_signed_delivery_proof.py --tenant-code acb --limit 100 || true
+      - name: Verify signed delivery proof chain (example tenant)
+        run: python scripts/verify_signed_delivery_proof.py --tenant-code acb --limit 1000 || true
+      - name: Generate cross-tenant assurance proof index
+        run: python scripts/generate_assurance_proof_index.py --limit 500

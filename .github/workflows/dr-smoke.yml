@@ -1,0 +1,29 @@
+name: DR Smoke Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1"
+
+jobs:
+  dr-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start required services
+        run: |
+          cd infra/docker
+          docker compose up -d postgres redis
+
+      - name: Run DR backup/restore smoke
+        run: |
+          cd backend
+          ./scripts/dr_backup_restore_smoke.sh
+
+      - name: Stop services
+        if: always()
+        run: |
+          cd infra/docker
+          docker compose down -v

@@ -1,0 +1,24 @@
+name: public-assurance-signing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 * * * *'
+
+jobs:
+  sign_and_verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate signed public assurance snapshot
+        run: python scripts/generate_signed_public_assurance.py
+      - name: Verify signed public assurance chain
+        run: python scripts/verify_signed_public_assurance.py

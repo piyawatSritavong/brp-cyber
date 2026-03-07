@@ -1,0 +1,26 @@
+name: assurance-digest-signing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '5 2 * * *'
+
+jobs:
+  sign_and_verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate signed assurance executive digest
+        run: python scripts/generate_signed_assurance_executive_digest.py
+      - name: Generate signed tenant bulletins
+        run: python scripts/generate_signed_tenant_bulletins.py
+      - name: Verify signed assurance digest chains
+        run: python scripts/verify_signed_assurance_digests.py

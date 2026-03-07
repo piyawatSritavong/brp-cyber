@@ -1,0 +1,26 @@
+name: assurance-zero-trust-attestation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 2 * * *'
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Upsert external verifier policy
+        run: python scripts/upsert_external_verifier_policy.py --tenant-code acb --min-quorum 1 --freshness-hours 24 --allowed-verifiers scheduled_workflow || true
+      - name: Import external verifier bundle (sample)
+        run: python scripts/import_external_verifier_bundle.py --tenant-code acb --source scheduled_workflow --valid --bundle-id verifier-acb || true
+      - name: Generate zero-trust attestation
+        run: python scripts/generate_zero_trust_attestation.py --tenant-code acb --freshness-hours 24 || true

@@ -1,0 +1,20 @@
+name: orchestration-cost-guardrail-anomaly-report
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cost-anomaly-report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Report orchestration cost guardrail anomalies
+        run: python scripts/report_orchestration_cost_guardrail_anomalies.py --limit 200 || true

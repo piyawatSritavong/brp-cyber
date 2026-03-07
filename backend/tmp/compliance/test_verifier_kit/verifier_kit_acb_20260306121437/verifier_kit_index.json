@@ -1,0 +1,16 @@
+{
+  "tenant_code": "acb",
+  "generated_at": "2026-03-06T12:14:37.017092+00:00",
+  "bulletin_latest": {
+    "id": "b-1"
+  },
+  "delivery_proof_latest": {
+    "id": "p-1"
+  },
+  "bulletin_chain_valid": true,
+  "delivery_proof_chain_valid": true,
+  "commands": [
+    "python scripts/verify_signed_assurance_digests.py --tenant-code acb",
+    "python scripts/verify_signed_delivery_proof.py --tenant-code acb"
+  ]
+}

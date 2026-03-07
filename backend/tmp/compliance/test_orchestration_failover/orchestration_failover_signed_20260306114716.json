@@ -1,0 +1,31 @@
+{
+  "bundle_version": "1.0",
+  "snapshot_id": "1-0",
+  "scope": "orchestration_failover_report",
+  "generated_at": "2026-03-06T11:47:16.332945+00:00",
+  "message": "2026-03-06T11:47:16.332945+00:00|e459ce3e90a3b534c9d127db2f6508f03f3e6e69f95a102dbf3fe40a3ed4fb90||10|orchestration_failover_report",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:47:16.332945+00:00",
+    "payload_hash": "e459ce3e90a3b534c9d127db2f6508f03f3e6e69f95a102dbf3fe40a3ed4fb90",
+    "prev_signature": "",
+    "limit": 10,
+    "scope": "orchestration_failover_report"
+  },
+  "signature": {
+    "value": "sig:2026-03-06T11:47:16.332945+00:00|e459ce3e90a3b534c9d127db2f6508f03f3e6e69f95a102dbf3fe40a3ed4fb90||10|orchestration_failover_report",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "enterprise_snapshot": {
+      "count": 1,
+      "rows": [
+        {
+          "tenant_code": "acb"
+        }
+      ]
+    }
+  }
+}

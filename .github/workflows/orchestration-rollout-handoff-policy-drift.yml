@@ -1,0 +1,22 @@
+name: orchestration-rollout-handoff-policy-drift
+
+on:
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Report rollout handoff policy drift
+        run: python scripts/report_rollout_handoff_policy_drift.py --limit 200 || true
+      - name: Reconcile rollout handoff policy drift (dry-run)
+        run: python scripts/reconcile_rollout_handoff_policy_drift.py --limit 200 --min-severity high || true

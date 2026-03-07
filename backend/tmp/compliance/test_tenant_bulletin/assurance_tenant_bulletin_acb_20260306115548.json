@@ -1,0 +1,35 @@
+{
+  "bundle_version": "1.0",
+  "snapshot_id": "1-0",
+  "scope": "assurance_tenant_bulletin:acb",
+  "generated_at": "2026-03-06T11:55:48.204525+00:00",
+  "message": "2026-03-06T11:55:48.204525+00:00|59cc6387ba7f8eb301daed18d596e4f4be051f306e9e5b793d0fb608e2cbe6fa||10|assurance_tenant_bulletin:acb",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:55:48.204525+00:00",
+    "payload_hash": "59cc6387ba7f8eb301daed18d596e4f4be051f306e9e5b793d0fb608e2cbe6fa",
+    "prev_signature": "",
+    "limit": 10,
+    "scope": "assurance_tenant_bulletin:acb"
+  },
+  "signature": {
+    "value": "sig:2026-03-06T11:55:48.204525+00:00|59cc6387ba7f8eb301daed18d596e4f4be051f306e9e5b793d0fb608e2cbe6fa||10|assurance_tenant_bulletin:acb",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "tenant_code": "acb",
+    "slo": {
+      "status": "ok",
+      "breach": false
+    },
+    "contract": {
+      "status": "ok"
+    },
+    "effectiveness": {
+      "count": 0
+    },
+    "risk": {}
+  }
+}

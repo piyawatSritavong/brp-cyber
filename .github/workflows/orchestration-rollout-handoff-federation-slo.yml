@@ -1,0 +1,20 @@
+name: orchestration-rollout-handoff-federation-slo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  slo:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Report rollout handoff federation SLO
+        run: python scripts/report_rollout_handoff_federation_slo.py --tenant-code acb --limit 200 --dry-run-escalation || true

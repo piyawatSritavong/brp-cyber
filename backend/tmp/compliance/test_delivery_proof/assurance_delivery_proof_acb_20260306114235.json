@@ -1,0 +1,38 @@
+{
+  "bundle_version": "1.0",
+  "snapshot_id": "1-0",
+  "scope": "assurance_delivery_proof:acb",
+  "generated_at": "2026-03-06T11:42:35.432731+00:00",
+  "message": "2026-03-06T11:42:35.432731+00:00|b6f66057d2bb58df209dfbb07a60978c43956b4e94f9ff55adfc97fa0181014e||10|assurance_delivery_proof:acb",
+  "message_fields": {
+    "generated_at": "2026-03-06T11:42:35.432731+00:00",
+    "payload_hash": "b6f66057d2bb58df209dfbb07a60978c43956b4e94f9ff55adfc97fa0181014e",
+    "prev_signature": "",
+    "limit": 10,
+    "scope": "assurance_delivery_proof:acb"
+  },
+  "signature": {
+    "value": "sig:2026-03-06T11:42:35.432731+00:00|b6f66057d2bb58df209dfbb07a60978c43956b4e94f9ff55adfc97fa0181014e||10|assurance_delivery_proof:acb",
+    "provider": "hmac",
+    "algorithm": "HMAC_SHA256",
+    "encoding": "hex",
+    "key_ref": "local_hmac"
+  },
+  "artifacts": {
+    "tenant_code": "acb",
+    "latest_receipt": {
+      "id": "1-0",
+      "status": "delivered",
+      "timestamp": "2026-01-01T00:00:00+00:00"
+    },
+    "latest_bulletin": {
+      "id": "1-0",
+      "signature": "sig",
+      "scope": "assurance_tenant_bulletin:acb"
+    },
+    "bulletin_chain_verify": {
+      "valid": true,
+      "checked": 1
+    }
+  }
+}

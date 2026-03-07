@@ -1,0 +1,24 @@
+name: assurance-risk-loop
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 1 * * *'
+
+jobs:
+  risk_loop:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate assurance risk heatmap report
+        run: python scripts/generate_assurance_risk_report.py
+      - name: Apply adaptive risk recommendations (dry-run)
+        run: python scripts/apply_assurance_risk_recommendations.py --limit 500 --max-tier high --dry-run

@@ -1,0 +1,30 @@
+{
+  "artifacts": [
+    {
+      "name": "control_plane_compliance_evidence.json",
+      "path": "tmp/compliance/test_audit_packs/audit-pack-20260306102240/control_plane_compliance_evidence.json",
+      "sha256": "2d41d10f02fb1444bc2f6a3295edece534717701b47fc2b55d1b35343197b5bc",
+      "size_bytes": 61
+    },
+    {
+      "name": "control_plane_governance_report.json",
+      "path": "tmp/compliance/test_audit_packs/audit-pack-20260306102240/control_plane_governance_report.json",
+      "sha256": "60a31a866027771d68f2444f1f9ea0031149417c8013412668a7c69cc718965d",
+      "size_bytes": 47
+    },
+    {
+      "name": "bundle.json",
+      "path": "tmp/compliance/test_audit_packs/audit-pack-20260306102240/bundle.json",
+      "sha256": "5f8f04f6a3a892aaabbddb6cf273894493773960d4a325b105fee46eef4304f1",
+      "size_bytes": 18
+    }
+  ],
+  "checks": {
+    "attestation_bundle_valid": true,
+    "compliance_overall_pass": true
+  },
+  "generated_at": "2026-03-06T10:22:40.697852+00:00",
+  "overall_pass": true,
+  "pack_id": "audit-pack-20260306102240",
+  "scope": "control_plane_external_audit_pack"
+}

@@ -1,0 +1,23 @@
+{
+  "tenant_id": "02f33970-b4f7-4245-82ef-1744cf2dc763",
+  "tenant_code": "acb",
+  "generated_at": "2026-03-06T09:16:46.897722+00:00",
+  "components": {
+    "assurance_contract_eval": {
+      "status": "ok",
+      "evaluation": {}
+    },
+    "signed_bulletin_latest": {
+      "id": "b-1"
+    },
+    "signed_delivery_proof_latest": {
+      "id": "p-1"
+    },
+    "slo_breach_latest": {
+      "id": "s-1"
+    },
+    "verifier_kit_latest": {
+      "id": "k-1"
+    }
+  }
+}

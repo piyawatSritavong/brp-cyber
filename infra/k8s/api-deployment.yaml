@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brp-api
+  namespace: brp-cyber
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: brp-api
+  template:
+    metadata:
+      labels:
+        app: brp-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/example/brp-cyber-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: brp-cyber-config
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: brp-api
+  namespace: brp-cyber
+spec:
+  selector:
+    app: brp-api
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP

@@ -1,0 +1,31 @@
+{
+  "tenant_id": "4c7fb263-0130-40f4-a5db-bdc81eef788a",
+  "generated_at": "2026-03-06T11:59:59.626666+00:00",
+  "verify": {
+    "tenant_id": "4c7fb263-0130-40f4-a5db-bdc81eef788a",
+    "valid": true,
+    "checked": 1,
+    "last_signature": "4046adbd73cfd895b7f9fff6ecfd5f608957e77f895b4e94f615345b28f1890b"
+  },
+  "evidence": {
+    "tenant_id": "4c7fb263-0130-40f4-a5db-bdc81eef788a",
+    "count": 1,
+    "rows": [
+      {
+        "id": "1-0",
+        "decision_id": "d1",
+        "event_type": "rollout_decision_auto_applied",
+        "action": "promote",
+        "tenant_id": "4c7fb263-0130-40f4-a5db-bdc81eef788a",
+        "timestamp": "2026-03-06T11:59:59.626626+00:00",
+        "prev_signature": "",
+        "signature": "4046adbd73cfd895b7f9fff6ecfd5f608957e77f895b4e94f615345b28f1890b"
+      }
+    ]
+  },
+  "notarization": {
+    "status": "notarized",
+    "provider": "local_digest",
+    "receipt_id": "receipt-1"
+  }
+}
