@@ -22,6 +22,7 @@ export function GovernancePanel({ data, loading, error }: Props) {
           policy: {data?.policy.mode || "unknown"}
         </span>
       </div>
+      <p className="mt-1 text-xs text-slate-400">Central policy engine and audit telemetry across onboarding, auth, overrides, and production promotions.</p>
 
       {loading ? <p className="mt-3 text-sm text-slate-400">Refreshing governance telemetry...</p> : null}
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
@@ -43,7 +44,7 @@ export function GovernancePanel({ data, loading, error }: Props) {
                 {data.top_actions.length === 0 ? <li className="text-slate-400">no actions</li> : null}
                 {data.top_actions.slice(0, 8).map((item, idx) => (
                   <li key={`${item[0]}-${idx}`} className="flex items-center justify-between border-b border-slate-800/80 py-1">
-                    <span className="truncate pr-2">{item[0]}</span>
+                    <span className="wrap-anywhere pr-2">{item[0]}</span>
                     <span className="font-semibold text-slate-300">{item[1]}</span>
                   </li>
                 ))}
@@ -56,7 +57,7 @@ export function GovernancePanel({ data, loading, error }: Props) {
                 {data.risky_actors.length === 0 ? <li className="text-slate-400">no risky actors</li> : null}
                 {data.risky_actors.slice(0, 8).map((item) => (
                   <li key={item.actor} className="flex items-center justify-between border-b border-slate-800/80 py-1">
-                    <span className="truncate pr-2">{item.actor}</span>
+                    <span className="wrap-anywhere pr-2">{item.actor}</span>
                     <span className="font-semibold text-danger">{item.risk_score}</span>
                   </li>
                 ))}
@@ -64,7 +65,11 @@ export function GovernancePanel({ data, loading, error }: Props) {
             </div>
           </div>
         </>
-      ) : null}
+      ) : (
+        <div className="mt-3 rounded-md border border-slate-800 bg-panelAlt/30 p-3 text-xs text-slate-300 wrap-anywhere">
+          No governance snapshot returned yet. This panel tracks control-plane policy events, risky actors, and override activity.
+        </div>
+      )}
     </section>
   );
 }

@@ -19,6 +19,7 @@ from app.api.guardrails import router as guardrails_router
 from app.api.health import router as health_router
 from app.api.ingest import router as ingest_router
 from app.api.integrations import router as integrations_router
+from app.api.competitive import router as competitive_router
 from app.api.orchestrator import router as orchestrator_router
 from app.api.purple import router as purple_router
 from app.api.red_sim import router as red_sim_router
@@ -83,6 +84,7 @@ app.include_router(orchestrator_router)
 app.include_router(enterprise_router)
 app.include_router(assurance_router)
 app.include_router(sites_router)
+app.include_router(competitive_router)
 
 
 @app.on_event("startup")

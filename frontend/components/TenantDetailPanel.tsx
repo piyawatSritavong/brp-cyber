@@ -1,4 +1,4 @@
-import type { TenantGateResponse, TenantHistoryResponse, TenantRemediation } from "@/lib/types";
+import type { SiteRow, TenantGateResponse, TenantHistoryResponse, TenantRemediation } from "@/lib/types";
 import { StatusBadge } from "./StatusBadge";
 
 type Props = {
@@ -6,19 +6,21 @@ type Props = {
   gate: TenantGateResponse | null;
   history: TenantHistoryResponse | null;
   remediation: TenantRemediation | null;
+  tenantSites: SiteRow[];
   loading: boolean;
   error: string;
 };
 
-export function TenantDetailPanel({ tenantId, gate, history, remediation, loading, error }: Props) {
+export function TenantDetailPanel({ tenantId, gate, history, remediation, tenantSites, loading, error }: Props) {
   return (
     <aside className="card p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Tenant Detail</h2>
         {gate ? <StatusBadge pass={gate.overall_pass} /> : null}
       </div>
+      <p className="mt-1 text-xs text-slate-400">Shows gate posture, remediation plan, historical snapshots, and linked sites for this tenant.</p>
 
-      <p className="mt-3 break-all rounded-md bg-panelAlt/60 px-3 py-2 font-mono text-xs text-slate-200">{tenantId || "Select tenant"}</p>
+      <p className="mt-3 wrap-anywhere rounded-md bg-panelAlt/60 px-3 py-2 font-mono text-xs text-slate-200">{tenantId || "Select tenant"}</p>
 
       {loading ? <p className="mt-4 text-sm text-slate-400">Loading tenant intelligence...</p> : null}
       {error ? <p className="mt-4 text-sm text-danger">{error}</p> : null}
@@ -34,6 +36,12 @@ export function TenantDetailPanel({ tenantId, gate, history, remediation, loadin
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {!gate && tenantSites.length > 0 ? (
+        <div className="mt-4 rounded-md border border-slate-800 bg-panelAlt/30 p-3 text-xs text-slate-300 wrap-anywhere">
+          Objective-gate detail is not generated yet for this tenant. Site-level telemetry is available below and will feed this panel after orchestration cycles run.
         </div>
       ) : null}
 
@@ -63,6 +71,20 @@ export function TenantDetailPanel({ tenantId, gate, history, remediation, loadin
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {tenantSites.length > 0 ? (
+        <div className="mt-5">
+          <h3 className="text-xs uppercase tracking-widest text-slate-400">Linked Sites</h3>
+          <div className="mt-2 space-y-2">
+            {tenantSites.slice(0, 6).map((site) => (
+              <div key={site.site_id} className="rounded-md border border-slate-800 bg-panelAlt/30 p-2 text-xs">
+                <p className="text-slate-100 wrap-anywhere">{site.display_name}</p>
+                <p className="mt-1 font-mono text-slate-400 wrap-anywhere">{site.base_url}</p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
     </aside>

@@ -35,3 +35,32 @@ def send_telegram_message(message: str) -> bool:
         logger.exception("telegram_send_failed")
         write_dead_letter("notifier", "send_telegram_message", payload, str(exc))
         return False
+
+
+def send_line_message(message: str) -> bool:
+    payload = {"message": message}
+
+    if not settings.line_notify_webhook_url:
+        logger.info("line_stub", extra=payload)
+        return True
+
+    headers = {"Content-Type": "application/json"}
+    if settings.line_notify_bearer_token:
+        headers["Authorization"] = f"Bearer {settings.line_notify_bearer_token}"
+
+    def _call() -> bool:
+        with httpx.Client(timeout=5.0) as client:
+            response = client.post(settings.line_notify_webhook_url, json={"message": message}, headers=headers)
+            response.raise_for_status()
+        return True
+
+    try:
+        return run_with_retry(
+            _call,
+            attempts=settings.response_retry_attempts,
+            backoff_seconds=settings.response_retry_backoff_seconds,
+        )
+    except Exception as exc:
+        logger.exception("line_send_failed")
+        write_dead_letter("notifier", "send_line_message", payload, str(exc))
+        return False

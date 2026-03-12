@@ -74,7 +74,23 @@ curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/set
 - Phase 59 complete: cost anomaly detection and preemptive throttling controls
 - Phase 60 complete: cost anomaly federation and production v1 final go-live closure
 - Phase 61 complete: post-go-live SLO burn-rate guard and auto rollback gate
-- Phase 63 in progress: universal integration layer (OCSF-compatible adapters + webhook + Purple ISO gap template)
+- Phase 65 complete: SOAR marketplace and connector reliability operations
+- Phase 66 complete: tenant policy matrix and action-center governance surface
+- Phase 67 complete: secops data tier and connector credential hardening
+- Phase 68 complete: credential hygiene auto-rotation and federation governance
+- Phase 69 complete: credential hygiene policy scheduler and run history operations
+- Phase 70 complete: purple executive scorecard and MITRE SLA federation
+- Phase 71 complete: connector dead-letter replay orchestration and federation guardrails
+- Phase 72 complete: unified case graph deep correlation for SOAR and connector replay evidence
+- Phase 73 complete: blue detection autotune policy scheduler and closed-loop guardrails
+- Phase 74 complete: red exploit autopilot policy scheduler and autonomous validation guardrails
+- Phase 75 complete: continuous threat-content pipeline automation with scheduler and federation freshness view
+
+## Competitive RBAC Scopes
+- `competitive:read` -> viewer (read federation/policy/events)
+- `competitive:policy:write` -> policy editor (SOAR policy matrix, SLA profile, action-center policy)
+- `competitive:approve` -> approver (SOAR approve, action-center dispatch, SLA evaluate)
+- Backward-compatible fallback: `control_plane:read` => viewer, `control_plane:write` => editor+approver
 
 ## Control Plane Auth Flow
 - `CONTROL_PLANE_AUTH_PROVIDER=local`: issue local scoped token via bootstrap token

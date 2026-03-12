@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 
-import { fetchIntegrationAdapters, fetchSites, ingestIntegrationEvent, upsertSite } from "@/lib/api";
-import type { IntegrationAdaptersResponse, SiteRow } from "@/lib/types";
+import {
+  createPhaseScopeCheck,
+  fetchCompetitiveObjectives,
+  fetchIntegrationAdapters,
+  fetchSites,
+  ingestIntegrationEvent,
+  upsertSite,
+  upsertThreatContentPack,
+} from "@/lib/api";
+import type { CompetitiveObjectivesResponse, IntegrationAdaptersResponse, SiteRow } from "@/lib/types";
 
 type FormState = {
   tenant_code: string;
@@ -28,6 +36,7 @@ export default function ConfigurationPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [adapters, setAdapters] = useState<IntegrationAdaptersResponse | null>(null);
+  const [objectives, setObjectives] = useState<CompetitiveObjectivesResponse | null>(null);
 
   const loadSites = async () => {
     setError("");
@@ -42,6 +51,7 @@ export default function ConfigurationPage() {
   useEffect(() => {
     void loadSites();
     void fetchIntegrationAdapters().then(setAdapters).catch(() => undefined);
+    void fetchCompetitiveObjectives().then(setObjectives).catch(() => undefined);
   }, []);
 
   const save = async () => {
@@ -90,6 +100,61 @@ export default function ConfigurationPage() {
       setMessage(`Sample webhook ingested: ${response.integration_event_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "ingest_sample_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const seedThreatPack = async () => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await upsertThreatContentPack({
+        pack_code: "weekly-credential-ransomware",
+        title: "Weekly Credential + Ransomware Validation Pack",
+        category: "ransomware",
+        mitre_techniques: ["T1110", "T1078", "T1486"],
+        attack_steps: [
+          "credential_stuffing_sim",
+          "privilege_escalation_sim",
+          "ransomware_preimpact_chain_sim",
+        ],
+        validation_mode: "simulation_safe",
+        is_active: true,
+      });
+      setMessage(`Threat pack ${result.status}: weekly-credential-ransomware`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "seed_threat_pack_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const recordPhaseScope = async () => {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const firstSite = rows[0];
+      const result = await createPhaseScopeCheck({
+        phase_code: "PHASE64",
+        phase_title: "Competitive Engine Foundations",
+        objective_ids: ["O1", "O2", "O3", "O6", "O8", "O9"],
+        deliverables: [
+          "exploit path simulation engine",
+          "threat content pack pipeline baseline",
+          "detection copilot tuning loop",
+          "unified case graph endpoint",
+          "purple executive iso gap alignment",
+          "connector reliability baseline",
+        ],
+        site_id: firstSite?.site_id || undefined,
+        context: { source: "configuration_page" },
+      });
+      setMessage(`Phase scope check: ${result.scope_status} (${result.phase_code})`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "phase_scope_check_failed");
     } finally {
       setBusy(false);
     }
@@ -148,6 +213,22 @@ export default function ConfigurationPage() {
           >
             Ingest Sample External Event
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void seedThreatPack()}
+            className="rounded-md border border-warning/60 bg-warning/10 px-3 py-2 text-xs text-warning hover:bg-warning/20 disabled:opacity-60"
+          >
+            Seed Threat Pack
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void recordPhaseScope()}
+            className="rounded-md border border-slate-600 px-3 py-2 text-xs text-slate-200 hover:border-slate-400 disabled:opacity-60"
+          >
+            Record Phase Scope Check
+          </button>
         </div>
 
         {message ? <p className="mt-2 text-sm text-accent">{message}</p> : null}
@@ -155,6 +236,10 @@ export default function ConfigurationPage() {
         <p className="mt-3 text-xs text-slate-400">
           Integration adapters:{" "}
           {adapters ? Object.keys(adapters.adapters).join(", ") : "loading..."}
+        </p>
+        <p className="mt-2 text-xs text-slate-400 wrap-anywhere">
+          Competitive objectives top-priority:{" "}
+          {objectives ? objectives.top_priority_objective_ids.join(", ") : "loading..."}
         </p>
       </section>
 
@@ -172,7 +257,7 @@ export default function ConfigurationPage() {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.site_id} className="border-t border-slate-800/80">
-                  <td className="px-4 py-3 text-xs text-slate-300">{row.tenant_id}</td>
+                  <td className="px-4 py-3 text-xs text-slate-300">{row.tenant_code || row.tenant_id}</td>
                   <td className="px-4 py-3 text-xs text-slate-100">{row.display_name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-300">{row.base_url}</td>
                   <td className="px-4 py-3 text-xs">{row.is_active ? "active" : "inactive"}</td>

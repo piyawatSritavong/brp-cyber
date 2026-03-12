@@ -17,6 +17,16 @@ class Settings(BaseSettings):
     autonomous_tick_limit: int = 200
     autonomous_red_schedule_tick_enabled: bool = True
     autonomous_red_schedule_limit: int = 100
+    autonomous_connector_hygiene_schedule_enabled: bool = True
+    autonomous_connector_hygiene_schedule_limit: int = 100
+    autonomous_connector_replay_schedule_enabled: bool = True
+    autonomous_connector_replay_schedule_limit: int = 100
+    autonomous_detection_autotune_schedule_enabled: bool = True
+    autonomous_detection_autotune_schedule_limit: int = 100
+    autonomous_red_exploit_autopilot_schedule_enabled: bool = True
+    autonomous_red_exploit_autopilot_schedule_limit: int = 100
+    autonomous_threat_content_pipeline_schedule_enabled: bool = True
+    autonomous_threat_content_pipeline_schedule_limit: int = 20
     integration_webhook_hmac_secret: str = ""
     integration_default_event_kind: str = "security_event"
 
@@ -31,6 +41,16 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+    line_notify_webhook_url: str = ""
+    line_notify_bearer_token: str = ""
+    connector_vault_master_key: str = "change-me-connector-vault-master-key"
+    connector_rotation_evidence_hmac_key: str = "change-me-connector-rotation-hmac-key"
+    secops_storage_cost_per_gb_month: float = 0.023
+    secops_ingest_cost_per_100k_events: float = 0.05
+    secops_search_cost_per_1k_queries: float = 0.01
+    secops_data_tier_search_latency_target_ms: int = 200
+    secops_data_tier_throughput_target_eps: float = 250.0
+    secops_data_tier_monthly_cost_budget_usd: float = 30.0
 
     allowlist_ips: str = "127.0.0.1"
     allowlist_cidrs: str = "10.0.0.0/8,192.168.0.0/16"

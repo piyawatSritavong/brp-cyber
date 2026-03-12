@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.models import BlueEventLog, IntegrationEvent, Site, Tenant
+from app.services.connector_observability import record_connector_event
 
 SUPPORTED_ADAPTERS: dict[str, dict[str, object]] = {
     "generic": {"name": "Generic JSON Adapter", "ocsf_class": "security_finding"},
@@ -211,6 +212,16 @@ def ingest_integration_event(
     )
     db.add(row)
     blue_event_id = _route_to_blue_event(db, site, normalized)
+    record_connector_event(
+        db,
+        connector_source=source.strip().lower() or "generic",
+        event_type="delivery_attempt",
+        status="success",
+        site_id=site.id if site else None,
+        latency_ms=0,
+        attempt=1,
+        payload={"event_kind": event_kind or settings.integration_default_event_kind, "blue_event_id": blue_event_id},
+    )
     db.commit()
     db.refresh(row)
     return {
@@ -256,4 +267,3 @@ def list_supported_adapters() -> dict[str, object]:
         "count": len(SUPPORTED_ADAPTERS),
         "adapters": SUPPORTED_ADAPTERS,
     }
-

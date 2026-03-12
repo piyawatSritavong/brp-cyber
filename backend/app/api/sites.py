@@ -9,12 +9,14 @@ from app.db.session import get_db
 from app.services.site_ops import (
     apply_blue_recommendation,
     generate_iso27001_gap_template,
+    generate_purple_executive_scorecard,
     generate_purple_site_report,
     ingest_blue_site_event,
     list_blue_site_events,
     list_purple_site_reports,
     list_red_scans,
     list_sites,
+    purple_executive_federation,
     run_red_site_scan,
     upsert_site,
 )
@@ -81,3 +83,37 @@ def purple_reports(site_id: UUID, limit: int = 30, db: Session = Depends(get_db)
 @router.get("/{site_id}/purple/iso27001-gap-template")
 def purple_iso27001_gap_template(site_id: UUID, limit: int = 200, db: Session = Depends(get_db)) -> dict[str, object]:
     return generate_iso27001_gap_template(db, site_id, limit=limit)
+
+
+@router.get("/{site_id}/purple/executive-scorecard")
+def purple_executive_scorecard(
+    site_id: UUID,
+    lookback_runs: int = 30,
+    lookback_events: int = 500,
+    sla_target_seconds: int = 120,
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    return generate_purple_executive_scorecard(
+        db,
+        site_id,
+        lookback_runs=lookback_runs,
+        lookback_events=lookback_events,
+        sla_target_seconds=sla_target_seconds,
+    )
+
+
+@router.get("/purple/executive-federation")
+def purple_exec_federation(
+    limit: int = 200,
+    lookback_runs: int = 30,
+    lookback_events: int = 500,
+    sla_target_seconds: int = 120,
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    return purple_executive_federation(
+        db,
+        limit=limit,
+        lookback_runs=lookback_runs,
+        lookback_events=lookback_events,
+        sla_target_seconds=sla_target_seconds,
+    )

@@ -9,8 +9,23 @@ import { TenantTable } from "@/components/TenantTable";
 import { RedTeamPanel } from "@/components/RedTeamPanel";
 import { BlueTeamPanel } from "@/components/BlueTeamPanel";
 import { PurpleReportsPanel } from "@/components/PurpleReportsPanel";
-import { fetchDashboard, fetchGovernanceDashboard, fetchSites, fetchTenantGate, fetchTenantHistory, fetchTenantRemediation } from "@/lib/api";
+import { SOARPlaybookPanel } from "@/components/SOARPlaybookPanel";
+import { ConnectorReliabilityPanel } from "@/components/ConnectorReliabilityPanel";
+import { ActionCenterPanel } from "@/components/ActionCenterPanel";
+import { FederationOpsPanel } from "@/components/FederationOpsPanel";
+import { SecOpsDataTierPanel } from "@/components/SecOpsDataTierPanel";
+import {
+  fetchCompetitiveAuthContext,
+  fetchDashboard,
+  fetchGovernanceDashboard,
+  fetchSites,
+  fetchTenantGate,
+  fetchTenantHistory,
+  fetchTenantRemediation,
+} from "@/lib/api";
 import type {
+  CompetitiveAuthContextResponse,
+  DashboardRow,
   DashboardResponse,
   GovernanceDashboardResponse,
   SiteRow,
@@ -29,11 +44,35 @@ export default function HomePage() {
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [loadingTenant, setLoadingTenant] = useState(false);
   const [loadingGovernance, setLoadingGovernance] = useState(false);
+  const [authContext, setAuthContext] = useState<CompetitiveAuthContextResponse | null>(null);
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState("");
   const [error, setError] = useState<string>("");
   const [governanceError, setGovernanceError] = useState<string>("");
   const [siteError, setSiteError] = useState<string>("");
+
+  const fallbackRows = useMemo<DashboardRow[]>(() => {
+    const grouped = new Map<string, { total: number; inactive: number }>();
+    for (const site of sites) {
+      const key = site.tenant_id;
+      const entry = grouped.get(key) || { total: 0, inactive: 0 };
+      entry.total += 1;
+      if (!site.is_active) entry.inactive += 1;
+      grouped.set(key, entry);
+    }
+    return Array.from(grouped.entries()).map(([tenantId, summary]) => {
+      const blockers = [{ gate: "objective_snapshot", reason: "No objective-gate snapshot yet. Run orchestration cycle." }];
+      if (summary.inactive > 0) {
+        blockers.push({ gate: "site_config", reason: `${summary.inactive} inactive site(s)` });
+      }
+      return {
+        tenant_id: tenantId,
+        overall_pass: summary.inactive === 0,
+        failed_gate_count: summary.inactive > 0 ? 1 : 0,
+        blockers,
+      };
+    });
+  }, [sites]);
 
   const loadDashboard = useCallback(async () => {
     setLoadingDashboard(true);
@@ -85,9 +124,30 @@ export default function HomePage() {
       setTenantHistory(history);
       setTenantRemediation(remediation);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "tenant_detail_load_failed");
+      if (dashboard?.rows?.length) {
+        setError(err instanceof Error ? err.message : "tenant_detail_load_failed");
+      } else {
+        setTenantGate(null);
+        setTenantHistory(null);
+        setTenantRemediation(null);
+      }
     } finally {
       setLoadingTenant(false);
+    }
+  }, [dashboard?.rows?.length]);
+
+  const loadAuthContext = useCallback(async () => {
+    try {
+      const data = await fetchCompetitiveAuthContext();
+      setAuthContext(data);
+    } catch {
+      setAuthContext({
+        authenticated: false,
+        actor: "",
+        scopes: [],
+        roles: ["viewer"],
+        permissions: { can_view: false, can_edit_policy: false, can_approve: false },
+      });
     }
   }, []);
 
@@ -108,20 +168,43 @@ export default function HomePage() {
     void loadDashboard();
     void loadGovernance();
     void loadSites();
+    void loadAuthContext();
     const timer = setInterval(() => {
       void loadDashboard();
       void loadGovernance();
       void loadSites();
+      void loadAuthContext();
     }, 15000);
     return () => clearInterval(timer);
-  }, [loadDashboard, loadGovernance, loadSites]);
+  }, [loadDashboard, loadGovernance, loadSites, loadAuthContext]);
 
   useEffect(() => {
     void loadTenantDetail(selectedTenantId);
   }, [selectedTenantId, loadTenantDetail]);
 
-  const rows = useMemo(() => dashboard?.rows || [], [dashboard]);
+  const rows = useMemo(() => {
+    const objectiveRows = dashboard?.rows || [];
+    return objectiveRows.length > 0 ? objectiveRows : fallbackRows;
+  }, [dashboard, fallbackRows]);
+  const stats = useMemo(() => {
+    const passing = rows.filter((row) => row.overall_pass).length;
+    return {
+      total: rows.length,
+      passing,
+      failing: Math.max(0, rows.length - passing),
+    };
+  }, [rows]);
   const selectedSite = useMemo(() => sites.find((site) => site.site_id === selectedSiteId) || null, [sites, selectedSiteId]);
+  const selectedTenantSites = useMemo(() => sites.filter((site) => site.tenant_id === selectedTenantId), [sites, selectedTenantId]);
+  const canViewCompetitive = Boolean(authContext?.permissions?.can_view);
+  const canEditPolicy = Boolean(authContext?.permissions?.can_edit_policy);
+  const canApprove = Boolean(authContext?.permissions?.can_approve);
+
+  useEffect(() => {
+    if (!selectedTenantId && rows.length > 0) {
+      setSelectedTenantId(rows[0].tenant_id);
+    }
+  }, [rows, selectedTenantId]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -142,14 +225,18 @@ export default function HomePage() {
         </button>
       </header>
 
-      <OverviewStats
-        total={dashboard?.total_tenants || 0}
-        passing={dashboard?.passing_tenants || 0}
-        failing={dashboard?.failing_tenants || 0}
-      />
+      <OverviewStats total={stats.total} passing={stats.passing} failing={stats.failing} />
 
       {loadingDashboard ? <p className="mt-3 text-sm text-slate-400">Refreshing dashboard stream...</p> : null}
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+      <p className="mt-2 text-xs text-slate-500 wrap-anywhere">
+        Competitive RBAC roles: {(authContext?.roles || ["viewer"]).join(", ")}
+      </p>
+      {dashboard?.rows?.length === 0 ? (
+        <p className="mt-2 text-xs text-warning wrap-anywhere">
+          No objective-gate snapshots yet. Dashboard is showing site-derived tenant data so operations remain visible.
+        </p>
+      ) : null}
 
       <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <TenantTable rows={rows} selectedTenantId={selectedTenantId} onSelectTenant={setSelectedTenantId} />
@@ -158,6 +245,7 @@ export default function HomePage() {
           gate={tenantGate}
           history={tenantHistory}
           remediation={tenantRemediation}
+          tenantSites={selectedTenantSites}
           loading={loadingTenant}
           error={error}
         />
@@ -166,10 +254,49 @@ export default function HomePage() {
       <GovernancePanel data={governance} loading={loadingGovernance} error={governanceError} />
 
       <section className="mt-6 grid gap-4 xl:grid-cols-3">
-        <RedTeamPanel sites={sites} selectedSiteId={selectedSiteId} onSelectSite={setSelectedSiteId} />
-        <BlueTeamPanel selectedSite={selectedSite} />
+        <RedTeamPanel
+          sites={sites}
+          selectedSiteId={selectedSiteId}
+          onSelectSite={setSelectedSiteId}
+          canView={canViewCompetitive}
+          canEditPolicy={canEditPolicy}
+          canApprove={canApprove}
+        />
+        <BlueTeamPanel
+          selectedSite={selectedSite}
+          canView={canViewCompetitive}
+          canEditPolicy={canEditPolicy}
+          canApprove={canApprove}
+        />
         <PurpleReportsPanel selectedSite={selectedSite} />
       </section>
+      <section className="mt-4 grid gap-4 xl:grid-cols-3">
+        <SOARPlaybookPanel
+          selectedSite={selectedSite}
+          canView={canViewCompetitive}
+          canEditPolicy={canEditPolicy}
+          canApprove={canApprove}
+        />
+        <ConnectorReliabilityPanel
+          selectedSite={selectedSite}
+          canView={canViewCompetitive}
+          canEditPolicy={canEditPolicy}
+          canApprove={canApprove}
+        />
+        <ActionCenterPanel
+          selectedSite={selectedSite}
+          canView={canViewCompetitive}
+          canEditPolicy={canEditPolicy}
+          canApprove={canApprove}
+        />
+      </section>
+      <FederationOpsPanel canView={canViewCompetitive} />
+      <SecOpsDataTierPanel
+        selectedSite={selectedSite}
+        canView={canViewCompetitive}
+        canEditPolicy={canEditPolicy}
+        canApprove={canApprove}
+      />
       {siteError ? <p className="mt-2 text-sm text-danger">{siteError}</p> : null}
     </main>
   );

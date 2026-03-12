@@ -10,8 +10,9 @@ type Props = {
 export function TenantTable({ rows, selectedTenantId, onSelectTenant }: Props) {
   return (
     <section className="card overflow-hidden">
+      <p className="px-4 pt-3 text-xs text-slate-400">Tenant posture matrix with failed gates and blockers requiring action.</p>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[760px] table-fixed text-left text-sm">
           <thead className="bg-panelAlt/60 text-slate-300">
             <tr>
               <th className="px-4 py-3">Tenant</th>
@@ -22,14 +23,21 @@ export function TenantTable({ rows, selectedTenantId, onSelectTenant }: Props) {
             </tr>
           </thead>
           <tbody>
+            {rows.length === 0 ? (
+              <tr className="border-t border-slate-800/80">
+                <td colSpan={5} className="px-4 py-4 text-xs text-slate-400">
+                  No tenants found. Add site records in Configuration first.
+                </td>
+              </tr>
+            ) : null}
             {rows.map((row) => (
               <tr key={row.tenant_id} className="border-t border-slate-800/80">
-                <td className="px-4 py-3 font-mono text-xs text-slate-200">{row.tenant_id}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-200 wrap-anywhere">{row.tenant_id}</td>
                 <td className="px-4 py-3">
                   <StatusBadge pass={row.overall_pass} />
                 </td>
                 <td className="px-4 py-3 text-warning">{row.failed_gate_count}</td>
-                <td className="px-4 py-3 text-xs text-slate-300">
+                <td className="px-4 py-3 text-xs text-slate-300 wrap-anywhere">
                   {row.blockers.length ? row.blockers.map((b) => b.gate).join(", ") : "none"}
                 </td>
                 <td className="px-4 py-3">

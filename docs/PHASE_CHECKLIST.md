@@ -2,7 +2,7 @@
 
 ใช้เอกสารนี้เป็นเกณฑ์ตรวจรับงาน (`Done/Not Done`) ต่อ Phase โดยไม่อิงเวลา
 
-## Progress Snapshot (2026-03-06)
+## Progress Snapshot (2026-03-11)
 - [x] Phase 0: Foundation & Governance (`Completed`)
 - [x] Phase 1: Blue Core (`Completed`)
 - [x] Phase 2: Purple Core (`Completed`)
@@ -65,6 +65,20 @@
 - [x] Phase 59: Cost Anomaly Detection & Preemptive Throttling Controls (`Completed`)
 - [x] Phase 60: Cost Anomaly Federation + Production v1 Final Go-Live Closure (`Completed`)
 - [x] Phase 61: Post-Go-Live SLO Burn-Rate Guard & Auto Rollback Gate (`Completed`)
+- [x] Phase 62: Autonomous Team Console & Operator UX (`Completed with carry-over items`)
+- [x] Phase 63: Universal Integration Layer & ISO Gap Automation (`Completed with carry-over items`)
+- [x] Phase 64: Competitive Engine Foundations (Objective-Scoped) (`Completed with carry-over items`)
+- [x] Phase 65: SOAR Marketplace + Connector Reliability Operations (`Completed`)
+- [x] Phase 66: Tenant Policy Matrix + Action Center Governance Surface (`Completed`)
+- [x] Phase 67: SecOps Data Tier + Connector Credential Hardening (`Completed`)
+- [x] Phase 68: Credential Hygiene Auto-Rotation & Federation Governance (`Completed`)
+- [x] Phase 69: Credential Hygiene Policy Scheduler & Runbook Ops (`Completed`)
+- [x] Phase 70: Purple Executive Scorecard & MITRE SLA Federation (`Completed`)
+- [x] Phase 71: Connector DLQ Replay Orchestration & Federation Guardrails (`Completed`)
+- [x] Phase 72: Unified Case Graph Deep Correlation (SOAR + Connector Replay) (`Completed`)
+- [x] Phase 73: Blue Detection Autotune Policy Scheduler & Closed-Loop Guardrails (`Completed`)
+- [x] Phase 74: Red Exploit Autopilot Policy Scheduler & Autonomous Validation Guardrails (`Completed`)
+- [x] Phase 75: Continuous Threat Content Pipeline Automation & Federation Freshness (`Completed`)
 
 ## Phase 0 Checklist: Foundation & Governance
 - [ ] สร้าง repo structure ตามมาตรฐาน (frontend/backend/agents/infra/docs)
@@ -702,7 +716,7 @@
 - [x] ผูกหน้า dashboard หลักให้แสดง Red/Blue/Purple panels แบบ site-centric
 - [x] เพิ่ม test coverage สำหรับ autonomous runtime service
 - [ ] เพิ่ม role-based UI control แยกสิทธิ์ Red/Blue/Purple operator
-- [ ] เพิ่ม incident/report outbound action center (Telegram/Line routing control)
+- [x] เพิ่ม incident/report outbound action center (Telegram/Line routing control)
 
 ## Phase 63 Checklist: Universal Integration Layer & ISO Gap Automation
 - [x] เพิ่ม integration event model สำหรับ raw + normalized payload persistence
@@ -715,4 +729,125 @@
 - [x] เพิ่ม Purple UI ให้เรียก/แสดง ISO gap summary ได้จาก evidence จริง
 - [x] เพิ่ม tests สำหรับ adapter normalization และ webhook signature verification
 - [ ] เพิ่ม connector credential vault abstraction + key rotation policy ต่อ connector
-- [ ] เพิ่ม connector health telemetry/retry/dead-letter UI สำหรับ production operations
+- [x] เพิ่ม connector health telemetry/retry/dead-letter UI สำหรับ production operations
+
+## Phase 64 Checklist: Competitive Engine Foundations (Objective-Scoped)
+- [x] เพิ่ม objective catalog สำหรับ competitive roadmap (`O1..O10`) + Top 6 priority set
+- [x] เพิ่ม phase scope-check service + persistence เพื่อบังคับ objective alignment ทุก phase
+- [x] เพิ่ม threat-content pack pipeline baseline (upsert/list MITRE-mapped packs)
+- [x] เพิ่ม Red exploit-path simulation run service พร้อม proof + safe-mode metadata
+- [x] เพิ่ม Blue detection-copilot tuning flow พร้อม before/after metrics
+- [x] เพิ่ม detection rule draft/apply API สำหรับ copilot outputs
+- [x] เพิ่ม Unified Case Graph API รวม Red/Blue/Purple evidence ต่อ site
+- [x] เชื่อม frontend Red/Blue/Purple panels กับ exploit-path/case-graph/copilot APIs
+- [x] เพิ่ม configuration actions สำหรับ threat-pack seed และ phase scope check
+- [x] เพิ่ม unit tests สำหรับ objective scope evaluation
+- [x] เพิ่ม SOAR playbook marketplace objects + approval lifecycle
+- [ ] เพิ่ม high-speed SecOps data tier benchmark + performance/cost dashboards
+
+## Phase 65 Checklist: SOAR Marketplace + Connector Reliability Operations
+- [x] เพิ่ม SOAR playbook model (`soar_playbooks`) พร้อม scope/category/version metadata
+- [x] เพิ่ม SOAR execution queue model (`soar_playbook_executions`) พร้อม approval lifecycle fields
+- [x] เพิ่ม APIs สำหรับ playbook upsert/list/execute/approve และ marketplace overview
+- [x] เพิ่ม connector telemetry model (`connector_delivery_events`) รองรับ retry/dead-letter/health
+- [x] เพิ่ม APIs สำหรับ connector event ingest/list และ health snapshot
+- [x] ผูก integration ingest ให้บันทึก connector delivery-attempt อัตโนมัติ
+- [x] เพิ่ม SOAR Playbook panel ใน dashboard (seed/run/approve flows)
+- [x] เพิ่ม Connector Reliability panel ใน dashboard (health + recent events)
+- [x] เพิ่ม tests สำหรับ SOAR/connector service logic
+- [x] เพิ่ม tenant playbook policy matrix + delegated approval workflow
+- [x] เพิ่ม connector SLA breach alert routing เข้าสู่ outbound action center (Telegram/Line)
+
+## Phase 66 Checklist: Tenant Policy Matrix + Action Center Governance Surface
+- [x] เพิ่ม model/service สำหรับ tenant action-center routing policy (`telegram/line/min_severity/tags`)
+- [x] เพิ่ม model/service สำหรับ action-center dispatch events + query history
+- [x] เพิ่ม model/service สำหรับ connector SLA profile/evaluate/breach persistence
+- [x] เพิ่ม competitive APIs สำหรับ SOAR policy matrix, connector SLA, action-center policy/dispatch/events
+- [x] เพิ่ม delegated approver enforcement ใน SOAR approval flow ตาม tenant policy
+- [x] เพิ่ม frontend SOAR panel controls สำหรับ delegated approvers + blocked playbooks + approval matrix
+- [x] เพิ่ม frontend Connector panel controls สำหรับ SLA profile, evaluate และ breach visibility
+- [x] เพิ่ม frontend Action Center panel สำหรับ routing policy + test dispatch + event feed
+- [x] เพิ่ม tests สำหรับ policy gate/delegated approval/SLA breach routing/severity threshold
+- [x] เพิ่ม RBAC ระดับ UI/API สำหรับแยกสิทธิ์ policy editor vs approver vs viewer
+- [x] เพิ่ม cross-tenant federation dashboard สำหรับ action-center/SLA breaches ระดับ MSSP
+
+## Phase 67 Checklist: SecOps Data Tier + Connector Credential Hardening
+- [x] เพิ่ม connector credential vault abstraction สำหรับ integration/action-center/SLA connectors
+- [x] เพิ่ม credential rotation policy + audit evidence chain ต่อ connector
+- [x] เพิ่ม high-speed SecOps data-tier benchmark endpoint (ingest/search/retention cost)
+- [x] เพิ่ม dashboard แสดง performance/cost trend ต่อ tenant และ federation view
+
+## Phase 68 Checklist: Credential Hygiene Auto-Rotation & Federation Governance
+- [x] เพิ่ม tenant credential hygiene evaluator (expired/due/risk score/recommendation)
+- [x] เพิ่ม auto-rotate due credentials flow (`dry_run` / `apply`) พร้อม action summary
+- [x] เพิ่ม credential hygiene federation snapshot ข้าม tenant สำหรับ MSSP operations
+- [x] เพิ่ม competitive APIs สำหรับ hygiene evaluate / auto-rotate / federation view
+- [x] ผูก auto-rotate กับ action-center alert routing สำหรับ governance visibility
+- [x] เพิ่ม frontend ใน SecOps Data Tier panel สำหรับ hygiene + auto-rotate controls
+- [x] เพิ่ม test coverage สำหรับ hygiene evaluator/auto-rotate/federation + RBAC API gate
+
+## Phase 69 Checklist: Credential Hygiene Policy Scheduler & Runbook Ops
+- [x] เพิ่ม hygiene policy model ต่อ tenant+connector (`warning_days/max_rotate/auto_apply/schedule/route_alert`)
+- [x] เพิ่ม hygiene run history model สำหรับ auditability (`candidate/executed/failed/risk/alert`)
+- [x] เพิ่ม service สำหรับ upsert/get policy และ manual hygiene run
+- [x] เพิ่ม scheduler run service เพื่อประมวลผล policy ที่ครบ interval อัตโนมัติ
+- [x] ผูก scheduler เข้ากับ autonomous runtime tick loop เพื่อรันอัตโนมัติแบบไม่ต้องกด script
+- [x] เพิ่ม competitive APIs สำหรับ policy/runs/scheduler operations
+- [x] เพิ่ม frontend controls สำหรับ policy save + manual run + scheduler trigger + run history
+- [x] เพิ่ม tests สำหรับ service logic + RBAC gates ของ policy/scheduler endpoints
+
+## Phase 70 Checklist: Purple Executive Scorecard & MITRE SLA Federation
+- [x] เพิ่ม Purple executive scorecard service ต่อ site (MITRE heatmap + remediation SLA)
+- [x] เพิ่ม MITRE technique coverage inference จาก Red exploit-path + Blue detection rules
+- [x] เพิ่ม remediation SLA estimator (`estimated_mttr/apply_rate/target/sla_status`)
+- [x] เพิ่ม federation executive summary ข้ามไซต์สำหรับมุมมองผู้บริหาร
+- [x] เพิ่ม site APIs สำหรับ executive scorecard และ federation view
+- [x] เพิ่ม Purple Team UI components สำหรับ Executive Scorecard/Federation
+- [x] เพิ่ม tests สำหรับ executive scorecard/federation service logic
+
+## Phase 71 Checklist: Connector DLQ Replay Orchestration & Federation Guardrails
+- [x] เพิ่ม reliability policy model ต่อ tenant+connector (`max_replay/max_attempts/auto_replay/schedule/route_alert`)
+- [x] เพิ่ม reliability run history model สำหรับ replay evidence (`backlog/replayed/failed/risk/alert`)
+- [x] เพิ่ม service สำหรับ DLQ backlog view + policy-aware replay execution (dry-run/apply)
+- [x] เพิ่ม scheduler service สำหรับ replay automation และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม federation snapshot ข้าม tenant สำหรับ unresolved DLQ + replay success risk tiers
+- [x] เพิ่ม competitive APIs สำหรับ reliability policy/backlog/replay/run/scheduler/federation
+- [x] เพิ่ม frontend Connector Reliability panel controls สำหรับ replay policy + run actions + summaries
+- [x] เพิ่ม tests สำหรับ reliability service, runtime integration, และ RBAC endpoints
+
+## Phase 72 Checklist: Unified Case Graph Deep Correlation (SOAR + Connector Replay)
+- [x] ยกระดับ Unified Case Graph service ให้รวม SOAR execution artifacts ต่อ site
+- [x] เพิ่ม connector event replay edges (`replayed_as`) และ playbook mitigation edges (`mitigated_by_playbook`)
+- [x] เพิ่ม cross-domain timeline view (red/blue/soar/connector/purple) สำหรับเคสเดียว
+- [x] เพิ่ม case risk summary (`risk_score/risk_tier/recommendation`) จาก exploit+blue+soar+dlq signals
+- [x] เพิ่ม summary fields สำหรับ SOAR/connector/replay counts ใน case graph response
+- [x] เพิ่ม Purple UI แสดง risk + timeline จาก Unified Case Graph
+- [x] เพิ่ม tests ครอบคลุม graph edge correlation และ risk output
+
+## Phase 73 Checklist: Blue Detection Autotune Policy Scheduler & Closed-Loop Guardrails
+- [x] เพิ่ม autotune policy model ต่อ site (`min_risk/min_tier/target_coverage/max_rules/auto_apply/schedule`)
+- [x] เพิ่ม autotune run history model สำหรับ audit (`risk/coverage delta/recommendations/applied/alert`)
+- [x] เพิ่ม service สำหรับ policy upsert/get + policy-aware autotune run (dry-run/apply/force)
+- [x] เพิ่ม scheduler service สำหรับ detection autotune และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม competitive APIs สำหรับ autotune policy/run/runs/scheduler พร้อม RBAC gate
+- [x] เพิ่ม Blue Team UI controls สำหรับ autotune policy และ manual/scheduler execution
+- [x] เพิ่ม tests สำหรับ service logic, runtime integration, และ RBAC endpoint behavior
+
+## Phase 74 Checklist: Red Exploit Autopilot Policy Scheduler & Autonomous Validation Guardrails
+- [x] เพิ่ม red exploit autopilot policy model ต่อ site (`min_risk/min_tier/pack_category/target_surface/depth/rpm/auto_run/schedule`)
+- [x] เพิ่ม red exploit autopilot run history model สำหรับ audit (`risk/path/proof/executed/alert`)
+- [x] เพิ่ม service สำหรับ policy upsert/get + policy-aware autopilot run (dry-run/apply/force)
+- [x] เพิ่ม scheduler service สำหรับ red exploit autopilot และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม competitive APIs สำหรับ red autopilot policy/run/runs/scheduler พร้อม RBAC gate
+- [x] เพิ่ม Red Team UI controls สำหรับ autopilot policy และ manual/scheduler execution
+- [x] เพิ่ม tests สำหรับ service logic, runtime integration, และ RBAC endpoint behavior
+
+## Phase 75 Checklist: Continuous Threat Content Pipeline Automation & Federation Freshness
+- [x] เพิ่ม threat-content pipeline policy model (`scope/refresh_interval/categories/max_packs/auto_activate/schedule`)
+- [x] เพิ่ม threat-content pipeline run history model สำหรับ audit (`candidate/created/refreshed/activated/skipped`)
+- [x] เพิ่ม service สำหรับ policy upsert/get + policy-aware pipeline run (dry-run/apply/force)
+- [x] เพิ่ม scheduler service สำหรับ threat-content pipeline และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม federation freshness summary ข้าม category (`stale_count/latest_updated_at/technique_coverage`)
+- [x] เพิ่ม competitive APIs สำหรับ pipeline policy/run/runs/scheduler/federation พร้อม RBAC gate
+- [x] เพิ่ม Red Team UI controls สำหรับ pipeline policy + manual run + scheduler + federation snapshot
+- [x] เพิ่ม tests สำหรับ service logic, runtime integration, และ RBAC endpoint behavior

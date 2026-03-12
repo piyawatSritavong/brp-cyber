@@ -6,8 +6,13 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from app.core.config import settings
+from app.services.connector_credential_hygiene import process_credential_hygiene_schedules
+from app.services.connector_reliability import process_connector_replay_schedules
+from app.services.detection_autotune import process_detection_autotune_schedules
 from app.services.orchestrator import run_activation_scheduler_tick
+from app.services.red_exploit_autopilot import process_red_exploit_autopilot_schedules
 from app.services.red_simulator import process_due_schedules
+from app.services.threat_content_pipeline import process_threat_content_pipeline_schedules
 
 
 class AutonomousRuntime:
@@ -16,9 +21,19 @@ class AutonomousRuntime:
         *,
         tick_runner: Callable[[int], dict[str, Any]] = run_activation_scheduler_tick,
         red_schedule_runner: Callable[[int], dict[str, Any]] = process_due_schedules,
+        hygiene_schedule_runner: Callable[[int], dict[str, Any]] = process_credential_hygiene_schedules,
+        replay_schedule_runner: Callable[[int], dict[str, Any]] = process_connector_replay_schedules,
+        detection_autotune_schedule_runner: Callable[[int], dict[str, Any]] = process_detection_autotune_schedules,
+        red_exploit_autopilot_schedule_runner: Callable[[int], dict[str, Any]] = process_red_exploit_autopilot_schedules,
+        threat_content_pipeline_schedule_runner: Callable[[int], dict[str, Any]] = process_threat_content_pipeline_schedules,
     ) -> None:
         self._tick_runner = tick_runner
         self._red_schedule_runner = red_schedule_runner
+        self._hygiene_schedule_runner = hygiene_schedule_runner
+        self._replay_schedule_runner = replay_schedule_runner
+        self._detection_autotune_schedule_runner = detection_autotune_schedule_runner
+        self._red_exploit_autopilot_schedule_runner = red_exploit_autopilot_schedule_runner
+        self._threat_content_pipeline_schedule_runner = threat_content_pipeline_schedule_runner
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
@@ -29,6 +44,28 @@ class AutonomousRuntime:
             "tick_limit": max(1, int(getattr(settings, "autonomous_tick_limit", 200))),
             "red_schedule_enabled": bool(getattr(settings, "autonomous_red_schedule_tick_enabled", True)),
             "red_schedule_limit": max(1, int(getattr(settings, "autonomous_red_schedule_limit", 100))),
+            "hygiene_schedule_enabled": bool(getattr(settings, "autonomous_connector_hygiene_schedule_enabled", True)),
+            "hygiene_schedule_limit": max(1, int(getattr(settings, "autonomous_connector_hygiene_schedule_limit", 100))),
+            "replay_schedule_enabled": bool(getattr(settings, "autonomous_connector_replay_schedule_enabled", True)),
+            "replay_schedule_limit": max(1, int(getattr(settings, "autonomous_connector_replay_schedule_limit", 100))),
+            "detection_autotune_schedule_enabled": bool(
+                getattr(settings, "autonomous_detection_autotune_schedule_enabled", True)
+            ),
+            "detection_autotune_schedule_limit": max(
+                1, int(getattr(settings, "autonomous_detection_autotune_schedule_limit", 100))
+            ),
+            "red_exploit_autopilot_schedule_enabled": bool(
+                getattr(settings, "autonomous_red_exploit_autopilot_schedule_enabled", True)
+            ),
+            "red_exploit_autopilot_schedule_limit": max(
+                1, int(getattr(settings, "autonomous_red_exploit_autopilot_schedule_limit", 100))
+            ),
+            "threat_content_pipeline_schedule_enabled": bool(
+                getattr(settings, "autonomous_threat_content_pipeline_schedule_enabled", True)
+            ),
+            "threat_content_pipeline_schedule_limit": max(
+                1, int(getattr(settings, "autonomous_threat_content_pipeline_schedule_limit", 20))
+            ),
             "started_at": "",
             "stopped_at": "",
             "last_tick_at": "",
@@ -85,14 +122,48 @@ class AutonomousRuntime:
         tick_limit = max(1, int(getattr(settings, "autonomous_tick_limit", 200)))
         red_limit = max(1, int(getattr(settings, "autonomous_red_schedule_limit", 100)))
         red_enabled = bool(getattr(settings, "autonomous_red_schedule_tick_enabled", True))
+        hygiene_limit = max(1, int(getattr(settings, "autonomous_connector_hygiene_schedule_limit", 100)))
+        hygiene_enabled = bool(getattr(settings, "autonomous_connector_hygiene_schedule_enabled", True))
+        replay_limit = max(1, int(getattr(settings, "autonomous_connector_replay_schedule_limit", 100)))
+        replay_enabled = bool(getattr(settings, "autonomous_connector_replay_schedule_enabled", True))
+        detection_autotune_limit = max(1, int(getattr(settings, "autonomous_detection_autotune_schedule_limit", 100)))
+        detection_autotune_enabled = bool(getattr(settings, "autonomous_detection_autotune_schedule_enabled", True))
+        red_exploit_autopilot_limit = max(1, int(getattr(settings, "autonomous_red_exploit_autopilot_schedule_limit", 100)))
+        red_exploit_autopilot_enabled = bool(getattr(settings, "autonomous_red_exploit_autopilot_schedule_enabled", True))
+        threat_content_pipeline_limit = max(
+            1, int(getattr(settings, "autonomous_threat_content_pipeline_schedule_limit", 20))
+        )
+        threat_content_pipeline_enabled = bool(
+            getattr(settings, "autonomous_threat_content_pipeline_schedule_enabled", True)
+        )
         now_iso = datetime.now(timezone.utc).isoformat()
-        result: dict[str, Any] = {"tick": {}, "red_schedule": {"status": "disabled"}}
+        result: dict[str, Any] = {
+            "tick": {},
+            "red_schedule": {"status": "disabled"},
+            "hygiene_schedule": {"status": "disabled"},
+            "replay_schedule": {"status": "disabled"},
+            "detection_autotune_schedule": {"status": "disabled"},
+            "red_exploit_autopilot_schedule": {"status": "disabled"},
+            "threat_content_pipeline_schedule": {"status": "disabled"},
+        }
         error_text = ""
 
         try:
             result["tick"] = self._tick_runner(tick_limit)
             if red_enabled:
                 result["red_schedule"] = self._red_schedule_runner(red_limit)
+            if hygiene_enabled:
+                result["hygiene_schedule"] = self._hygiene_schedule_runner(hygiene_limit)
+            if replay_enabled:
+                result["replay_schedule"] = self._replay_schedule_runner(replay_limit)
+            if detection_autotune_enabled:
+                result["detection_autotune_schedule"] = self._detection_autotune_schedule_runner(detection_autotune_limit)
+            if red_exploit_autopilot_enabled:
+                result["red_exploit_autopilot_schedule"] = self._red_exploit_autopilot_schedule_runner(red_exploit_autopilot_limit)
+            if threat_content_pipeline_enabled:
+                result["threat_content_pipeline_schedule"] = self._threat_content_pipeline_schedule_runner(
+                    threat_content_pipeline_limit
+                )
         except Exception as exc:
             error_text = str(exc)
             result["error"] = error_text
@@ -103,6 +174,16 @@ class AutonomousRuntime:
             self._state["tick_limit"] = tick_limit
             self._state["red_schedule_enabled"] = red_enabled
             self._state["red_schedule_limit"] = red_limit
+            self._state["hygiene_schedule_enabled"] = hygiene_enabled
+            self._state["hygiene_schedule_limit"] = hygiene_limit
+            self._state["replay_schedule_enabled"] = replay_enabled
+            self._state["replay_schedule_limit"] = replay_limit
+            self._state["detection_autotune_schedule_enabled"] = detection_autotune_enabled
+            self._state["detection_autotune_schedule_limit"] = detection_autotune_limit
+            self._state["red_exploit_autopilot_schedule_enabled"] = red_exploit_autopilot_enabled
+            self._state["red_exploit_autopilot_schedule_limit"] = red_exploit_autopilot_limit
+            self._state["threat_content_pipeline_schedule_enabled"] = threat_content_pipeline_enabled
+            self._state["threat_content_pipeline_schedule_limit"] = threat_content_pipeline_limit
             self._state["last_tick_at"] = now_iso
             self._state["last_result"] = result
             self._state["last_error"] = error_text
@@ -112,4 +193,3 @@ class AutonomousRuntime:
 
 
 autonomous_runtime = AutonomousRuntime()
-

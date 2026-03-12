@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
@@ -11,7 +12,16 @@ import httpx
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.db.models import BlueEventLog, PurpleInsightReport, RedScanRun, Site, Tenant
+from app.db.models import (
+    BlueDetectionRule,
+    BlueEventLog,
+    PurpleInsightReport,
+    RedExploitPathRun,
+    RedScanRun,
+    Site,
+    Tenant,
+    ThreatContentPack,
+)
 from schemas.site_ops import BlueSiteEventIngestRequest, RedSiteScanRequest, SiteUpsertRequest
 
 SECURITY_HEADERS = [
@@ -21,6 +31,21 @@ SECURITY_HEADERS = [
     "x-content-type-options",
     "referrer-policy",
 ]
+
+SIGNAL_MITRE_HINTS: dict[str, list[str]] = {
+    "failed_login_spike": ["T1110"],
+    "impossible_auth_pattern": ["T1078"],
+    "lateral_movement_plus_privilege_escalation": ["T1021", "T1068"],
+    "waf_403_burst": ["T1190"],
+    "credential_reuse_or_bruteforce": ["T1110"],
+}
+
+RULE_HINT_MITRE: dict[str, list[str]] = {
+    "velocity guard": ["T1110"],
+    "identity abuse": ["T1078"],
+    "ransomware": ["T1486"],
+    "adaptive waf": ["T1190"],
+}
 
 
 def _as_json(value: dict[str, object]) -> str:
@@ -39,10 +64,23 @@ def _safe_json_load(value: str | None) -> dict[str, object]:
     return {}
 
 
+def _safe_json_list(value: str | None) -> list[object]:
+    if not value:
+        return []
+    try:
+        payload = json.loads(value)
+        if isinstance(payload, list):
+            return payload
+    except Exception:
+        pass
+    return []
+
+
 def _site_row(site: Site) -> dict[str, object]:
     return {
         "site_id": str(site.id),
         "tenant_id": str(site.tenant_id),
+        "tenant_code": site.tenant.tenant_code if site.tenant else "",
         "site_code": site.site_code,
         "display_name": site.display_name,
         "base_url": site.base_url,
@@ -461,4 +499,218 @@ def generate_iso27001_gap_template(db: Session, site_id: UUID, *, limit: int = 2
         "framework": "ISO/IEC 27001:2022",
         "summary": summary,
         "controls": control_rows,
+    }
+
+
+def _extract_red_mitre_techniques(db: Session, red_runs: list[RedExploitPathRun]) -> dict[str, int]:
+    attacked_counts: dict[str, int] = defaultdict(int)
+    for run in red_runs:
+        proof = _safe_json_load(run.proof_json)
+        techniques = proof.get("mitre_techniques", []) if isinstance(proof, dict) else []
+        if isinstance(techniques, list):
+            for technique in techniques:
+                technique_id = str(technique).strip().upper()
+                if technique_id:
+                    attacked_counts[technique_id] += 1
+        if run.threat_pack_id:
+            pack = db.get(ThreatContentPack, run.threat_pack_id)
+            if pack:
+                for technique in _safe_json_list(pack.mitre_techniques_json):
+                    technique_id = str(technique).strip().upper()
+                    if technique_id:
+                        attacked_counts[technique_id] += 1
+    return attacked_counts
+
+
+def _extract_detection_mitre_coverage(rules: list[BlueDetectionRule]) -> set[str]:
+    covered: set[str] = set()
+    for rule in rules:
+        logic = _safe_json_load(rule.rule_logic_json)
+        if isinstance(logic, dict):
+            techniques = logic.get("mitre_techniques", [])
+            if isinstance(techniques, list):
+                for technique in techniques:
+                    technique_id = str(technique).strip().upper()
+                    if technique_id:
+                        covered.add(technique_id)
+            signal = str(logic.get("signal", "")).strip().lower()
+            for technique_id in SIGNAL_MITRE_HINTS.get(signal, []):
+                covered.add(technique_id.upper())
+        rule_name = (rule.rule_name or "").lower()
+        for hint, technique_ids in RULE_HINT_MITRE.items():
+            if hint in rule_name:
+                for technique_id in technique_ids:
+                    covered.add(technique_id.upper())
+    return covered
+
+
+def _estimate_mttr_seconds(blue_rows: list[BlueEventLog], suspicious_total: int) -> int:
+    if suspicious_total <= 0:
+        return 0
+    applied_suspicious = len(
+        [row for row in blue_rows if row.ai_severity in {"high", "medium"} and row.status == "applied"]
+    )
+    unresolved = max(0, suspicious_total - applied_suspicious)
+    weighted = (applied_suspicious * 60) + (unresolved * 240)
+    return int(weighted / suspicious_total)
+
+
+def generate_purple_executive_scorecard(
+    db: Session,
+    site_id: UUID,
+    *,
+    lookback_runs: int = 30,
+    lookback_events: int = 500,
+    sla_target_seconds: int = 120,
+) -> dict[str, object]:
+    site = db.get(Site, site_id)
+    if not site:
+        return {"status": "not_found", "site_id": str(site_id)}
+
+    red_runs = db.scalars(
+        select(RedExploitPathRun)
+        .where(RedExploitPathRun.site_id == site_id)
+        .order_by(desc(RedExploitPathRun.created_at))
+        .limit(max(1, min(lookback_runs, 500)))
+    ).all()
+    blue_rows = db.scalars(
+        select(BlueEventLog)
+        .where(BlueEventLog.site_id == site_id)
+        .order_by(desc(BlueEventLog.created_at))
+        .limit(max(1, min(lookback_events, 2000)))
+    ).all()
+    detection_rules = db.scalars(
+        select(BlueDetectionRule)
+        .where(BlueDetectionRule.site_id == site_id)
+        .order_by(desc(BlueDetectionRule.updated_at))
+        .limit(500)
+    ).all()
+
+    attacked_counts = _extract_red_mitre_techniques(db, red_runs)
+    covered_techniques = _extract_detection_mitre_coverage(detection_rules)
+
+    suspicious_total = len([row for row in blue_rows if row.ai_severity in {"high", "medium"}])
+    applied_suspicious = len([row for row in blue_rows if row.ai_severity in {"high", "medium"} and row.status == "applied"])
+    detection_total = len([row for row in blue_rows if row.ai_severity in {"high", "medium"}])
+    mttr_seconds = _estimate_mttr_seconds(blue_rows, suspicious_total)
+    target_seconds = max(30, min(int(sla_target_seconds), 3600))
+    apply_rate = round((applied_suspicious / suspicious_total) if suspicious_total else 0.0, 4)
+    response_sla_pass = mttr_seconds <= target_seconds and apply_rate >= 0.7
+
+    if attacked_counts:
+        technique_rows = []
+        for technique_id, count in sorted(attacked_counts.items(), key=lambda item: item[0]):
+            covered = technique_id in covered_techniques
+            status = "covered" if covered else ("partial" if apply_rate >= 0.5 else "gap")
+            technique_rows.append(
+                {
+                    "technique_id": technique_id,
+                    "attack_count": int(count),
+                    "detection_status": status,
+                    "mitigation_time_seconds": mttr_seconds if detection_total else None,
+                    "sla_status": "pass" if response_sla_pass else "at_risk",
+                    "recommendation": (
+                        "Maintain control and continue validation."
+                        if covered
+                        else "Add/tune detection rule mapped to this MITRE technique."
+                    ),
+                }
+            )
+    else:
+        technique_rows = []
+
+    attacked_unique = len(attacked_counts)
+    covered_unique = len([row for row in technique_rows if row["detection_status"] == "covered"])
+    partial_unique = len([row for row in technique_rows if row["detection_status"] == "partial"])
+    heatmap_coverage = round((covered_unique / attacked_unique), 4) if attacked_unique else 0.0
+
+    executive_summary = {
+        "site_id": str(site.id),
+        "site_code": site.site_code,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "red_exploit_runs": len(red_runs),
+        "blue_events": len(blue_rows),
+        "detection_rules": len(detection_rules),
+        "attacked_techniques": attacked_unique,
+        "covered_techniques": covered_unique,
+        "partial_techniques": partial_unique,
+        "heatmap_coverage": heatmap_coverage,
+    }
+
+    remediation_sla = {
+        "target_mttr_seconds": target_seconds,
+        "estimated_mttr_seconds": mttr_seconds,
+        "suspicious_event_count": suspicious_total,
+        "applied_event_count": applied_suspicious,
+        "apply_rate": apply_rate,
+        "detection_event_count": detection_total,
+        "sla_status": "pass" if response_sla_pass else "at_risk",
+        "recommendation": (
+            "SLA healthy. Continue iterative red/blue tuning."
+            if response_sla_pass
+            else "Increase blue auto-apply rate and tighten detection thresholds for faster mitigation."
+        ),
+    }
+
+    return {
+        "status": "completed",
+        "framework": "MITRE ATT&CK + Remediation SLA",
+        "summary": executive_summary,
+        "heatmap": technique_rows,
+        "remediation_sla": remediation_sla,
+    }
+
+
+def purple_executive_federation(
+    db: Session,
+    *,
+    limit: int = 200,
+    lookback_runs: int = 30,
+    lookback_events: int = 500,
+    sla_target_seconds: int = 120,
+) -> dict[str, object]:
+    sites = db.scalars(select(Site).order_by(desc(Site.created_at)).limit(max(1, min(limit, 1000)))).all()
+    rows: list[dict[str, object]] = []
+    for site in sites:
+        scorecard = generate_purple_executive_scorecard(
+            db,
+            site.id,
+            lookback_runs=lookback_runs,
+            lookback_events=lookback_events,
+            sla_target_seconds=sla_target_seconds,
+        )
+        if scorecard.get("status") != "completed":
+            continue
+        summary = scorecard.get("summary", {})
+        remediation = scorecard.get("remediation_sla", {})
+        rows.append(
+            {
+                "site_id": str(site.id),
+                "site_code": site.site_code,
+                "tenant_code": site.tenant.tenant_code if site.tenant else "",
+                "heatmap_coverage": float(summary.get("heatmap_coverage", 0.0)),
+                "attacked_techniques": int(summary.get("attacked_techniques", 0)),
+                "covered_techniques": int(summary.get("covered_techniques", 0)),
+                "estimated_mttr_seconds": int(remediation.get("estimated_mttr_seconds", 0)),
+                "target_mttr_seconds": int(remediation.get("target_mttr_seconds", 0)),
+                "sla_status": str(remediation.get("sla_status", "at_risk")),
+                "apply_rate": float(remediation.get("apply_rate", 0.0)),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            1 if row["sla_status"] != "pass" else 0,
+            1.0 - row["heatmap_coverage"],
+            row["estimated_mttr_seconds"],
+        ),
+        reverse=True,
+    )
+    passing = len([row for row in rows if row["sla_status"] == "pass"])
+    return {
+        "status": "completed",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "count": len(rows),
+        "passing_sites": passing,
+        "at_risk_sites": max(0, len(rows) - passing),
+        "rows": rows,
     }
