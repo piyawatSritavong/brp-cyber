@@ -40,10 +40,13 @@ import type {
   SiteDetectionAutotuneRunResponse,
   SiteDetectionRulesResponse,
   SiteBlueManagedResponderPolicyResponse,
+  SiteBlueManagedResponderCallbackListResponse,
+  SiteBlueManagedResponderCallbackResponse,
   SiteBlueManagedResponderEvidenceVerifyResponse,
   SiteBlueManagedResponderRunListResponse,
   SiteBlueManagedResponderRunResponse,
   SiteBlueManagedResponderSchedulerResponse,
+  BlueManagedResponderVendorPackListResponse,
   SiteBlueThreatLocalizerPolicyResponse,
   SiteBlueThreatLocalizerPromotionRunListResponse,
   SiteBlueThreatLocalizerPromotionRunResponse,
@@ -70,6 +73,7 @@ import type {
   SiteRedSocialRosterResponse,
   SiteRedSocialSimulatorRunListResponse,
   SiteRedSocialSimulatorRunResponse,
+  SiteRedSocialTemplatePackResponse,
   SiteRedSocialTelemetryResponse,
   SiteRedVulnerabilityFindingImportResponse,
   SiteRedVulnerabilityFindingListResponse,
@@ -139,6 +143,11 @@ import type {
   PurpleRoiPortfolioRollupResponse,
   PurpleExportTemplatePackResponse,
   SitePurpleIncidentReportExportResponse,
+  SitePurpleAttackLayerExportResponse,
+  SitePurpleAttackLayerWorkspaceListResponse,
+  SitePurpleAttackLayerWorkspaceResponse,
+  SitePurpleControlFamilyMapExportResponse,
+  SitePurpleControlFamilyMapResponse,
   SitePurpleMitreHeatmapExportResponse,
   SitePurpleReportReleaseListResponse,
   SitePurpleReportReleaseResponse,
@@ -299,6 +308,8 @@ export function runSiteRedSocialSimulator(
     campaign_name?: string;
     employee_segment?: string;
     email_count?: number;
+    campaign_type?: string;
+    template_pack_code?: string;
     difficulty?: "low" | "medium" | "high";
     impersonation_brand?: string;
     dry_run?: boolean;
@@ -332,6 +343,16 @@ export function fetchSiteRedSocialPolicy(siteId: string): Promise<SiteRedSocialP
   return getJson<SiteRedSocialPolicyResponse>(`/competitive/sites/${siteId}/red/social-simulator/policy`);
 }
 
+export function fetchSiteRedSocialTemplatePacks(params?: {
+  campaign_type?: string;
+  jurisdiction?: string;
+}): Promise<SiteRedSocialTemplatePackResponse> {
+  const query = new URLSearchParams();
+  if (params?.campaign_type) query.set("campaign_type", params.campaign_type);
+  query.set("jurisdiction", params?.jurisdiction ?? "th");
+  return getJson<SiteRedSocialTemplatePackResponse>(`/competitive/red/social-simulator/template-packs?${query.toString()}`);
+}
+
 export function upsertSiteRedSocialPolicy(
   siteId: string,
   payload: {
@@ -348,6 +369,10 @@ export function upsertSiteRedSocialPolicy(
     kill_switch_active: boolean;
     allowed_domains: string[];
     connector_config?: Record<string, unknown>;
+    campaign_type?: string;
+    template_pack_code?: string;
+    evidence_retention_days?: number;
+    legal_ack_required?: boolean;
     enabled: boolean;
     owner: string;
   },
@@ -808,6 +833,45 @@ export function fetchSiteBlueManagedResponderRuns(siteId: string, limit = 20): P
   return getJson<SiteBlueManagedResponderRunListResponse>(`/competitive/sites/${siteId}/blue/managed-responder/runs?limit=${limit}`);
 }
 
+export function fetchBlueManagedResponderVendorPacks(source = ""): Promise<BlueManagedResponderVendorPackListResponse> {
+  const query = new URLSearchParams();
+  if (source) query.set("source", source);
+  return getJson<BlueManagedResponderVendorPackListResponse>(`/competitive/blue/managed-responder/vendor-packs?${query.toString()}`);
+}
+
+export function fetchSiteBlueManagedResponderCallbacks(
+  siteId: string,
+  params?: { run_id?: string; connector_source?: string; limit?: number },
+): Promise<SiteBlueManagedResponderCallbackListResponse> {
+  const query = new URLSearchParams();
+  if (params?.run_id) query.set("run_id", params.run_id);
+  if (params?.connector_source) query.set("connector_source", params.connector_source);
+  query.set("limit", String(params?.limit ?? 20));
+  return getJson<SiteBlueManagedResponderCallbackListResponse>(
+    `/competitive/sites/${siteId}/blue/managed-responder/callbacks?${query.toString()}`,
+  );
+}
+
+export function ingestSiteBlueManagedResponderCallback(
+  siteId: string,
+  runId: string,
+  payload: {
+    connector_source?: string;
+    contract_code: string;
+    callback_type?: string;
+    webhook_event_id?: string;
+    external_action_ref?: string;
+    status?: string;
+    payload?: Record<string, unknown>;
+    actor?: string;
+  },
+): Promise<SiteBlueManagedResponderCallbackResponse> {
+  return postJson<SiteBlueManagedResponderCallbackResponse>(
+    `/competitive/sites/${siteId}/blue/managed-responder/runs/${runId}/callback`,
+    payload,
+  );
+}
+
 export function reviewSiteBlueManagedResponderRun(
   siteId: string,
   runId: string,
@@ -897,18 +961,49 @@ export function fetchSitePurpleRoiDashboardSnapshots(
 
 export function fetchSitePurpleRoiDashboardTrends(
   siteId: string,
-  limit = 12,
+  params?: {
+    limit?: number;
+    metric_focus?: string;
+    min_automation_coverage_pct?: number;
+    min_noise_reduction_pct?: number;
+  },
 ): Promise<SitePurpleRoiDashboardTrendResponse> {
+  const query = new URLSearchParams();
+  query.set("limit", String(params?.limit ?? 12));
+  if (params?.metric_focus) query.set("metric_focus", params.metric_focus);
+  if (typeof params?.min_automation_coverage_pct === "number") {
+    query.set("min_automation_coverage_pct", String(params.min_automation_coverage_pct));
+  }
+  if (typeof params?.min_noise_reduction_pct === "number") {
+    query.set("min_noise_reduction_pct", String(params.min_noise_reduction_pct));
+  }
   return getJson<SitePurpleRoiDashboardTrendResponse>(
-    `/competitive/sites/${siteId}/purple/roi-dashboard/trends?limit=${limit}`,
+    `/competitive/sites/${siteId}/purple/roi-dashboard/trends?${query.toString()}`,
   );
 }
 
 export function fetchPurpleRoiPortfolioRollup(
-  params?: { tenant_code?: string; limit?: number },
+  params?: {
+    tenant_code?: string;
+    site_code?: string;
+    status?: string;
+    min_automation_coverage_pct?: number;
+    min_noise_reduction_pct?: number;
+    sort_by?: string;
+    limit?: number;
+  },
 ): Promise<PurpleRoiPortfolioRollupResponse> {
   const query = new URLSearchParams();
   if (params?.tenant_code) query.set("tenant_code", params.tenant_code);
+  if (params?.site_code) query.set("site_code", params.site_code);
+  if (params?.status) query.set("status", params.status);
+  if (typeof params?.min_automation_coverage_pct === "number") {
+    query.set("min_automation_coverage_pct", String(params.min_automation_coverage_pct));
+  }
+  if (typeof params?.min_noise_reduction_pct === "number") {
+    query.set("min_noise_reduction_pct", String(params.min_noise_reduction_pct));
+  }
+  if (params?.sort_by) query.set("sort_by", params.sort_by);
   query.set("limit", String(params?.limit ?? 200));
   return getJson<PurpleRoiPortfolioRollupResponse>(`/competitive/purple/roi-dashboard/portfolio?${query.toString()}`);
 }
@@ -946,7 +1041,7 @@ export function fetchPurpleExportTemplatePacks(params?: {
 export function exportSitePurpleMitreHeatmap(
   siteId: string,
   payload?: {
-    export_format?: "markdown" | "csv" | "attack_layer_json";
+    export_format?: "markdown" | "csv" | "attack_layer_json" | "svg";
     title_override?: string;
     include_recommendations?: boolean;
     lookback_runs?: number;
@@ -955,6 +1050,79 @@ export function exportSitePurpleMitreHeatmap(
   },
 ): Promise<SitePurpleMitreHeatmapExportResponse> {
   return postJson<SitePurpleMitreHeatmapExportResponse>(`/competitive/sites/${siteId}/purple/mitre-heatmap/export`, payload ?? {});
+}
+
+export function fetchSitePurpleControlFamilyMap(
+  siteId: string,
+  framework: "combined" | "iso27001" | "nist_csf" = "combined",
+): Promise<SitePurpleControlFamilyMapResponse> {
+  return getJson<SitePurpleControlFamilyMapResponse>(`/competitive/sites/${siteId}/purple/control-family-map?framework=${framework}`);
+}
+
+export function exportSitePurpleControlFamilyMap(
+  siteId: string,
+  payload?: {
+    framework?: "combined" | "iso27001" | "nist_csf";
+    export_format?: "markdown" | "csv" | "json";
+  },
+): Promise<SitePurpleControlFamilyMapExportResponse> {
+  return postJson<SitePurpleControlFamilyMapExportResponse>(`/competitive/sites/${siteId}/purple/control-family-map/export`, payload ?? {});
+}
+
+export function fetchSitePurpleAttackLayerWorkspaces(
+  siteId: string,
+  limit = 20,
+): Promise<SitePurpleAttackLayerWorkspaceListResponse> {
+  return getJson<SitePurpleAttackLayerWorkspaceListResponse>(`/competitive/sites/${siteId}/purple/mitre-heatmap/layers?limit=${limit}`);
+}
+
+export function importSitePurpleAttackLayerWorkspace(
+  siteId: string,
+  payload: {
+    layer_name: string;
+    layer_document: Record<string, unknown> | string;
+    actor?: string;
+    notes?: string;
+  },
+): Promise<SitePurpleAttackLayerWorkspaceResponse> {
+  return postJson<SitePurpleAttackLayerWorkspaceResponse>(`/competitive/sites/${siteId}/purple/mitre-heatmap/layers/import`, payload);
+}
+
+export function updateSitePurpleAttackLayerWorkspace(
+  siteId: string,
+  layerId: string,
+  payload: {
+    layer_name?: string;
+    notes?: string;
+    technique_overrides?: Array<Record<string, unknown>>;
+    actor?: string;
+  },
+): Promise<SitePurpleAttackLayerWorkspaceResponse> {
+  return postJson<SitePurpleAttackLayerWorkspaceResponse>(
+    `/competitive/sites/${siteId}/purple/mitre-heatmap/layers/${layerId}/edit`,
+    payload,
+  );
+}
+
+export function exportSitePurpleAttackLayerWorkspace(
+  siteId: string,
+  layerId: string,
+  payload?: { export_format?: "attack_layer_json" | "svg" },
+): Promise<SitePurpleAttackLayerExportResponse> {
+  return postJson<SitePurpleAttackLayerExportResponse>(
+    `/competitive/sites/${siteId}/purple/mitre-heatmap/layers/${layerId}/export`,
+    payload ?? {},
+  );
+}
+
+export function exportSitePurpleAttackLayerGraphic(
+  siteId: string,
+  payload?: { export_format?: "svg" | "attack_layer_json" },
+): Promise<SitePurpleAttackLayerExportResponse> {
+  return postJson<SitePurpleAttackLayerExportResponse>(
+    `/competitive/sites/${siteId}/purple/mitre-heatmap/graphical-export`,
+    payload ?? {},
+  );
 }
 
 export function exportSitePurpleIncidentReport(
@@ -1873,10 +2041,26 @@ export function fetchSoarMarketplaceOverview(limit = 500): Promise<SoarMarketpla
   return getJson<SoarMarketplaceOverview>(`/competitive/soar/marketplace/overview?limit=${limit}`);
 }
 
-export function fetchSoarMarketplacePacks(params?: { category?: string; audience?: string; limit?: number }): Promise<SoarMarketplacePackListResponse> {
+export function fetchSoarMarketplacePacks(params?: {
+  category?: string;
+  audience?: string;
+  scope?: string;
+  source_type?: string;
+  trust_tier?: string;
+  connector_source?: string;
+  search?: string;
+  featured_only?: boolean;
+  limit?: number;
+}): Promise<SoarMarketplacePackListResponse> {
   const query = new URLSearchParams();
   if (params?.category) query.set("category", params.category);
   if (params?.audience) query.set("audience", params.audience);
+  if (params?.scope) query.set("scope", params.scope);
+  if (params?.source_type) query.set("source_type", params.source_type);
+  if (params?.trust_tier) query.set("trust_tier", params.trust_tier);
+  if (params?.connector_source) query.set("connector_source", params.connector_source);
+  if (params?.search) query.set("search", params.search);
+  if (typeof params?.featured_only === "boolean") query.set("featured_only", String(params.featured_only));
   query.set("limit", String(params?.limit ?? 200));
   return getJson<SoarMarketplacePackListResponse>(`/competitive/soar/marketplace/packs?${query.toString()}`);
 }

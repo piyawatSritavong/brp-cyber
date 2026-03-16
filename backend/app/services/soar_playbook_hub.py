@@ -55,6 +55,14 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
         "category": "identity_response",
         "description": "Starter bundle for suspicious login, phishing, and session abuse containment.",
         "scope": "community",
+        "source_type": "community",
+        "publisher_name": "BRP Community Labs",
+        "trust_tier": "community_reviewed",
+        "version": "1.2.0",
+        "featured": True,
+        "community_tags": ["identity", "phishing", "thai"],
+        "supported_connectors": ["splunk", "generic"],
+        "install_count": 124,
         "playbooks": [
             {
                 "playbook_code": "notify-and-clear-session",
@@ -87,6 +95,14 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
         "category": "containment",
         "description": "WAF and edge response bundle for hostile traffic bursts and credential abuse.",
         "scope": "partner",
+        "source_type": "partner",
+        "publisher_name": "BRP Edge Alliance",
+        "trust_tier": "verified_partner",
+        "version": "2.1.0",
+        "featured": True,
+        "community_tags": ["edge", "waf", "credential-abuse"],
+        "supported_connectors": ["cloudflare", "generic"],
+        "install_count": 88,
         "playbooks": [
             {
                 "playbook_code": "block-ip-and-waf-tighten",
@@ -119,6 +135,14 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
         "category": "containment",
         "description": "Partner-ready response bundle for endpoint isolation and credential revocation.",
         "scope": "partner",
+        "source_type": "partner",
+        "publisher_name": "BRP Endpoint Partners",
+        "trust_tier": "verified_partner",
+        "version": "1.4.0",
+        "featured": False,
+        "community_tags": ["endpoint", "edr", "isolation"],
+        "supported_connectors": ["crowdstrike", "generic"],
+        "install_count": 64,
         "playbooks": [
             {
                 "playbook_code": "isolate-host-and-reset-session",
@@ -151,6 +175,14 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
         "category": "containment",
         "description": "Expanded response bundle for Thai web abuse, bot bursts, and WAF correlation.",
         "scope": "community",
+        "source_type": "community",
+        "publisher_name": "BRP Community Labs",
+        "trust_tier": "community_reviewed",
+        "version": "1.1.0",
+        "featured": False,
+        "community_tags": ["web", "bot", "thai"],
+        "supported_connectors": ["cloudflare", "splunk", "generic"],
+        "install_count": 53,
         "playbooks": [
             {
                 "playbook_code": "web-abuse-block-and-observe",
@@ -172,6 +204,14 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
         "category": "containment",
         "description": "Partner-ready endpoint recovery bundle with quarantine, scan, and verification callbacks.",
         "scope": "partner",
+        "source_type": "partner",
+        "publisher_name": "BRP MSSP Alliance",
+        "trust_tier": "verified_partner",
+        "version": "2.0.1",
+        "featured": True,
+        "community_tags": ["endpoint", "verification", "callback"],
+        "supported_connectors": ["crowdstrike", "generic"],
+        "install_count": 42,
         "playbooks": [
             {
                 "playbook_code": "partner-endpoint-quarantine-and-verify",
@@ -182,6 +222,35 @@ MARKETPLACE_PACKS: list[dict[str, Any]] = [
                 "scope": "partner",
                 "steps": ["triage_event", "quarantine_host", "trigger_edr_scan", "verify_callback", "notify_team"],
                 "action_policy": {"max_duration_seconds": 420, "rollback_supported": True},
+                "is_active": True,
+            }
+        ],
+    },
+    {
+        "pack_code": "community_identity_hunt_pack",
+        "title": "Community Identity Hunt Pack",
+        "audience": "soc",
+        "category": "identity_response",
+        "description": "Community-maintained hunt and containment bundle for suspicious identity drift and MFA fatigue.",
+        "scope": "community",
+        "source_type": "community",
+        "publisher_name": "Thai SecOps Guild",
+        "trust_tier": "community_reviewed",
+        "version": "1.0.0",
+        "featured": False,
+        "community_tags": ["identity", "hunt", "mfa"],
+        "supported_connectors": ["splunk", "crowdstrike", "generic"],
+        "install_count": 37,
+        "playbooks": [
+            {
+                "playbook_code": "identity-hunt-and-mfa-hardening",
+                "title": "Identity Hunt and MFA Hardening",
+                "category": "identity_response",
+                "description": "Launch identity hunt, harden MFA policy, and notify identity responders.",
+                "version": "1.0.0",
+                "scope": "community",
+                "steps": ["triage_event", "hunt_identity_signals", "increase_mfa_scrutiny", "notify_team"],
+                "action_policy": {"max_duration_seconds": 240, "rollback_supported": False},
                 "is_active": True,
             }
         ],
@@ -301,6 +370,14 @@ def _marketplace_pack_row(pack: dict[str, Any]) -> dict[str, object]:
         "category": str(pack.get("category", "")),
         "description": str(pack.get("description", "")),
         "scope": str(pack.get("scope", "")),
+        "source_type": str(pack.get("source_type", "community")),
+        "publisher_name": str(pack.get("publisher_name", "BRP Community")),
+        "trust_tier": str(pack.get("trust_tier", "community_reviewed")),
+        "version": str(pack.get("version", "1.0.0")),
+        "featured": bool(pack.get("featured", False)),
+        "community_tags": [str(item) for item in pack.get("community_tags", []) if str(item).strip()],
+        "supported_connectors": [str(item) for item in pack.get("supported_connectors", []) if str(item).strip()],
+        "install_count": int(pack.get("install_count", 0) or 0),
         "playbook_count": len(playbooks),
         "playbooks": playbooks,
     }
@@ -399,9 +476,16 @@ def soar_marketplace_overview(db: Session, *, limit: int = 500) -> dict[str, obj
     ).all()
     scope_counts: dict[str, int] = {}
     category_counts: dict[str, int] = {}
+    source_counts: dict[str, int] = {}
+    trust_tier_counts: dict[str, int] = {}
     for row in rows:
         scope_counts[row.scope] = scope_counts.get(row.scope, 0) + 1
         category_counts[row.category] = category_counts.get(row.category, 0) + 1
+    for pack in MARKETPLACE_PACKS:
+        source_type = str(pack.get("source_type", "community")).strip().lower() or "community"
+        trust_tier = str(pack.get("trust_tier", "community_reviewed")).strip().lower() or "community_reviewed"
+        source_counts[source_type] = source_counts.get(source_type, 0) + 1
+        trust_tier_counts[trust_tier] = trust_tier_counts.get(trust_tier, 0) + 1
 
     return {
         "total_playbooks": len(rows),
@@ -409,19 +493,78 @@ def soar_marketplace_overview(db: Session, *, limit: int = 500) -> dict[str, obj
         "scope_counts": scope_counts,
         "category_counts": category_counts,
         "marketplace_pack_count": len(MARKETPLACE_PACKS),
+        "source_counts": source_counts,
+        "trust_tier_counts": trust_tier_counts,
+        "featured_pack_count": sum(1 for pack in MARKETPLACE_PACKS if bool(pack.get("featured", False))),
     }
 
 
-def list_marketplace_packs(*, category: str = "", audience: str = "", limit: int = 200) -> dict[str, object]:
+def list_marketplace_packs(
+    *,
+    category: str = "",
+    audience: str = "",
+    scope: str = "",
+    source_type: str = "",
+    trust_tier: str = "",
+    connector_source: str = "",
+    search: str = "",
+    featured_only: bool = False,
+    limit: int = 200,
+) -> dict[str, object]:
+    normalized_search = search.strip().lower()
+    normalized_scope = scope.strip().lower()
+    normalized_source_type = source_type.strip().lower()
+    normalized_trust_tier = trust_tier.strip().lower()
+    normalized_connector = connector_source.strip().lower()
     rows: list[dict[str, object]] = []
     for pack in MARKETPLACE_PACKS:
         if category and str(pack.get("category", "")).strip().lower() != category.strip().lower():
             continue
         if audience and str(pack.get("audience", "")).strip().lower() != audience.strip().lower():
             continue
+        if normalized_scope and str(pack.get("scope", "")).strip().lower() != normalized_scope:
+            continue
+        if normalized_source_type and str(pack.get("source_type", "")).strip().lower() != normalized_source_type:
+            continue
+        if normalized_trust_tier and str(pack.get("trust_tier", "")).strip().lower() != normalized_trust_tier:
+            continue
+        connectors = {str(item).strip().lower() for item in pack.get("supported_connectors", []) if str(item).strip()}
+        if normalized_connector and normalized_connector not in connectors:
+            continue
+        if featured_only and not bool(pack.get("featured", False)):
+            continue
+        if normalized_search:
+            haystack = " ".join(
+                [
+                    str(pack.get("pack_code", "")),
+                    str(pack.get("title", "")),
+                    str(pack.get("description", "")),
+                    " ".join(str(item) for item in pack.get("community_tags", [])),
+                    str(pack.get("publisher_name", "")),
+                ]
+            ).lower()
+            if normalized_search not in haystack:
+                continue
         rows.append(_marketplace_pack_row(pack))
+    rows.sort(key=lambda row: (not bool(row.get("featured", False)), -int(row.get("install_count", 0)), str(row.get("title", ""))))
     capped = rows[: max(1, min(limit, 500))]
-    return {"count": len(capped), "rows": capped}
+    return {
+        "count": len(capped),
+        "rows": capped,
+        "available_filters": {
+            "scope": sorted({str(pack.get("scope", "")).strip().lower() for pack in MARKETPLACE_PACKS if str(pack.get("scope", "")).strip()}),
+            "source_type": sorted({str(pack.get("source_type", "")).strip().lower() for pack in MARKETPLACE_PACKS if str(pack.get("source_type", "")).strip()}),
+            "trust_tier": sorted({str(pack.get("trust_tier", "")).strip().lower() for pack in MARKETPLACE_PACKS if str(pack.get("trust_tier", "")).strip()}),
+            "connector_source": sorted(
+                {
+                    str(item).strip().lower()
+                    for pack in MARKETPLACE_PACKS
+                    for item in pack.get("supported_connectors", [])
+                    if str(item).strip()
+                }
+            ),
+        },
+    }
 
 
 def list_connector_result_contracts(*, connector_source: str = "", playbook_code: str = "") -> dict[str, object]:

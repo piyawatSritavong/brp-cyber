@@ -50,3 +50,14 @@ class BlueLogRefinerCallbackWebhookRequest(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     actor: str = Field(default="siem_callback", min_length=2, max_length=128)
     run_id: UUID | None = None
+
+
+class BlueManagedResponderCallbackWebhookRequest(BaseModel):
+    connector_source: str = Field(default="generic", min_length=2, max_length=64)
+    contract_code: str = Field(min_length=3, max_length=128)
+    callback_type: str = Field(default="result_confirmed", max_length=32)
+    webhook_event_id: str = Field(default="", max_length=255)
+    external_action_ref: str = Field(default="", max_length=255)
+    status: str = Field(default="received", max_length=32)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    actor: str = Field(default="vendor_callback", min_length=2, max_length=128)

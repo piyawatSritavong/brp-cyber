@@ -36,3 +36,33 @@ def test_public_soar_connector_callback_route_accepts_valid_payload(monkeypatch)
 
     assert response.status_code == 200
     assert response.json()["connector_result"]["connector_source"] == "cloudflare"
+
+
+def test_public_managed_responder_callback_route_accepts_valid_payload(monkeypatch) -> None:
+    monkeypatch.setattr(integrations_api, "verify_webhook_signature", lambda raw, signature: True)
+    monkeypatch.setattr(
+        integrations_api,
+        "ingest_managed_responder_callback",
+        lambda db, **kwargs: {
+            "status": "ok",
+            "site_id": str(uuid4()),
+            "site_code": kwargs["site_code"],
+            "run": {"run_id": str(kwargs["run_id"]), "status": "verified"},
+            "callback": {"connector_source": kwargs["connector_source"], "contract_code": kwargs["contract_code"]},
+            "contract": {"contract_code": kwargs["contract_code"]},
+        },
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            f"/integrations/blue/managed-responder/sites/acb-site/runs/{uuid4()}/callback",
+            json={
+                "connector_source": "paloalto",
+                "contract_code": "paloalto_dynamic_block_result_v1",
+                "status": "confirmed",
+                "payload": {"rule_name": "brp-acb-dynamic-block"},
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["callback"]["connector_source"] == "paloalto"

@@ -58,6 +58,18 @@ def test_list_marketplace_packs_filters_by_audience() -> None:
     result = soar_playbook_hub.list_marketplace_packs(audience="soc", limit=10)
     assert result["count"] >= 1
     assert all(row["audience"] == "soc" for row in result["rows"])
+    assert "source_type" in result["rows"][0]
+    assert "trust_tier" in result["rows"][0]
+
+
+def test_list_marketplace_packs_filters_by_source_and_connector() -> None:
+    result = soar_playbook_hub.list_marketplace_packs(source_type="partner", connector_source="cloudflare", limit=10)
+
+    assert result["count"] >= 1
+    assert all(row["source_type"] == "partner" for row in result["rows"])
+    assert all("cloudflare" in row["supported_connectors"] for row in result["rows"])
+    assert "source_type" in result["available_filters"]
+    assert "connector_source" in result["available_filters"]
 
 
 def test_install_marketplace_pack_calls_upsert_for_each_playbook(monkeypatch) -> None:

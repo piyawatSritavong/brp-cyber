@@ -11,13 +11,128 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.models import BlueEventLog, BlueManagedResponderPolicy, BlueManagedResponderRun, Site, SoarPlaybookExecution
+from app.db.models import (
+    BlueEventLog,
+    BlueManagedResponderCallbackEvent,
+    BlueManagedResponderPolicy,
+    BlueManagedResponderRun,
+    Site,
+    SoarPlaybookExecution,
+)
 from app.db.session import SessionLocal
 from app.services.site_ops import apply_blue_recommendation
 from app.services.soar_playbook_hub import approve_playbook_execution, execute_playbook
 
 SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 ALLOWED_ACTIONS = {"ai_recommended", "block_ip", "notify_team", "limit_user", "ignore"}
+MANAGED_RESPONDER_CONNECTOR_SOURCES = {
+    "cloudflare",
+    "crowdstrike",
+    "splunk",
+    "generic",
+    "paloalto",
+    "fortinet",
+    "defender",
+    "sentinelone",
+}
+MANAGED_RESPONDER_VENDOR_PACKS: dict[str, dict[str, Any]] = {
+    "cloudflare": {
+        "display_name": "Cloudflare Firewall/WAF Pack",
+        "supported_actions": ["block_ip", "notify_team"],
+        "callback_contracts": [
+            {
+                "contract_code": "cloudflare_firewall_rule_result_v2",
+                "callback_type": "rule_applied",
+                "required_fields": ["rule_id"],
+                "success_statuses": ["confirmed", "applied"],
+            }
+        ],
+    },
+    "crowdstrike": {
+        "display_name": "CrowdStrike Falcon Response Pack",
+        "supported_actions": ["block_ip", "limit_user", "notify_team"],
+        "callback_contracts": [
+            {
+                "contract_code": "crowdstrike_host_contain_result_v2",
+                "callback_type": "host_action",
+                "required_fields": ["device_id"],
+                "success_statuses": ["confirmed", "contained", "applied"],
+            }
+        ],
+    },
+    "splunk": {
+        "display_name": "Splunk Adaptive Response Pack",
+        "supported_actions": ["block_ip", "notify_team", "limit_user"],
+        "callback_contracts": [
+            {
+                "contract_code": "splunk_adaptive_response_result_v2",
+                "callback_type": "adaptive_response",
+                "required_fields": ["sid"],
+                "success_statuses": ["confirmed", "applied", "notable_updated"],
+            }
+        ],
+    },
+    "paloalto": {
+        "display_name": "Palo Alto NGFW Pack",
+        "supported_actions": ["block_ip", "notify_team"],
+        "callback_contracts": [
+            {
+                "contract_code": "paloalto_dynamic_block_result_v1",
+                "callback_type": "dynamic_block",
+                "required_fields": ["rule_name"],
+                "success_statuses": ["confirmed", "committed", "applied"],
+            }
+        ],
+    },
+    "fortinet": {
+        "display_name": "Fortinet FortiGate Pack",
+        "supported_actions": ["block_ip", "notify_team"],
+        "callback_contracts": [
+            {
+                "contract_code": "fortinet_address_block_result_v1",
+                "callback_type": "address_block",
+                "required_fields": ["address_name"],
+                "success_statuses": ["confirmed", "applied", "updated"],
+            }
+        ],
+    },
+    "defender": {
+        "display_name": "Microsoft Defender XDR Pack",
+        "supported_actions": ["limit_user", "notify_team", "block_ip"],
+        "callback_contracts": [
+            {
+                "contract_code": "defender_machine_isolate_result_v1",
+                "callback_type": "machine_action",
+                "required_fields": ["machine_id"],
+                "success_statuses": ["confirmed", "isolated", "applied"],
+            }
+        ],
+    },
+    "sentinelone": {
+        "display_name": "SentinelOne Response Pack",
+        "supported_actions": ["limit_user", "notify_team", "block_ip"],
+        "callback_contracts": [
+            {
+                "contract_code": "sentinelone_agent_disconnect_result_v1",
+                "callback_type": "agent_action",
+                "required_fields": ["agent_id"],
+                "success_statuses": ["confirmed", "disconnected", "applied"],
+            }
+        ],
+    },
+    "generic": {
+        "display_name": "Generic Response Webhook Pack",
+        "supported_actions": ["block_ip", "notify_team", "limit_user"],
+        "callback_contracts": [
+            {
+                "contract_code": "generic_response_result_v1",
+                "callback_type": "result_confirmed",
+                "required_fields": ["action_ref"],
+                "success_statuses": ["confirmed", "applied"],
+            }
+        ],
+    },
+}
 
 
 def _now() -> datetime:
@@ -85,6 +200,47 @@ def _safe_uuid(value: str) -> UUID | None:
         return UUID(str(value or "").strip())
     except Exception:
         return None
+
+
+def _normalize_connector_source(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    return normalized if normalized in MANAGED_RESPONDER_CONNECTOR_SOURCES else "generic"
+
+
+def _normalize_callback_type(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    return normalized[:32] or "result_confirmed"
+
+
+def _normalize_callback_status(value: str) -> str:
+    normalized = str(value or "").strip().lower()
+    return normalized[:32] or "received"
+
+
+def _vendor_pack_row(source: str, row: dict[str, Any]) -> dict[str, Any]:
+    callback_contracts = row.get("callback_contracts", [])
+    if not isinstance(callback_contracts, list):
+        callback_contracts = []
+    return {
+        "connector_source": source,
+        "display_name": str(row.get("display_name", source) or source),
+        "supported_actions": [str(item) for item in row.get("supported_actions", []) if str(item).strip()],
+        "callback_contracts": callback_contracts,
+    }
+
+
+def _find_vendor_callback_contract(connector_source: str, contract_code: str) -> dict[str, Any] | None:
+    pack = MANAGED_RESPONDER_VENDOR_PACKS.get(_normalize_connector_source(connector_source), {})
+    contracts = pack.get("callback_contracts", [])
+    if not isinstance(contracts, list):
+        return None
+    wanted = str(contract_code or "").strip()
+    for row in contracts:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("contract_code", "") or "") == wanted:
+            return row
+    return None
 
 
 def _append_audit_entry(details: dict[str, Any], *, kind: str, actor: str, note: str, status: str) -> None:
@@ -268,6 +424,34 @@ def _run_row(row: BlueManagedResponderRun) -> dict[str, Any]:
     }
 
 
+def _callback_row(row: BlueManagedResponderCallbackEvent) -> dict[str, Any]:
+    return {
+        "callback_id": str(row.id),
+        "site_id": str(row.site_id),
+        "run_id": str(row.run_id),
+        "connector_source": row.connector_source,
+        "contract_code": row.contract_code,
+        "callback_type": row.callback_type,
+        "webhook_event_id": row.webhook_event_id,
+        "external_action_ref": row.external_action_ref,
+        "status": row.status,
+        "actor": row.actor,
+        "payload": _safe_json(row.payload_json),
+        "details": _safe_json(row.details_json),
+        "created_at": _safe_iso(row.created_at),
+    }
+
+
+def list_managed_responder_vendor_packs(*, source: str = "") -> dict[str, Any]:
+    normalized = _normalize_connector_source(source)
+    rows: list[dict[str, Any]] = []
+    for connector_source, pack in MANAGED_RESPONDER_VENDOR_PACKS.items():
+        if source and connector_source != normalized:
+            continue
+        rows.append(_vendor_pack_row(connector_source, pack))
+    return {"status": "ok", "count": len(rows), "rows": rows}
+
+
 def get_managed_responder_policy(db: Session, *, site_id: UUID) -> dict[str, Any]:
     site = db.get(Site, site_id)
     if not site:
@@ -344,6 +528,34 @@ def list_managed_responder_runs(db: Session, *, site_id: UUID, limit: int = 100)
     return {"site_id": str(site.id), "count": len(rows), "rows": [_run_row(row) for row in rows]}
 
 
+def list_managed_responder_callbacks(
+    db: Session,
+    *,
+    site_id: UUID,
+    run_id: UUID | None = None,
+    connector_source: str = "",
+    limit: int = 20,
+) -> dict[str, Any]:
+    site = db.get(Site, site_id)
+    if not site:
+        return {"status": "not_found", "site_id": str(site_id), "count": 0, "rows": []}
+    rows = db.scalars(
+        select(BlueManagedResponderCallbackEvent)
+        .where(BlueManagedResponderCallbackEvent.site_id == site.id)
+        .order_by(desc(BlueManagedResponderCallbackEvent.created_at))
+        .limit(max(1, min(limit, 200)))
+    ).all()
+    normalized_source = _normalize_connector_source(connector_source) if connector_source else ""
+    filtered = []
+    for row in rows:
+        if run_id and row.run_id != run_id:
+            continue
+        if normalized_source and row.connector_source != normalized_source:
+            continue
+        filtered.append(row)
+    return {"status": "ok", "site_id": str(site.id), "site_code": site.site_code, "count": len(filtered), "rows": [_callback_row(row) for row in filtered]}
+
+
 def _pick_candidate_event(db: Session, *, site_id: UUID, min_severity: str) -> BlueEventLog | None:
     min_rank = SEVERITY_RANK.get(_normalize_severity(min_severity), 2)
     rows = db.scalars(
@@ -417,8 +629,8 @@ def _resolve_connector_source(site: Site, candidate: BlueEventLog) -> str:
         site_config.get("default_connector_source"),
     ]
     for value in candidates:
-        normalized = str(value or "").strip().lower()
-        if normalized in {"cloudflare", "crowdstrike", "splunk", "generic"}:
+        normalized = _normalize_connector_source(value)
+        if normalized != "generic" or str(value or "").strip().lower() == "generic":
             return normalized
     event_type = str(candidate.event_type or "").lower()
     if event_type.startswith("waf") or "cloudflare" in event_type:
@@ -427,6 +639,14 @@ def _resolve_connector_source(site: Site, candidate: BlueEventLog) -> str:
         return "crowdstrike"
     if "siem" in event_type or "splunk" in event_type:
         return "splunk"
+    if "paloalto" in event_type or "panos" in event_type:
+        return "paloalto"
+    if "fortinet" in event_type or "fortigate" in event_type:
+        return "fortinet"
+    if "defender" in event_type or "microsoft" in event_type:
+        return "defender"
+    if "sentinelone" in event_type or "sentinel_one" in event_type:
+        return "sentinelone"
     return "generic"
 
 
@@ -484,6 +704,66 @@ def _build_connector_action_plan(site: Site, candidate: BlueEventLog, *, selecte
             "rollback_payload": {
                 "operation": "notable.close",
                 "reason": "rollback",
+            },
+        }
+    if connector_source == "paloalto":
+        return {
+            **base,
+            "operation": "panos.dynamic_block.commit" if selected_action == "block_ip" else "panos.ticket.annotate",
+            "request_payload": {
+                "rule_name": f"brp-{site.site_code}-dynamic-block",
+                "ip_address": str(candidate.source_ip or ""),
+                "selected_action": selected_action,
+                "commit": True,
+            },
+            "rollback_payload": {
+                "operation": "panos.dynamic_block.remove",
+                "rule_name": f"brp-{site.site_code}-dynamic-block",
+                "ip_address": str(candidate.source_ip or ""),
+            },
+        }
+    if connector_source == "fortinet":
+        return {
+            **base,
+            "operation": "fortios.firewall.address.block" if selected_action == "block_ip" else "fortios.log.note",
+            "request_payload": {
+                "address_name": f"brp_{site.site_code}_{str(candidate.source_ip or '').replace('.', '_')}",
+                "ip_address": str(candidate.source_ip or ""),
+                "selected_action": selected_action,
+            },
+            "rollback_payload": {
+                "operation": "fortios.firewall.address.remove",
+                "address_name": f"brp_{site.site_code}_{str(candidate.source_ip or '').replace('.', '_')}",
+            },
+        }
+    if connector_source == "defender":
+        machine_id = str(event_payload.get("machine_id") or event_payload.get("device_id") or candidate.source_ip or "")
+        return {
+            **base,
+            "operation": "defender.machine.isolate" if selected_action in {"block_ip", "limit_user"} else "defender.incident.comment",
+            "request_payload": {
+                "machine_id": machine_id,
+                "selected_action": selected_action,
+                "comment": f"BRP managed responder for {site.site_code}",
+            },
+            "rollback_payload": {
+                "operation": "defender.machine.release",
+                "machine_id": machine_id,
+            },
+        }
+    if connector_source == "sentinelone":
+        agent_id = str(event_payload.get("agent_id") or event_payload.get("device_id") or candidate.source_ip or "")
+        return {
+            **base,
+            "operation": "sentinelone.agent.disconnect" if selected_action in {"block_ip", "limit_user"} else "sentinelone.threat.note",
+            "request_payload": {
+                "agent_id": agent_id,
+                "selected_action": selected_action,
+                "note": f"BRP managed responder for {site.site_code}",
+            },
+            "rollback_payload": {
+                "operation": "sentinelone.agent.reconnect",
+                "agent_id": agent_id,
             },
         }
     return {
@@ -980,6 +1260,135 @@ def verify_managed_responder_evidence_chain(db: Session, *, site_id: UUID, limit
         "count": len(summaries),
         "valid": valid,
         "rows": list(reversed(summaries)),
+    }
+
+
+def ingest_managed_responder_callback(
+    db: Session,
+    *,
+    site_id: UUID | None = None,
+    site_code: str = "",
+    run_id: UUID,
+    connector_source: str,
+    contract_code: str,
+    callback_type: str = "result_confirmed",
+    webhook_event_id: str = "",
+    external_action_ref: str = "",
+    status: str = "received",
+    payload: dict[str, Any] | None = None,
+    actor: str = "vendor_callback",
+) -> dict[str, Any]:
+    site = db.get(Site, site_id) if site_id else None
+    if site is None and site_code:
+        site = db.scalar(select(Site).where(Site.site_code == site_code))
+    if site is None:
+        return {"status": "not_found", "site_id": str(site_id or ""), "site_code": site_code}
+
+    run = db.get(BlueManagedResponderRun, run_id)
+    if not run or run.site_id != site.id:
+        return {"status": "run_not_found", "site_id": str(site.id), "run_id": str(run_id)}
+
+    normalized_source = _normalize_connector_source(connector_source)
+    contract = _find_vendor_callback_contract(normalized_source, contract_code)
+    if contract is None:
+        return {"status": "contract_not_found", "connector_source": normalized_source, "contract_code": contract_code}
+
+    callback_id = str(webhook_event_id or "").strip()
+    if callback_id:
+        existing = db.scalar(
+            select(BlueManagedResponderCallbackEvent).where(
+                BlueManagedResponderCallbackEvent.run_id == run.id,
+                BlueManagedResponderCallbackEvent.webhook_event_id == callback_id,
+            )
+        )
+        if existing is not None:
+            return {
+                "status": "duplicate",
+                "site_id": str(site.id),
+                "site_code": site.site_code,
+                "run": _run_row(run),
+                "callback": _callback_row(existing),
+            }
+
+    raw_payload = payload or {}
+    required_fields = [str(item) for item in contract.get("required_fields", []) if str(item).strip()]
+    missing_fields = [field for field in required_fields if field not in raw_payload]
+    if missing_fields:
+        return {
+            "status": "required_fields_missing",
+            "connector_source": normalized_source,
+            "contract_code": contract_code,
+            "missing_fields": missing_fields,
+        }
+
+    callback_status = _normalize_callback_status(status)
+    success_statuses = {str(item).strip().lower() for item in contract.get("success_statuses", []) if str(item).strip()}
+    callback_confirmed = callback_status in success_statuses
+    details = {
+        "missing_fields": missing_fields,
+        "callback_confirmed": callback_confirmed,
+        "success_statuses": sorted(success_statuses),
+    }
+    row = BlueManagedResponderCallbackEvent(
+        site_id=site.id,
+        run_id=run.id,
+        connector_source=normalized_source,
+        contract_code=str(contract_code or "").strip()[:128],
+        callback_type=_normalize_callback_type(callback_type),
+        webhook_event_id=callback_id[:255],
+        external_action_ref=str(external_action_ref or "").strip()[:255],
+        status=callback_status,
+        actor=str(actor or "vendor_callback")[:128],
+        payload_json=_as_json(raw_payload),
+        details_json=_as_json(details),
+        created_at=_now(),
+    )
+    db.add(row)
+
+    run_details = _safe_json(run.details_json)
+    connector_result = run_details.get("connector_action_result", {})
+    if not isinstance(connector_result, dict):
+        connector_result = {}
+    connector_result["vendor_callback"] = {
+        "callback_type": row.callback_type,
+        "contract_code": row.contract_code,
+        "webhook_event_id": row.webhook_event_id,
+        "external_action_ref": row.external_action_ref,
+        "status": row.status,
+        "confirmed": callback_confirmed,
+        "received_at": row.created_at.isoformat(),
+    }
+    confirmation = connector_result.get("confirmation", {})
+    if not isinstance(confirmation, dict):
+        confirmation = {}
+    confirmation["status"] = "confirmed" if callback_confirmed else callback_status
+    confirmation["confirmed_at"] = row.created_at.isoformat() if callback_confirmed else str(confirmation.get("confirmed_at", "") or "")
+    confirmation["actor"] = actor
+    connector_result["confirmation"] = confirmation
+    run_details["connector_action_result"] = connector_result
+    history = run_details.get("vendor_callbacks", [])
+    if not isinstance(history, list):
+        history = []
+    history.append(_callback_row(row))
+    run_details["vendor_callbacks"] = history[-20:]
+    run.status = "verified" if callback_confirmed and run.status in {"applied", "partial", "pending_approval", "approved_no_action"} else run.status
+    run.details_json = _as_json(run_details)
+    db.commit()
+    db.refresh(row)
+    db.refresh(run)
+    return {
+        "status": "ok",
+        "site_id": str(site.id),
+        "site_code": site.site_code,
+        "run": _run_row(run),
+        "callback": _callback_row(row),
+        "contract": {
+            "contract_code": contract_code,
+            "connector_source": normalized_source,
+            "callback_type": contract.get("callback_type", ""),
+            "required_fields": required_fields,
+            "success_statuses": sorted(success_statuses),
+        },
     }
 
 

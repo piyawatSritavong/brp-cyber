@@ -97,6 +97,56 @@ def test_build_purple_roi_portfolio_rollup_aggregates_latest_snapshots() -> None
     assert result["summary"]["highest_value_site_code"] == "duck-a"
 
 
+def test_list_purple_roi_trends_applies_threshold_filters() -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck", display_name="Duck")
+    latest = _snapshot(site_id, "2026-03-15T00:00:00+00:00", validated=5, automation=72, noise=81, saved=320)
+    previous = _snapshot(site_id, "2026-03-14T00:00:00+00:00", validated=3, automation=40, noise=50, saved=250)
+    db = _FakeDB(object_map={site_id: site}, scalar_batches=[[latest, previous]])
+
+    result = purple_roi_dashboard.list_purple_roi_trends(
+        db,
+        site_id=site_id,
+        limit=12,
+        metric_focus="automation_coverage_pct",
+        min_automation_coverage_pct=60,
+        min_noise_reduction_pct=70,
+    )
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1
+    assert result["summary"]["filtered_out_count"] == 1
+    assert result["summary"]["metric_focus"] == "automation_coverage_pct"
+    assert result["rows"][0]["automation_coverage_pct"] == 72.0
+
+
+def test_build_purple_roi_portfolio_rollup_applies_filters_and_sorting() -> None:
+    tenant = SimpleNamespace(id=uuid4(), tenant_code="acb")
+    site_a_id = uuid4()
+    site_b_id = uuid4()
+    site_a = SimpleNamespace(id=site_a_id, site_code="duck-a", display_name="Duck A", tenant=tenant)
+    site_b = SimpleNamespace(id=site_b_id, site_code="duck-b", display_name="Duck B", tenant=tenant)
+    latest_a = _snapshot(site_a_id, "2026-03-15T00:00:00+00:00", validated=5, automation=72, noise=81, saved=320)
+    latest_b = _snapshot(site_b_id, "2026-03-15T00:00:00+00:00", validated=2, automation=40, noise=30, saved=80)
+    db = _FakeDB(scalar_batches=[[site_a, site_b]], scalar_values=[latest_a, latest_b])
+
+    result = purple_roi_dashboard.build_purple_roi_portfolio_rollup(
+        db,
+        tenant_code="acb",
+        site_code="duck-a",
+        min_automation_coverage_pct=60,
+        min_noise_reduction_pct=70,
+        sort_by="automation_coverage_pct",
+        limit=50,
+    )
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1
+    assert result["summary"]["sort_by"] == "automation_coverage_pct"
+    assert result["summary"]["applied_filters"]["site_code"] == "duck-a"
+    assert result["rows"][0]["site_code"] == "duck-a"
+
+
 def test_export_purple_roi_board_pack_builds_sections_and_slides(monkeypatch) -> None:
     tenant = SimpleNamespace(id=uuid4(), tenant_code="acb")
     site_id = uuid4()

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import {
   applySiteBlueRecommendation,
+  fetchBlueManagedResponderVendorPacks,
   applySiteDetectionRule,
   fetchBlueLogRefinerMappingPacks,
   fetchSoarConnectorResultContracts,
@@ -18,6 +19,7 @@ import {
   fetchSiteBlueLogRefinerSchedulePolicy,
   fetchSiteBlueLogRefinerRuns,
   fetchSiteBlueManagedResponderPolicy,
+  fetchSiteBlueManagedResponderCallbacks,
   fetchSiteBlueManagedResponderRuns,
   fetchSiteBlueThreatLocalizerPolicy,
   fetchSiteBlueThreatLocalizerPromotionRuns,
@@ -35,6 +37,7 @@ import {
   verifySoarExecution,
   verifySiteBlueManagedResponderEvidence,
   ingestSiteBlueEvent,
+  ingestSiteBlueManagedResponderCallback,
   ingestSiteBlueLogRefinerCallback,
   importBlueThreatFeedItems,
   importBlueThreatFeedAdapter,
@@ -59,6 +62,7 @@ import {
 } from "@/lib/api";
 import type {
   BlueLogRefinerMappingPackResponse,
+  BlueManagedResponderVendorPackListResponse,
   BlueThreatFeedListResponse,
   BlueThreatFeedAdapterTemplatesResponse,
   BlueThreatSectorProfilesResponse,
@@ -71,6 +75,7 @@ import type {
   SiteBlueManagedResponderRunListResponse,
   SiteBlueManagedResponderRunResponse,
   SiteBlueManagedResponderEvidenceVerifyResponse,
+  SiteBlueManagedResponderCallbackListResponse,
   SiteBlueThreatLocalizerPolicyResponse,
   SiteBlueThreatLocalizerPromotionRunListResponse,
   SiteBlueThreatLocalizerRoutingPolicyResponse,
@@ -211,6 +216,8 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
   const [lastTune, setLastTune] = useState<SiteDetectionCopilotTuneResponse | null>(null);
   const [managedRuns, setManagedRuns] = useState<SiteBlueManagedResponderRunListResponse | null>(null);
   const [managedEvidence, setManagedEvidence] = useState<SiteBlueManagedResponderEvidenceVerifyResponse | null>(null);
+  const [managedVendorPacks, setManagedVendorPacks] = useState<BlueManagedResponderVendorPackListResponse | null>(null);
+  const [managedCallbacks, setManagedCallbacks] = useState<SiteBlueManagedResponderCallbackListResponse | null>(null);
 
   const [autotunePolicySummary, setAutotunePolicySummary] = useState("No autotune policy loaded");
   const [autotuneRunSummary, setAutotuneRunSummary] = useState("No autotune run yet");
@@ -218,7 +225,15 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
   const [managedRunSummary, setManagedRunSummary] = useState("No managed responder run yet");
   const [managedSchedulerSummary, setManagedSchedulerSummary] = useState("No managed responder scheduler run yet");
   const [managedEvidenceSummary, setManagedEvidenceSummary] = useState("No evidence chain verification yet");
+  const [managedVendorPackSummary, setManagedVendorPackSummary] = useState("No managed responder vendor packs loaded");
+  const [managedCallbackSummary, setManagedCallbackSummary] = useState("No managed responder vendor callback yet");
   const [soarMarketplaceSummary, setSoarMarketplaceSummary] = useState("No marketplace data loaded");
+  const [soarMarketplaceScopeFilter, setSoarMarketplaceScopeFilter] = useState("");
+  const [soarMarketplaceSourceFilter, setSoarMarketplaceSourceFilter] = useState("");
+  const [soarMarketplaceTrustTierFilter, setSoarMarketplaceTrustTierFilter] = useState("");
+  const [soarMarketplaceConnectorFilter, setSoarMarketplaceConnectorFilter] = useState("");
+  const [soarMarketplaceSearch, setSoarMarketplaceSearch] = useState("");
+  const [soarMarketplaceFeaturedOnly, setSoarMarketplaceFeaturedOnly] = useState(false);
   const [localizerPolicySummary, setLocalizerPolicySummary] = useState("No threat localizer policy loaded");
   const [localizerRunSummary, setLocalizerRunSummary] = useState("No threat localizer run yet");
   const [localizerFeedSummary, setLocalizerFeedSummary] = useState("No external threat feed imported yet");
@@ -292,6 +307,15 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
   const [responderRequireApproval, setResponderRequireApproval] = useState(true);
   const [responderDryRun, setResponderDryRun] = useState(true);
   const [responderEnabled, setResponderEnabled] = useState(true);
+  const [responderConnectorSource, setResponderConnectorSource] = useState("cloudflare");
+  const [responderCallbackContractCode, setResponderCallbackContractCode] = useState("cloudflare_firewall_rule_result_v2");
+  const [responderCallbackType, setResponderCallbackType] = useState("rule_applied");
+  const [responderCallbackEventId, setResponderCallbackEventId] = useState("managed-callback-001");
+  const [responderCallbackExternalRef, setResponderCallbackExternalRef] = useState("edge-block-001");
+  const [responderCallbackStatus, setResponderCallbackStatus] = useState("confirmed");
+  const [responderCallbackPayloadText, setResponderCallbackPayloadText] = useState(
+    JSON.stringify({ rule_id: "cf-rule-001", blocked_ip: "203.0.113.20" }, null, 2),
+  );
   const [soarContractSource, setSoarContractSource] = useState("cloudflare");
   const [soarContractCode, setSoarContractCode] = useState("cloudflare_block_result_v1");
   const [soarExternalActionRef, setSoarExternalActionRef] = useState("edge-action-001");
@@ -305,6 +329,7 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const selectedThreatAdapter = (localizerFeedAdapters?.rows || []).find((row) => row.source === localizerAdapterSource) || null;
+  const selectedResponderVendorPack = (managedVendorPacks?.rows || []).find((row) => row.connector_source === responderConnectorSource) || null;
 
   const load = async () => {
     if (!selectedSite) return;
@@ -343,6 +368,8 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
           responderPolicy,
           responderRunHistory,
           responderEvidence,
+          responderVendorRows,
+          responderCallbackRows,
         ] = await Promise.all([
           fetchSiteDetectionAutotunePolicy(selectedSite.site_id),
           fetchSiteDetectionAutotuneRuns(selectedSite.site_id, 20),
@@ -363,10 +390,23 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
           fetchSiteSoarExecutions(selectedSite.site_id, { limit: 10 }),
           fetchSoarConnectorResultContracts({ connector_source: soarContractSource }),
           fetchSoarMarketplaceOverview(200),
-          fetchSoarMarketplacePacks({ limit: 20 }),
+          fetchSoarMarketplacePacks({
+            scope: soarMarketplaceScopeFilter,
+            source_type: soarMarketplaceSourceFilter,
+            trust_tier: soarMarketplaceTrustTierFilter,
+            connector_source: soarMarketplaceConnectorFilter,
+            search: soarMarketplaceSearch,
+            featured_only: soarMarketplaceFeaturedOnly,
+            limit: 20,
+          }),
           fetchSiteBlueManagedResponderPolicy(selectedSite.site_id),
           fetchSiteBlueManagedResponderRuns(selectedSite.site_id, 10),
           verifySiteBlueManagedResponderEvidence(selectedSite.site_id, 20),
+          fetchBlueManagedResponderVendorPacks(responderConnectorSource),
+          fetchSiteBlueManagedResponderCallbacks(selectedSite.site_id, {
+            connector_source: responderConnectorSource,
+            limit: 10,
+          }),
         ]);
         setAutotuneRuns(runs);
         setLocalizerRuns(threatRuns);
@@ -389,8 +429,10 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
         setSoarMarketplacePacks(marketplacePacks);
         setManagedRuns(responderRunHistory);
         setManagedEvidence(responderEvidence);
+        setManagedVendorPacks(responderVendorRows);
+        setManagedCallbacks(responderCallbackRows);
         setSoarMarketplaceSummary(
-          `packs=${marketplacePacks.count} playbooks=${marketplaceOverview.total_playbooks} active=${marketplaceOverview.active_playbooks} pack_catalog=${marketplaceOverview.marketplace_pack_count}`,
+          `packs=${marketplacePacks.count} featured=${marketplaceOverview.featured_pack_count} playbooks=${marketplaceOverview.total_playbooks} active=${marketplaceOverview.active_playbooks} sources=${Object.keys(marketplaceOverview.source_counts || {}).join(",") || "none"}`,
         );
         const latestExecution = soarRunHistory.rows?.[0];
         if (latestExecution) {
@@ -544,12 +586,49 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
         setManagedEvidenceSummary(
           `evidence_chain valid=${String(responderEvidence.valid)} rows=${responderEvidence.count} latest_signature=${responderEvidence.rows?.[0]?.signature || "none"}`,
         );
+        const selectedPack =
+          responderVendorRows.rows?.find((row) => row.connector_source === responderConnectorSource) || responderVendorRows.rows?.[0] || null;
+        if (selectedPack) {
+          setResponderConnectorSource(selectedPack.connector_source);
+          const firstContract = selectedPack.callback_contracts?.[0];
+          if (firstContract) {
+            setResponderCallbackContractCode(firstContract.contract_code);
+            setResponderCallbackType(firstContract.callback_type);
+            if (firstContract.required_fields?.length) {
+              const samplePayload = Object.fromEntries(firstContract.required_fields.map((field) => [field, `${field}_value`]));
+              setResponderCallbackPayloadText((current) => {
+                if (current.trim()) return current;
+                return JSON.stringify(samplePayload, null, 2);
+              });
+            }
+          }
+          setManagedVendorPackSummary(
+            `connector=${selectedPack.connector_source} actions=${selectedPack.supported_actions.join("/")} contracts=${selectedPack.callback_contracts.length}`,
+          );
+        } else {
+          setManagedVendorPackSummary("No managed responder vendor packs loaded");
+        }
+        const latestManagedCallback = responderCallbackRows.rows?.[0];
+        if (latestManagedCallback) {
+          setManagedCallbackSummary(
+            `${latestManagedCallback.connector_source}/${latestManagedCallback.contract_code} status=${latestManagedCallback.status} ref=${latestManagedCallback.external_action_ref || "none"}`,
+          );
+          setResponderCallbackContractCode(latestManagedCallback.contract_code || responderCallbackContractCode);
+          setResponderCallbackType(latestManagedCallback.callback_type || responderCallbackType);
+          setResponderCallbackEventId(latestManagedCallback.webhook_event_id || responderCallbackEventId);
+          setResponderCallbackExternalRef(latestManagedCallback.external_action_ref || responderCallbackExternalRef);
+          setResponderCallbackStatus(latestManagedCallback.status || responderCallbackStatus);
+        } else {
+          setManagedCallbackSummary("No managed responder vendor callback yet");
+        }
       } else {
         setAutotunePolicySummary("No permission to view autotune policy");
         setAutotuneRunSummary("No permission to view autotune runs");
         setManagedPolicySummary("No permission to view managed responder policy");
         setManagedRunSummary("No permission to view managed responder runs");
         setManagedEvidenceSummary("No permission to verify responder evidence");
+        setManagedVendorPackSummary("No permission to view managed responder vendor packs");
+        setManagedCallbackSummary("No permission to view managed responder callbacks");
         setSoarMarketplaceSummary("No permission to view SOAR marketplace");
         setSoarConnectorCallbackSummary("No permission to view connector callbacks");
         setLocalizerPolicySummary("No permission to view threat localizer policy");
@@ -585,6 +664,8 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
         setSoarMarketplacePacks(null);
         setManagedRuns(null);
         setManagedEvidence(null);
+        setManagedVendorPacks(null);
+        setManagedCallbacks(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "blue_events_load_failed");
@@ -653,6 +734,64 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
       active = false;
     };
   }, [canView, soarContractSource]);
+
+  useEffect(() => {
+    if (!canView) return;
+    let active = true;
+    fetchBlueManagedResponderVendorPacks(responderConnectorSource)
+      .then((response) => {
+        if (!active) return;
+        setManagedVendorPacks(response);
+        const pack = (response.rows || []).find((row) => row.connector_source === responderConnectorSource) || response.rows?.[0];
+        if (!pack) return;
+        setManagedVendorPackSummary(
+          `connector=${pack.connector_source} actions=${pack.supported_actions.join("/")} contracts=${pack.callback_contracts.length}`,
+        );
+        const contract = pack.callback_contracts?.find((row) => row.contract_code === responderCallbackContractCode) || pack.callback_contracts?.[0];
+        if (!contract) return;
+        setResponderCallbackContractCode(contract.contract_code);
+        setResponderCallbackType(contract.callback_type);
+        if (!responderCallbackPayloadText.trim()) {
+          const samplePayload = Object.fromEntries(contract.required_fields.map((field) => [field, `${field}_value`]));
+          setResponderCallbackPayloadText(JSON.stringify(samplePayload, null, 2));
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err.message : "managed_vendor_pack_load_failed");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [canView, responderConnectorSource]);
+
+  useEffect(() => {
+    if (!canView || !selectedSite) return;
+    let active = true;
+    fetchSiteBlueManagedResponderCallbacks(selectedSite.site_id, {
+      connector_source: responderConnectorSource,
+      limit: 10,
+    })
+      .then((response) => {
+        if (!active) return;
+        setManagedCallbacks(response);
+        const latest = response.rows?.[0];
+        setManagedCallbackSummary(
+          latest
+            ? `${latest.connector_source}/${latest.contract_code} status=${latest.status} ref=${latest.external_action_ref || "none"}`
+            : "No managed responder vendor callback yet",
+        );
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err.message : "managed_callback_load_failed");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [canView, selectedSite?.site_id, responderConnectorSource]);
 
   const ingestSampleLog = async () => {
     if (!selectedSite) return;
@@ -1209,6 +1348,36 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "managed_responder_scheduler_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const ingestManagedResponderCallback = async (runId: string) => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      const payload = JSON.parse(responderCallbackPayloadText) as Record<string, unknown>;
+      const result = await ingestSiteBlueManagedResponderCallback(selectedSite.site_id, runId, {
+        connector_source: responderConnectorSource,
+        contract_code: responderCallbackContractCode,
+        callback_type: responderCallbackType,
+        webhook_event_id: responderCallbackEventId,
+        external_action_ref: responderCallbackExternalRef,
+        status: responderCallbackStatus,
+        payload,
+        actor: "blue_service_vendor_callback",
+      });
+      setManagedCallbackSummary(
+        `${result.callback.connector_source}/${result.callback.contract_code} status=${result.callback.status} ref=${result.callback.external_action_ref || "none"}`,
+      );
+      setManagedRunSummary(
+        `${result.run.status} action=${result.run.selected_action} severity=${result.run.selected_severity} callback=${result.callback.status}`,
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "managed_responder_callback_failed");
     } finally {
       setBusy(false);
     }
@@ -1801,6 +1970,8 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
         <p className="mt-1 text-slate-400 wrap-anywhere">{managedRunSummary}</p>
         <p className="mt-1 text-slate-400 wrap-anywhere">{managedSchedulerSummary}</p>
         <p className="mt-1 text-slate-400 wrap-anywhere">{managedEvidenceSummary}</p>
+        <p className="mt-1 text-slate-400 wrap-anywhere">{managedVendorPackSummary}</p>
+        <p className="mt-1 text-slate-400 wrap-anywhere">{managedCallbackSummary}</p>
         {latestRiskEvent ? (
           <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
             <p className="text-slate-200 wrap-anywhere">
@@ -1850,6 +2021,22 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
               onChange={(event) => setResponderPlaybookCode(event.target.value)}
               className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
             />
+          </label>
+          <label className="text-[11px] text-slate-400">
+            Vendor Connector
+            <select
+              value={responderConnectorSource}
+              onChange={(event) => setResponderConnectorSource(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            >
+              {(["cloudflare", "crowdstrike", "splunk", "paloalto", "fortinet", "defender", "sentinelone", "generic"] as const).map(
+                (value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ),
+              )}
+            </select>
           </label>
         </div>
 
@@ -1917,6 +2104,84 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
           >
             Run Responder Scheduler
           </button>
+        </div>
+
+        <div className="mt-2 rounded border border-slate-800 bg-panelAlt/20 p-2">
+          <p className="text-slate-300">Vendor Callback Ingestion</p>
+          <p className="mt-1 text-[11px] text-slate-500 wrap-anywhere">
+            ปิด loop จาก vendor-native action result กลับเข้า Managed Responder run โดยตรง เพื่อ confirm ว่า block/isolate ถูก apply จริง
+          </p>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            <label className="text-[11px] text-slate-400">
+              Contract Code
+              <select
+                value={responderCallbackContractCode}
+                onChange={(event) => setResponderCallbackContractCode(event.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+              >
+                {((selectedResponderVendorPack?.callback_contracts || []) as Array<{ contract_code: string }>).map((row) => (
+                  <option key={row.contract_code} value={row.contract_code}>
+                    {row.contract_code}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-400">
+              Callback Type
+              <input
+                type="text"
+                value={responderCallbackType}
+                onChange={(event) => setResponderCallbackType(event.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+              />
+            </label>
+            <label className="text-[11px] text-slate-400">
+              Webhook Event ID
+              <input
+                type="text"
+                value={responderCallbackEventId}
+                onChange={(event) => setResponderCallbackEventId(event.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+              />
+            </label>
+            <label className="text-[11px] text-slate-400">
+              External Action Ref
+              <input
+                type="text"
+                value={responderCallbackExternalRef}
+                onChange={(event) => setResponderCallbackExternalRef(event.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+              />
+            </label>
+            <label className="text-[11px] text-slate-400">
+              Callback Status
+              <input
+                type="text"
+                value={responderCallbackStatus}
+                onChange={(event) => setResponderCallbackStatus(event.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+              />
+            </label>
+          </div>
+          <label className="mt-2 block text-[11px] text-slate-400">
+            Callback Payload JSON
+            <textarea
+              value={responderCallbackPayloadText}
+              onChange={(event) => setResponderCallbackPayloadText(event.target.value)}
+              rows={4}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            />
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!selectedSite || busy || !canApprove || !(managedRuns?.rows?.[0]?.run_id)}
+              onClick={() => managedRuns?.rows?.[0]?.run_id && void ingestManagedResponderCallback(managedRuns.rows[0].run_id)}
+              className="rounded border border-accent/60 bg-accent/10 px-2 py-1 text-[11px] text-accent hover:bg-accent/20 disabled:opacity-60"
+            >
+              Ingest Vendor Callback
+            </button>
+          </div>
         </div>
 
         {latestAutoPlaybook ? (
@@ -2015,11 +2280,131 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
           ))}
         </div>
 
+        <div className="mt-2 max-h-32 overflow-auto rounded border border-slate-800 p-2">
+          <p className="mb-2 text-slate-400">Responder Vendor Packs</p>
+          {(managedVendorPacks?.rows || []).length === 0 ? <p className="text-slate-500">No vendor packs yet.</p> : null}
+          {(managedVendorPacks?.rows || []).map((row) => (
+            <div key={row.connector_source} className="mb-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+              <p className="text-slate-200 wrap-anywhere">
+                {row.display_name} [{row.connector_source}]
+              </p>
+              <p className="mt-1 text-slate-400 wrap-anywhere">
+                actions={row.supported_actions.join("/")} contracts={row.callback_contracts.map((item) => item.contract_code).join(", ")}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-2 max-h-32 overflow-auto rounded border border-slate-800 p-2">
+          <p className="mb-2 text-slate-400">Managed Responder Vendor Callbacks</p>
+          {(managedCallbacks?.rows || []).length === 0 ? <p className="text-slate-500">No managed responder callbacks yet.</p> : null}
+          {(managedCallbacks?.rows || []).slice(0, 4).map((row) => (
+            <div key={row.callback_id} className="mb-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+              <p className="text-slate-200 wrap-anywhere">
+                {row.connector_source}/{row.contract_code} status={row.status}
+              </p>
+              <p className="mt-1 text-slate-400 wrap-anywhere">
+                run={row.run_id} ref={row.external_action_ref || "none"} event={row.webhook_event_id || "none"}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <div className="mt-2 max-h-40 overflow-auto rounded border border-slate-800 p-2">
           <p className="mb-2 text-slate-400">SOAR Marketplace Packs</p>
           <p className="mb-2 text-[11px] text-slate-500 wrap-anywhere">{soarMarketplaceSummary}</p>
+          <div className="mb-2 grid gap-2 md:grid-cols-3">
+            <label className="text-slate-400">
+              <span className="mb-1 block text-[11px]">Scope</span>
+              <select
+                value={soarMarketplaceScopeFilter}
+                onChange={(event) => setSoarMarketplaceScopeFilter(event.target.value)}
+                className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+              >
+                <option value="">all</option>
+                {(soarMarketplacePacks?.available_filters?.scope || []).map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-slate-400">
+              <span className="mb-1 block text-[11px]">Source</span>
+              <select
+                value={soarMarketplaceSourceFilter}
+                onChange={(event) => setSoarMarketplaceSourceFilter(event.target.value)}
+                className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+              >
+                <option value="">all</option>
+                {(soarMarketplacePacks?.available_filters?.source_type || []).map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-slate-400">
+              <span className="mb-1 block text-[11px]">Trust Tier</span>
+              <select
+                value={soarMarketplaceTrustTierFilter}
+                onChange={(event) => setSoarMarketplaceTrustTierFilter(event.target.value)}
+                className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+              >
+                <option value="">all</option>
+                {(soarMarketplacePacks?.available_filters?.trust_tier || []).map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-slate-400">
+              <span className="mb-1 block text-[11px]">Connector</span>
+              <select
+                value={soarMarketplaceConnectorFilter}
+                onChange={(event) => setSoarMarketplaceConnectorFilter(event.target.value)}
+                className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+              >
+                <option value="">all</option>
+                {(soarMarketplacePacks?.available_filters?.connector_source || []).map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-slate-400 md:col-span-2">
+              <span className="mb-1 block text-[11px]">Search</span>
+              <input
+                type="text"
+                value={soarMarketplaceSearch}
+                onChange={(event) => setSoarMarketplaceSearch(event.target.value)}
+                placeholder="pack title, tag, publisher"
+                className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+              />
+            </label>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex items-center gap-2 text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={soarMarketplaceFeaturedOnly}
+                  onChange={(event) => setSoarMarketplaceFeaturedOnly(event.target.checked)}
+                />
+                featured_only
+              </label>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void load()}
+                className="rounded border border-slate-600 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-400 disabled:opacity-60"
+              >
+                Reload Catalog
+              </button>
+            </div>
+          </div>
           {(soarMarketplacePacks?.rows || []).length === 0 ? <p className="text-slate-500">No marketplace packs loaded.</p> : null}
-          {(soarMarketplacePacks?.rows || []).slice(0, 3).map((pack) => (
+          {(soarMarketplacePacks?.rows || []).slice(0, 4).map((pack) => (
             <div key={pack.pack_code} className="mb-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-slate-200 wrap-anywhere">{pack.title}</p>
@@ -2033,9 +2418,15 @@ export function BlueTeamPanel({ selectedSite, canView, canEditPolicy, canApprove
                 </button>
               </div>
               <p className="mt-1 text-slate-400 wrap-anywhere">
-                audience={pack.audience} scope={pack.scope} playbooks={pack.playbook_count}
+                audience={pack.audience} scope={pack.scope} source={pack.source_type} trust={pack.trust_tier} version={pack.version}
               </p>
               <p className="mt-1 text-slate-500 wrap-anywhere">{pack.description}</p>
+              <p className="mt-1 text-[11px] text-slate-500 wrap-anywhere">
+                publisher={pack.publisher_name} installs={pack.install_count} connectors={pack.supported_connectors.join(",") || "generic"}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500 wrap-anywhere">
+                tags={pack.community_tags.join(", ") || "none"} featured={String(pack.featured)} playbooks={pack.playbook_count}
+              </p>
             </div>
           ))}
         </div>

@@ -96,6 +96,45 @@ def test_export_purple_mitre_heatmap_returns_attack_layer_json(monkeypatch) -> N
     assert "\"techniqueID\": \"T1110\"" in result["export"]["content"]
 
 
+def test_export_purple_mitre_heatmap_returns_svg(monkeypatch) -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck-sec-ai", display_name="Duck Sec AI")
+    db = _FakeDB(object_map={site_id: site})
+
+    monkeypatch.setattr(
+        purple_plugin_exports,
+        "generate_purple_executive_scorecard",
+        lambda _db, _site_id, **_kwargs: {
+            "summary": {
+                "attacked_techniques": 1,
+                "covered_techniques": 1,
+                "heatmap_coverage": 1.0,
+            },
+            "remediation_sla": {"sla_status": "pass", "estimated_mttr_seconds": 45},
+            "heatmap": [
+                {
+                    "technique_id": "T1110",
+                    "detection_status": "covered",
+                    "attack_count": 2,
+                    "mitigation_time_seconds": 45,
+                    "sla_status": "pass",
+                    "recommendation": "maintain auth telemetry",
+                }
+            ],
+        },
+    )
+
+    result = purple_plugin_exports.export_purple_mitre_heatmap(
+        db,
+        site_id=site_id,
+        export_format="svg",
+    )
+
+    assert result["status"] == "ok"
+    assert result["export"]["export_format"] == "svg"
+    assert "<svg" in result["export"]["content"]
+
+
 def test_export_purple_incident_report_returns_sections() -> None:
     site_id = uuid4()
     now = datetime.now(timezone.utc)

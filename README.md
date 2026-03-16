@@ -120,6 +120,13 @@ curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/set
 - Phase 105 complete: Purple native incident/regulatory PDF-DOCX export and final report release approval workflow
 - Phase 106 complete: Red Shadow Pentest pack-to-asset validation chaining with coverage/targeted-asset evidence
 - Phase 107 complete: Red plugin external intelligence sync, autonomous feed scheduler, and one-click threat-pack publishing from template output
+- Phase 108 complete: Red multi-language exploit draft output and social campaign legal/compliance template packs
+- Phase 109 complete: SOAR marketplace expansion with community/partner catalog metadata, filters, and richer pack discovery
+- Phase 110 complete: Purple ROI segmentation and portfolio filters for executive trend slicing and site-level portfolio views
+- Phase 111 complete: Blue managed responder vendor-pack coverage expanded to Palo Alto, Fortinet, Defender, and SentinelOne
+- Phase 112 complete: Blue managed responder live callback ingestion with admin/public webhook flows and per-run callback evidence
+- Phase 113 complete: Purple control-family policy/evidence mapping across ISO 27001 and NIST CSF with export surface
+- Phase 114 complete: Purple graphical MITRE heatmap export and ATT&CK layer import/edit/export workflow
 
 ## Competitive RBAC Scopes
 - `competitive:read` -> viewer (read federation/policy/events)

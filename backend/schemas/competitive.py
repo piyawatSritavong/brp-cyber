@@ -168,6 +168,8 @@ class RedSocialEngineeringRunRequest(BaseModel):
     campaign_name: str = Field(default="thai_phishing_awareness", min_length=3, max_length=255)
     employee_segment: str = Field(default="all_staff", min_length=2, max_length=128)
     email_count: int = Field(default=50, ge=1, le=5000)
+    campaign_type: str = Field(default="awareness", pattern="^(awareness|credential_reset|hr_notice|finance_notice|brand_protection)$")
+    template_pack_code: str = Field(default="", max_length=64)
     difficulty: str = Field(default="medium", pattern="^(low|medium|high)$")
     impersonation_brand: str = Field(default="", max_length=128)
     dry_run: bool = True
@@ -193,6 +195,10 @@ class RedSocialCampaignPolicyUpsertRequest(BaseModel):
     kill_switch_active: bool = False
     allowed_domains: list[str] = Field(default_factory=list)
     connector_config: dict[str, Any] = Field(default_factory=dict)
+    campaign_type: str = Field(default="awareness", pattern="^(awareness|credential_reset|hr_notice|finance_notice|brand_protection)$")
+    template_pack_code: str = Field(default="th_awareness_basic", max_length=64)
+    evidence_retention_days: int = Field(default=90, ge=1, le=3650)
+    legal_ack_required: bool = True
     enabled: bool = True
     owner: str = Field(default="security", min_length=2, max_length=64)
 
@@ -459,6 +465,17 @@ class BlueManagedResponderRollbackRequest(BaseModel):
     note: str = Field(default="", max_length=2048)
 
 
+class BlueManagedResponderCallbackIngestRequest(BaseModel):
+    connector_source: str = Field(default="generic", min_length=2, max_length=64)
+    contract_code: str = Field(min_length=3, max_length=128)
+    callback_type: str = Field(default="result_confirmed", max_length=32)
+    webhook_event_id: str = Field(default="", max_length=255)
+    external_action_ref: str = Field(default="", max_length=255)
+    status: str = Field(default="received", max_length=32)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    actor: str = Field(default="vendor_callback", min_length=2, max_length=128)
+
+
 class PurpleRoiDashboardRequest(BaseModel):
     lookback_days: int = Field(default=30, ge=1, le=365)
     analyst_hourly_cost_usd: float = Field(default=18.0, ge=1.0, le=1000.0)
@@ -475,12 +492,35 @@ class PurpleRoiDashboardExportRequest(BaseModel):
 
 
 class PurpleMitreHeatmapExportRequest(BaseModel):
-    export_format: str = Field(default="markdown", pattern="^(markdown|csv|attack_layer_json)$")
+    export_format: str = Field(default="markdown", pattern="^(markdown|csv|attack_layer_json|svg)$")
     title_override: str = Field(default="", max_length=255)
     include_recommendations: bool = True
     lookback_runs: int = Field(default=30, ge=1, le=500)
     lookback_events: int = Field(default=500, ge=1, le=2000)
     sla_target_seconds: int = Field(default=120, ge=30, le=3600)
+
+
+class PurpleControlFamilyMapExportRequest(BaseModel):
+    framework: str = Field(default="combined", pattern="^(combined|iso27001|nist_csf)$")
+    export_format: str = Field(default="markdown", pattern="^(markdown|json|csv)$")
+
+
+class PurpleAttackLayerImportRequest(BaseModel):
+    layer_name: str = Field(default="Imported Layer", min_length=3, max_length=255)
+    layer_document: dict[str, Any] | str = Field(default_factory=dict)
+    actor: str = Field(default="purple_operator", min_length=2, max_length=128)
+    notes: str = Field(default="", max_length=4000)
+
+
+class PurpleAttackLayerUpdateRequest(BaseModel):
+    layer_name: str = Field(default="", max_length=255)
+    notes: str = Field(default="", max_length=4000)
+    technique_overrides: list[dict[str, Any]] = Field(default_factory=list)
+    actor: str = Field(default="purple_operator", min_length=2, max_length=128)
+
+
+class PurpleAttackLayerExportRequest(BaseModel):
+    export_format: str = Field(default="attack_layer_json", pattern="^(attack_layer_json|svg)$")
 
 
 class PurpleIncidentReportExportRequest(BaseModel):

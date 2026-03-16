@@ -180,3 +180,43 @@ def test_run_coworker_plugin_scheduler_executes_due_binding(monkeypatch) -> None
     assert result["scheduled_binding_count"] == 1
     assert result["executed_count"] == 1
     assert result["skipped_count"] == 0
+
+
+def test_red_exploit_code_generator_supports_bash_output(monkeypatch) -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck", base_url="https://duck-sec-ai.vercel.app/")
+    db = _FakeDB(scalar_values=[None])
+    monkeypatch.setattr(
+        coworker_plugins,
+        "get_latest_red_plugin_intelligence",
+        lambda _db, **kwargs: {
+            "title": "Thai auth advisory",
+            "cve_id": "CVE-2026-1111",
+            "target_surface": kwargs["target_surface"],
+            "target_type": kwargs["target_type"],
+        },
+    )
+    monkeypatch.setattr(
+        coworker_plugins,
+        "get_red_plugin_safety_policy",
+        lambda _db, **kwargs: {
+            "policy": {
+                "target_type": kwargs["target_type"],
+                "allow_network_calls": True,
+                "require_comment_header": True,
+                "require_disclaimer": True,
+            }
+        },
+    )
+
+    input_summary, output_summary = coworker_plugins._run_red_exploit_code_generator(
+        db,
+        site,
+        {"target_surface": "/admin-login", "target_type": "web", "target_language": "bash"},
+    )
+
+    assert input_summary["target_language"] == "bash"
+    assert output_summary["language"] == "bash"
+    assert "set -euo pipefail" in output_summary["script_preview"]
+    assert "--max-time 10" in output_summary["script_preview"]
+    assert set(output_summary["script_variants"]) == {"python", "bash", "curl"}

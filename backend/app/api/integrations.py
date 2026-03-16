@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.models import Site
 from app.db.session import get_db
 from app.services.blue_log_refiner import ingest_blue_log_refiner_callback
+from app.services.blue_managed_responder import ingest_managed_responder_callback
 from app.services.integration_layer import (
     ingest_integration_event,
     list_integration_events,
@@ -20,6 +21,7 @@ from app.services.soar_playbook_hub import ingest_playbook_connector_result
 from app.services.embedded_workflows import invoke_site_embedded_workflow
 from app.services.integration_adapter_templates import list_adapter_invoke_templates
 from schemas.integrations import (
+    BlueManagedResponderCallbackWebhookRequest,
     BlueLogRefinerCallbackWebhookRequest,
     EmbeddedWorkflowInvokeRequest,
     IntegrationEventIngestRequest,
@@ -184,6 +186,42 @@ async def ingest_blue_log_refiner_source_callback(
     )
     if result.get("status") == "not_found":
         raise HTTPException(status_code=404, detail="site_not_found")
+    return result
+
+
+@router.post("/blue/managed-responder/sites/{site_code}/runs/{run_id}/callback")
+async def ingest_blue_managed_responder_vendor_callback(
+    site_code: str,
+    run_id: UUID,
+    request: Request,
+    payload: BlueManagedResponderCallbackWebhookRequest,
+    db: Session = Depends(get_db),
+    x_brp_signature: str = Header(default=""),
+) -> dict[str, Any]:
+    raw_body = await request.body()
+    if not verify_webhook_signature(raw_body, x_brp_signature):
+        raise HTTPException(status_code=403, detail="invalid_webhook_signature")
+    result = ingest_managed_responder_callback(
+        db,
+        site_code=site_code,
+        run_id=run_id,
+        connector_source=payload.connector_source,
+        contract_code=payload.contract_code,
+        callback_type=payload.callback_type,
+        webhook_event_id=payload.webhook_event_id,
+        external_action_ref=payload.external_action_ref,
+        status=payload.status,
+        payload=payload.payload,
+        actor=payload.actor,
+    )
+    if result.get("status") == "not_found":
+        raise HTTPException(status_code=404, detail="site_not_found")
+    if result.get("status") == "run_not_found":
+        raise HTTPException(status_code=404, detail="run_not_found")
+    if result.get("status") == "contract_not_found":
+        raise HTTPException(status_code=404, detail="contract_not_found")
+    if result.get("status") == "required_fields_missing":
+        raise HTTPException(status_code=422, detail=result.get("missing_fields", []))
     return result
 
 

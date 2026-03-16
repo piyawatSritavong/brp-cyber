@@ -385,11 +385,33 @@ export type SiteRedSocialPolicyResponse = {
     kill_switch_active: boolean;
     allowed_domains: string[];
     connector_config: Record<string, unknown>;
+    campaign_type: string;
+    template_pack_code: string;
+    evidence_retention_days: number;
+    legal_ack_required: boolean;
     enabled: boolean;
     owner: string;
     created_at: string;
     updated_at: string;
   };
+};
+
+export type SiteRedSocialTemplatePackResponse = {
+  status: string;
+  campaign_type: string;
+  jurisdiction: string;
+  count: number;
+  rows: Array<{
+    template_pack_code: string;
+    campaign_type: string;
+    jurisdiction: string;
+    title: string;
+    approval_required: boolean;
+    evidence_retention_days: number;
+    legal_notice_th: string;
+    compliance_controls_th: string[];
+    recommended_subject_suffixes: string[];
+  }>;
 };
 
 export type SiteRedSocialTelemetryRow = {
@@ -961,6 +983,63 @@ export type SiteBlueManagedResponderRunListResponse = {
   rows: SiteBlueManagedResponderRunRow[];
 };
 
+export type BlueManagedResponderVendorPackRow = {
+  connector_source: string;
+  display_name: string;
+  supported_actions: string[];
+  callback_contracts: Array<{
+    contract_code: string;
+    callback_type: string;
+    required_fields: string[];
+    success_statuses: string[];
+  }>;
+};
+
+export type BlueManagedResponderVendorPackListResponse = {
+  status: string;
+  count: number;
+  rows: BlueManagedResponderVendorPackRow[];
+};
+
+export type SiteBlueManagedResponderCallbackRow = {
+  callback_id: string;
+  site_id: string;
+  run_id: string;
+  connector_source: string;
+  contract_code: string;
+  callback_type: string;
+  webhook_event_id: string;
+  external_action_ref: string;
+  status: string;
+  actor: string;
+  payload: Record<string, unknown>;
+  details: Record<string, unknown>;
+  created_at: string;
+};
+
+export type SiteBlueManagedResponderCallbackResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  run: SiteBlueManagedResponderRunRow;
+  callback: SiteBlueManagedResponderCallbackRow;
+  contract: {
+    contract_code: string;
+    connector_source: string;
+    callback_type: string;
+    required_fields: string[];
+    success_statuses: string[];
+  };
+};
+
+export type SiteBlueManagedResponderCallbackListResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  count: number;
+  rows: SiteBlueManagedResponderCallbackRow[];
+};
+
 export type SiteBlueManagedResponderSchedulerResponse = {
   timestamp: string;
   scheduled_policy_count: number;
@@ -1033,11 +1112,19 @@ export type SitePurpleRoiDashboardTrendResponse = {
   count: number;
   summary: {
     trend_points: number;
+    total_points_before_filter: number;
+    filtered_out_count: number;
     latest_created_at: string;
+    metric_focus: string;
     validated_findings_delta: number;
     automation_coverage_delta_pct: number;
     noise_reduction_delta_pct: number;
     estimated_manual_effort_saved_delta_usd: number;
+    applied_filters: {
+      metric_focus: string;
+      min_automation_coverage_pct: number;
+      min_noise_reduction_pct: number;
+    };
     direction: string;
   };
   rows: SitePurpleRoiDashboardTrendRow[];
@@ -1066,6 +1153,7 @@ export type PurpleRoiPortfolioRollupResponse = {
   summary: {
     tenant_code: string;
     total_sites: number;
+    total_sites_before_filter: number;
     sites_with_snapshots: number;
     no_snapshot_sites: number;
     total_validated_findings: number;
@@ -1073,6 +1161,13 @@ export type PurpleRoiPortfolioRollupResponse = {
     average_automation_coverage_pct: number;
     average_noise_reduction_pct: number;
     highest_value_site_code: string;
+    sort_by: string;
+    applied_filters: {
+      site_code: string;
+      status: string;
+      min_automation_coverage_pct: number;
+      min_noise_reduction_pct: number;
+    };
   };
   rows: PurpleRoiPortfolioRow[];
 };
@@ -1153,6 +1248,95 @@ export type SitePurpleMitreHeatmapExportResponse = {
     summary: Record<string, unknown>;
     remediation_sla: Record<string, unknown>;
     rows: Array<Record<string, unknown>>;
+    content: string;
+  };
+};
+
+export type SitePurpleControlFamilyMapResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  framework: string;
+  generated_at: string;
+  summary: {
+    family_count: number;
+    implemented_family_count: number;
+    partial_family_count: number;
+    gap_family_count: number;
+    heatmap_coverage: number;
+    report_release_count: number;
+  };
+  rows: Array<{
+    framework: string;
+    family_code: string;
+    family_name: string;
+    control_total: number;
+    implemented_count: number;
+    partial_count: number;
+    gap_count: number;
+    coverage_status: string;
+    coverage_pct: number;
+    policy_refs: string[];
+    evidence_refs: string[];
+    top_gaps: string[];
+  }>;
+};
+
+export type SitePurpleControlFamilyMapExportResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  export: {
+    export_type: string;
+    export_format: string;
+    filename: string;
+    generated_at: string;
+    summary: Record<string, unknown>;
+    rows: Array<Record<string, unknown>>;
+    content: string;
+  };
+};
+
+export type SitePurpleAttackLayerWorkspaceRow = {
+  workspace_id: string;
+  site_id: string;
+  layer_name: string;
+  source_kind: string;
+  actor: string;
+  title: string;
+  notes: string;
+  layer: Record<string, unknown>;
+  summary: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SitePurpleAttackLayerWorkspaceListResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  count: number;
+  rows: SitePurpleAttackLayerWorkspaceRow[];
+};
+
+export type SitePurpleAttackLayerWorkspaceResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  workspace: SitePurpleAttackLayerWorkspaceRow;
+};
+
+export type SitePurpleAttackLayerExportResponse = {
+  status: string;
+  site_id: string;
+  site_code: string;
+  workspace?: SitePurpleAttackLayerWorkspaceRow;
+  export: {
+    export_type: string;
+    export_format: string;
+    filename: string;
+    generated_at: string;
+    technique_count?: number;
     content: string;
   };
 };
@@ -2496,6 +2680,9 @@ export type SoarMarketplaceOverview = {
   scope_counts: Record<string, number>;
   category_counts: Record<string, number>;
   marketplace_pack_count: number;
+  source_counts: Record<string, number>;
+  trust_tier_counts: Record<string, number>;
+  featured_pack_count: number;
 };
 
 export type SoarMarketplacePackRow = {
@@ -2505,6 +2692,14 @@ export type SoarMarketplacePackRow = {
   category: string;
   description: string;
   scope: "community" | "partner" | "private";
+  source_type: string;
+  publisher_name: string;
+  trust_tier: string;
+  version: string;
+  featured: boolean;
+  community_tags: string[];
+  supported_connectors: string[];
+  install_count: number;
   playbook_count: number;
   playbooks: Array<{
     playbook_code: string;
@@ -2517,6 +2712,12 @@ export type SoarMarketplacePackRow = {
 export type SoarMarketplacePackListResponse = {
   count: number;
   rows: SoarMarketplacePackRow[];
+  available_filters?: {
+    scope: string[];
+    source_type: string[];
+    trust_tier: string[];
+    connector_source: string[];
+  };
 };
 
 export type SoarExecutionVerifyResponse = {

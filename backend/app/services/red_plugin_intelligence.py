@@ -754,7 +754,7 @@ def _lint_template(content: str) -> dict[str, Any]:
     }
 
 
-def _lint_exploit(content: str, safety_policy: dict[str, Any]) -> dict[str, Any]:
+def _lint_exploit(content: str, safety_policy: dict[str, Any], *, language: str = "python") -> dict[str, Any]:
     issues: list[str] = []
     warnings: list[str] = []
     blocked_modules = {str(item).strip() for item in safety_policy.get("blocked_modules", [])}
@@ -765,18 +765,29 @@ def _lint_exploit(content: str, safety_policy: dict[str, Any]) -> dict[str, Any]
         issues.append("missing required comment header")
     if safety_policy.get("require_disclaimer") and "authorized validation" not in content.lower():
         issues.append("missing required authorized-validation disclaimer")
-    if not safety_policy.get("allow_network_calls", True) and "requests." in content:
+    if not safety_policy.get("allow_network_calls", True) and any(
+        marker in content for marker in ("requests.", "curl ", "curl\t", "curl -", "curl\n")
+    ):
         issues.append("network calls disabled by policy")
-    for module in blocked_modules:
-        if module and f"import {module}" in content:
-            issues.append(f"blocked module detected: {module}")
-    for line in lines:
-        if line.startswith("import "):
-            module = line.replace("import ", "", 1).split(" as ", 1)[0].split(",", 1)[0].strip()
-            if allowed_modules and module and module not in allowed_modules and module not in blocked_modules:
-                warnings.append(f"module not in allow-list: {module}")
-    if "requests.get(" in content and "timeout=" not in content:
-        warnings.append("requests call missing timeout")
+    if language == "python":
+        for module in blocked_modules:
+            if module and f"import {module}" in content:
+                issues.append(f"blocked module detected: {module}")
+        for line in lines:
+            if line.startswith("import "):
+                module = line.replace("import ", "", 1).split(" as ", 1)[0].split(",", 1)[0].strip()
+                if allowed_modules and module and module not in allowed_modules and module not in blocked_modules:
+                    warnings.append(f"module not in allow-list: {module}")
+        if "requests.get(" in content and "timeout=" not in content:
+            warnings.append("requests call missing timeout")
+    elif language == "bash":
+        if "set -euo pipefail" not in content:
+            warnings.append("bash script missing strict shell options")
+        if "curl " in content and "--max-time" not in content:
+            warnings.append("curl call missing --max-time")
+    elif language == "curl":
+        if "curl " in content and "--max-time" not in content:
+            warnings.append("curl call missing --max-time")
     if line_count > int(safety_policy.get("max_script_lines", 80) or 80):
         warnings.append("script exceeds max_script_lines policy")
     return {
@@ -784,7 +795,7 @@ def _lint_exploit(content: str, safety_policy: dict[str, Any]) -> dict[str, Any]
         "issues": issues,
         "warnings": warnings,
         "line_count": line_count,
-        "kind": "exploit_script",
+        "kind": f"{language}_exploit_script",
     }
 
 
@@ -807,8 +818,10 @@ def lint_red_plugin_output(
     content = str(content_override or output_summary.get("template_preview") or output_summary.get("script_preview") or "")
     target_type = str(output_summary.get("target_type") or "web")
     safety_policy = get_red_plugin_safety_policy(db, site_id=site.id, target_type=target_type)["policy"]
-    lint = _lint_template(content) if plugin_code == "red_template_writer" else _lint_exploit(content, safety_policy)
+    language = str(output_summary.get("language") or "python")
+    lint = _lint_template(content) if plugin_code == "red_template_writer" else _lint_exploit(content, safety_policy, language=language)
     lint["target_type"] = target_type
+    lint["language"] = language
     lint["preview_excerpt"] = content[:400]
     return {
         "status": "ok",
@@ -846,7 +859,15 @@ def export_red_plugin_output(
         target_type=str(input_summary.get("target_type") or output_summary.get("target_type") or "web"),
     )
     lint_result = lint_red_plugin_output(db, site_id=site.id, plugin_code=plugin_code, run_id=run.id)
-    extension = "yaml" if plugin_code == "red_template_writer" else "py"
+    language = str(output_summary.get("language") or "python").lower()
+    if plugin_code == "red_template_writer":
+        extension = "yaml"
+    elif language == "bash":
+        extension = "sh"
+    elif language == "curl":
+        extension = "txt"
+    else:
+        extension = "py"
     filename = f"{site.site_code}-{plugin_code}-{str(run.id)[:8]}.{extension}.json"
     title = title_override.strip() or f"{plugin.display_name} export for {site.display_name}"
     export = {

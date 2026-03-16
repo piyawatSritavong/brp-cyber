@@ -17,6 +17,17 @@ def test_red_social_engineering_production_routes_require_permissions(monkeypatc
     site_id = uuid4()
     run_id = uuid4()
     monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
+    monkeypatch.setattr(
+        competitive_api,
+        "list_social_template_packs",
+        lambda **kwargs: {
+            "status": "ok",
+            "campaign_type": kwargs.get("campaign_type", ""),
+            "jurisdiction": kwargs.get("jurisdiction", "th"),
+            "count": 1,
+            "rows": [{"template_pack_code": "th_awareness_basic", "campaign_type": kwargs.get("campaign_type", "awareness") or "awareness"}],
+        },
+    )
     monkeypatch.setattr(competitive_api, "get_social_engineering_policy", lambda db, **kwargs: {"status": "ok", "policy": {"connector_type": "simulated"}})
     monkeypatch.setattr(competitive_api, "upsert_social_engineering_policy", lambda db, **kwargs: {"status": "updated", "policy": {"connector_type": "simulated"}})
     monkeypatch.setattr(competitive_api, "import_social_roster", lambda db, **kwargs: {"status": "ok", "imported_count": 1, "updated_count": 0, "rows": []})
@@ -49,6 +60,10 @@ def test_red_social_engineering_production_routes_require_permissions(monkeypatc
 
     with TestClient(app) as client:
         policy_ok = client.get(f"/competitive/sites/{site_id}/red/social-simulator/policy", headers={"Authorization": "Bearer demo"})
+        template_packs_ok = client.get(
+            "/competitive/red/social-simulator/template-packs?campaign_type=finance_notice&jurisdiction=th",
+            headers={"Authorization": "Bearer demo"},
+        )
         roster_ok = client.get(f"/competitive/sites/{site_id}/red/social-simulator/roster", headers={"Authorization": "Bearer demo"})
         telemetry_ok = client.get(f"/competitive/sites/{site_id}/red/social-simulator/telemetry", headers={"Authorization": "Bearer demo"})
         callback_denied = client.post(
@@ -67,8 +82,10 @@ def test_red_social_engineering_production_routes_require_permissions(monkeypatc
             headers={"Authorization": "Bearer demo"},
         )
         assert policy_ok.status_code == 200
+        assert template_packs_ok.status_code == 200
         assert roster_ok.status_code == 200
         assert telemetry_ok.status_code == 200
+        assert template_packs_ok.json()["campaign_type"] == "finance_notice"
         assert callback_denied.status_code == 403
         assert review_denied.status_code == 403
 
@@ -85,7 +102,15 @@ def test_red_social_engineering_production_routes_require_permissions(monkeypatc
         )
         policy_save = client.post(
             f"/competitive/sites/{site_id}/red/social-simulator/policy",
-            json={"connector_type": "simulated", "sender_name": "Demo", "sender_email": "demo@example.com"},
+            json={
+                "connector_type": "simulated",
+                "sender_name": "Demo",
+                "sender_email": "demo@example.com",
+                "campaign_type": "finance_notice",
+                "template_pack_code": "th_finance_regulated",
+                "evidence_retention_days": 365,
+                "legal_ack_required": True,
+            },
             headers={"Authorization": "Bearer demo"},
         )
         review_ok = client.post(

@@ -111,6 +111,13 @@
 - [x] Phase 105: Purple Binary Export & Final Report Release Workflow (`Completed`)
 - [x] Phase 106: Shadow Pentest Pack-to-Asset Validation Chaining (`Completed`)
 - [x] Phase 107: Red Plugin External Sync & Threat-Pack Publish Bridge (`Completed`)
+- [x] Phase 108: Red Multi-Language Exploit Output & Social Compliance Packs (`Completed`)
+- [x] Phase 109: SOAR Marketplace Community/Partner Catalog Expansion (`Completed`)
+- [x] Phase 110: Purple ROI Segmentation & Portfolio Filters (`Completed`)
+- [x] Phase 111: Managed Responder Vendor Coverage Deepening (`Completed`)
+- [x] Phase 112: Managed Responder Live Callback Ingestion (`Completed`)
+- [x] Phase 113: Purple Control-Family Policy/Evidence Mapping (`Completed`)
+- [x] Phase 114: Purple Graphical Heatmap Export & ATT&CK Layer Workflow (`Completed`)
 
 ## Phase 0 Checklist: Foundation & Governance
 - [x] สร้าง repo structure ตามมาตรฐาน (frontend/backend/agents/infra/docs)
@@ -1189,3 +1196,62 @@
 - [x] ปรับหน้า `Red Service` ให้ save sync source, run sync, run scheduler, และ publish threat pack ได้จากหน้าเดียว
 - [x] เพิ่ม targeted tests ครอบคลุม service logic, RBAC/API behavior, และ runtime integration
 - [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ย้าย Red sync/publish items ออกจาก future backlog
+
+## Phase 108 Checklist: Red Multi-Language Exploit Output & Social Compliance Packs
+- [x] ขยาย `Exploit Code Generator` ให้สร้าง preview หลายภาษา (`python`, `bash`, `curl`) จาก run เดียว
+- [x] เพิ่ม language-aware lint/export สำหรับ exploit artifact (`.py/.sh/.txt`) พร้อม type metadata
+- [x] ปรับหน้า `Red Service` ให้เลือกภาษา exploit draft และเห็น selected output language ชัดเจน
+- [x] เพิ่ม legal/compliance template pack catalog สำหรับ social campaign type (`awareness/hr/finance/brand`)
+- [x] ขยาย social policy/run payload ให้เก็บ `campaign_type`, `template_pack_code`, `evidence_retention_days`, `legal_ack_required`
+- [x] ปรับหน้า `Red Service` ให้เลือก campaign type / template pack และ preview legal notice / compliance controls ได้จากหน้าเดียว
+- [x] แก้ execution approval flag ให้สอดคล้องกับทั้ง policy และ template-pack approval requirement
+- [x] เพิ่ม targeted tests ครอบคลุม exploit multi-language output, language-aware lint/export, social template-pack listing, และ social API permission behavior
+
+## Phase 109 Checklist: SOAR Marketplace Community/Partner Catalog Expansion
+- [x] ขยาย marketplace pack metadata ให้มี `source_type`, `publisher_name`, `trust_tier`, `version`, `featured`, `supported_connectors`, `install_count`
+- [x] เพิ่ม community/partner pack entries beyond starter bundles เพื่อให้ catalog มีความหลากหลายมากขึ้น
+- [x] เพิ่ม marketplace overview summary สำหรับ `source_counts`, `trust_tier_counts`, และ `featured_pack_count`
+- [x] เพิ่ม filters/search บน `GET /competitive/soar/marketplace/packs` (`scope`, `source_type`, `trust_tier`, `connector_source`, `search`, `featured_only`)
+- [x] ปรับหน้า `Blue Service` ให้ filter/reload marketplace catalog และเห็น metadata ของแต่ละ pack ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม marketplace source/connector filters และ API query behavior
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ย้าย backlog เรื่อง richer marketplace catalog ออกจาก future backlog
+
+## Phase 110 Checklist: Purple ROI Segmentation & Portfolio Filters
+- [x] ขยาย `GET /competitive/sites/{site_id}/purple/roi-dashboard/trends` ให้ filter ได้ด้วย `metric_focus`, `min_automation_coverage_pct`, `min_noise_reduction_pct`
+- [x] ขยาย `GET /competitive/purple/roi-dashboard/portfolio` ให้ filter/sort ได้ด้วย `site_code`, `status`, `min_automation_coverage_pct`, `min_noise_reduction_pct`, `sort_by`
+- [x] เพิ่ม summary fields สำหรับ filtered counts และ applied filters ทั้งฝั่ง trend/portfolio
+- [x] ปรับหน้า `Purple Service` ให้ตั้ง ROI slice filters และ reload view ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม trend threshold filtering, portfolio filtering/sorting, และ API query behavior
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ย้าย backlog เรื่อง finer ROI segmentation/filtering ออกจาก future backlog
+
+## Phase 111 Checklist: Managed Responder Vendor Coverage Deepening
+- [x] ขยาย vendor pack catalog ของ Managed AI Responder ให้ครอบคลุม `Palo Alto`, `Fortinet`, `Defender`, และ `SentinelOne`
+- [x] เพิ่ม connector-specific action plans และ callback contracts สำหรับ vendor ใหม่
+- [x] เพิ่ม API `GET /competitive/blue/managed-responder/vendor-packs`
+- [x] ปรับหน้า `Blue Service` ให้เลือก vendor, เห็น callback contracts, และ preview supported actions ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม vendor-pack listing และ connector-aware confirmation behavior
+
+## Phase 112 Checklist: Managed Responder Live Callback Ingestion
+- [x] เพิ่ม model `blue_managed_responder_callback_events` เพื่อเก็บ vendor callback/result evidence ต่อ run
+- [x] เพิ่ม admin API `GET /competitive/sites/{site_id}/blue/managed-responder/callbacks`
+- [x] เพิ่ม admin API `POST /competitive/sites/{site_id}/blue/managed-responder/runs/{run_id}/callback`
+- [x] เพิ่ม public integration callback `POST /integrations/blue/managed-responder/sites/{site_code}/runs/{run_id}/callback`
+- [x] ผูก callback ingestion เข้ากับ run confirmation state และ verification summary
+- [x] ปรับหน้า `Blue Service` ให้ ingest callback และดู callback history ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, RBAC/API behavior, และ public callback route
+
+## Phase 113 Checklist: Purple Control-Family Policy/Evidence Mapping
+- [x] เพิ่ม service สร้าง control-family map จาก ISO 27001 + NIST CSF พร้อม policy/evidence refs
+- [x] เพิ่ม API `GET /competitive/sites/{site_id}/purple/control-family-map`
+- [x] เพิ่ม API `POST /competitive/sites/{site_id}/purple/control-family-map/export`
+- [x] รองรับ export `markdown`, `csv`, และ `json`
+- [x] ปรับหน้า `Purple Service` ให้ build control-family map, preview family coverage, และ export ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic และ RBAC/API behavior
+
+## Phase 114 Checklist: Purple Graphical Heatmap Export & ATT&CK Layer Workflow
+- [x] ขยาย MITRE heatmap export ให้รองรับ `svg`
+- [x] เพิ่ม model `purple_attack_layer_workspaces` สำหรับ imported/editable ATT&CK layers
+- [x] เพิ่ม API list/import/edit/export สำหรับ ATT&CK layer workspace
+- [x] เพิ่ม live graphical export endpoint สำหรับ current heatmap evidence
+- [x] ปรับหน้า `Purple Service` ให้ import layer JSON, apply overrides, export workspace, และ export live layer ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม ATT&CK layer workflow และ Purple export regression

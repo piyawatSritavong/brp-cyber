@@ -623,15 +623,36 @@ def list_purple_roi_snapshots(db: Session, *, site_id: UUID, limit: int = 20) ->
     return {"status": "ok", "count": len(rows), "rows": [_snapshot_row(row) for row in rows]}
 
 
-def list_purple_roi_trends(db: Session, *, site_id: UUID, limit: int = 12) -> dict[str, Any]:
+def list_purple_roi_trends(
+    db: Session,
+    *,
+    site_id: UUID,
+    limit: int = 12,
+    metric_focus: str = "",
+    min_automation_coverage_pct: float = 0.0,
+    min_noise_reduction_pct: float = 0.0,
+) -> dict[str, Any]:
     snapshot_result = list_purple_roi_snapshots(db, site_id=site_id, limit=max(2, min(limit, 36)))
     if snapshot_result.get("status") != "ok":
         return snapshot_result
 
     rows = [row for row in snapshot_result.get("rows", [])]
     trend_rows = [_trend_row(row) for row in rows]
-    latest = trend_rows[0] if trend_rows else None
-    previous = trend_rows[1] if len(trend_rows) > 1 else None
+    normalized_metric_focus = str(metric_focus or "").strip().lower()
+    if normalized_metric_focus not in {"", "validated_findings", "automation_coverage_pct", "noise_reduction_pct", "estimated_manual_effort_saved_usd", "high_risk_findings"}:
+        normalized_metric_focus = ""
+    filtered_rows = [
+        row
+        for row in trend_rows
+        if float(row.get("automation_coverage_pct", 0.0) or 0.0) >= float(min_automation_coverage_pct or 0.0)
+        and float(row.get("noise_reduction_pct", 0.0) or 0.0) >= float(min_noise_reduction_pct or 0.0)
+    ]
+    if normalized_metric_focus:
+        filtered_rows.sort(key=lambda row: float(row.get(normalized_metric_focus, 0.0) or 0.0), reverse=True)
+    else:
+        filtered_rows.sort(key=lambda row: str(row.get("created_at", "")), reverse=True)
+    latest = filtered_rows[0] if filtered_rows else None
+    previous = filtered_rows[1] if len(filtered_rows) > 1 else None
 
     def _delta(metric: str) -> float:
         if not latest or not previous:
@@ -639,12 +660,20 @@ def list_purple_roi_trends(db: Session, *, site_id: UUID, limit: int = 12) -> di
         return round(float(latest.get(metric, 0.0)) - float(previous.get(metric, 0.0)), 2)
 
     summary = {
-        "trend_points": len(trend_rows),
+        "trend_points": len(filtered_rows),
+        "total_points_before_filter": len(trend_rows),
+        "filtered_out_count": max(0, len(trend_rows) - len(filtered_rows)),
         "latest_created_at": latest.get("created_at", "") if latest else "",
+        "metric_focus": normalized_metric_focus,
         "validated_findings_delta": _delta("validated_findings"),
         "automation_coverage_delta_pct": _delta("automation_coverage_pct"),
         "noise_reduction_delta_pct": _delta("noise_reduction_pct"),
         "estimated_manual_effort_saved_delta_usd": _delta("estimated_manual_effort_saved_usd"),
+        "applied_filters": {
+            "metric_focus": normalized_metric_focus,
+            "min_automation_coverage_pct": round(float(min_automation_coverage_pct or 0.0), 2),
+            "min_noise_reduction_pct": round(float(min_noise_reduction_pct or 0.0), 2),
+        },
         "direction": (
             "improving"
             if _delta("automation_coverage_pct") >= 0 and _delta("noise_reduction_pct") >= 0
@@ -654,13 +683,23 @@ def list_purple_roi_trends(db: Session, *, site_id: UUID, limit: int = 12) -> di
     return {
         "status": "ok",
         "site_id": str(site_id),
-        "count": len(trend_rows),
+        "count": len(filtered_rows),
         "summary": summary,
-        "rows": trend_rows,
+        "rows": filtered_rows,
     }
 
 
-def build_purple_roi_portfolio_rollup(db: Session, *, tenant_code: str = "", limit: int = 200) -> dict[str, Any]:
+def build_purple_roi_portfolio_rollup(
+    db: Session,
+    *,
+    tenant_code: str = "",
+    site_code: str = "",
+    status: str = "",
+    min_automation_coverage_pct: float = 0.0,
+    min_noise_reduction_pct: float = 0.0,
+    sort_by: str = "estimated_manual_effort_saved_usd",
+    limit: int = 200,
+) -> dict[str, Any]:
     stmt = select(Site).order_by(Site.display_name.asc()).limit(max(1, min(limit, 500)))
     if tenant_code:
         stmt = (
@@ -719,14 +758,28 @@ def build_purple_roi_portfolio_rollup(db: Session, *, tenant_code: str = "", lim
             }
         )
 
-    rows.sort(key=lambda item: float(item.get("estimated_manual_effort_saved_usd", 0.0)), reverse=True)
-    sites_with_snapshots = [row for row in rows if row["status"] != "no_snapshot"]
+    normalized_site_code = site_code.strip().lower()
+    normalized_status = status.strip().lower()
+    normalized_sort_by = str(sort_by or "estimated_manual_effort_saved_usd").strip()
+    if normalized_sort_by not in {"estimated_manual_effort_saved_usd", "validated_findings", "automation_coverage_pct", "noise_reduction_pct", "high_risk_findings"}:
+        normalized_sort_by = "estimated_manual_effort_saved_usd"
+    filtered_rows = [
+        row
+        for row in rows
+        if (not normalized_site_code or normalized_site_code in str(row.get("site_code", "")).lower())
+        and (not normalized_status or str(row.get("status", "")).lower() == normalized_status)
+        and float(row.get("automation_coverage_pct", 0.0) or 0.0) >= float(min_automation_coverage_pct or 0.0)
+        and float(row.get("noise_reduction_pct", 0.0) or 0.0) >= float(min_noise_reduction_pct or 0.0)
+    ]
+    filtered_rows.sort(key=lambda item: float(item.get(normalized_sort_by, 0.0) or 0.0), reverse=True)
+    sites_with_snapshots = [row for row in filtered_rows if row["status"] != "no_snapshot"]
     snapshot_count = len(sites_with_snapshots)
     summary = {
         "tenant_code": tenant_code,
-        "total_sites": len(rows),
+        "total_sites": len(filtered_rows),
+        "total_sites_before_filter": len(rows),
         "sites_with_snapshots": snapshot_count,
-        "no_snapshot_sites": len(rows) - snapshot_count,
+        "no_snapshot_sites": len(filtered_rows) - snapshot_count,
         "total_validated_findings": round(sum(float(row["validated_findings"]) for row in sites_with_snapshots), 2),
         "total_estimated_manual_effort_saved_usd": round(
             sum(float(row["estimated_manual_effort_saved_usd"]) for row in sites_with_snapshots), 2
@@ -741,14 +794,21 @@ def build_purple_roi_portfolio_rollup(db: Session, *, tenant_code: str = "", lim
         )
         if snapshot_count
         else 0.0,
-        "highest_value_site_code": rows[0]["site_code"] if rows else "",
+        "highest_value_site_code": filtered_rows[0]["site_code"] if filtered_rows else "",
+        "sort_by": normalized_sort_by,
+        "applied_filters": {
+            "site_code": normalized_site_code,
+            "status": normalized_status,
+            "min_automation_coverage_pct": round(float(min_automation_coverage_pct or 0.0), 2),
+            "min_noise_reduction_pct": round(float(min_noise_reduction_pct or 0.0), 2),
+        },
     }
     return {
         "status": "ok",
         "tenant_code": tenant_code,
-        "count": len(rows),
+        "count": len(filtered_rows),
         "summary": summary,
-        "rows": rows,
+        "rows": filtered_rows,
     }
 
 

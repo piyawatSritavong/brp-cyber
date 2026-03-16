@@ -102,6 +102,7 @@ from app.services.red_social_engineering import (
     ingest_social_provider_callback,
     import_social_roster,
     kill_social_campaign,
+    list_social_template_packs,
     list_social_engineering_runs,
     list_social_roster,
     review_social_campaign,
@@ -146,7 +147,10 @@ from app.services.blue_log_refiner import (
 )
 from app.services.blue_managed_responder import (
     get_managed_responder_policy,
+    ingest_managed_responder_callback,
+    list_managed_responder_callbacks,
     list_managed_responder_runs,
+    list_managed_responder_vendor_packs,
     review_managed_responder_run,
     rollback_managed_responder_run,
     run_managed_responder,
@@ -236,6 +240,14 @@ from app.services.purple_plugin_exports import (
     request_purple_report_release,
     review_purple_report_release,
 )
+from app.services.purple_control_mapping import build_purple_control_family_map, export_purple_control_family_map
+from app.services.purple_attack_layer_workflows import (
+    export_live_purple_attack_layer_graphic,
+    export_purple_attack_layer_workspace,
+    import_purple_attack_layer_workspace,
+    list_purple_attack_layer_workspaces,
+    update_purple_attack_layer_workspace,
+)
 from schemas.action_center import ActionCenterDispatchRequest, ActionCenterPolicyUpsertRequest
 from schemas.connector_ops import (
     ConnectorCredentialAutoRotateRequest,
@@ -259,6 +271,7 @@ from schemas.competitive import (
     BlueThreatLocalizerRoutingPolicyUpsertRequest,
     BlueThreatLocalizerRunRequest,
     BlueThreatFeedAdapterImportRequest,
+    BlueManagedResponderCallbackIngestRequest,
     BlueManagedResponderReviewRequest,
     BlueManagedResponderRollbackRequest,
     BlueManagedResponderPolicyUpsertRequest,
@@ -302,6 +315,10 @@ from schemas.competitive import (
     ThreatContentPipelinePolicyUpsertRequest,
     ThreatContentPipelineRunRequest,
     PhaseObjectiveCheckRequest,
+    PurpleAttackLayerExportRequest,
+    PurpleAttackLayerImportRequest,
+    PurpleAttackLayerUpdateRequest,
+    PurpleControlFamilyMapExportRequest,
     PurpleIncidentReportExportRequest,
     PurpleMitreHeatmapExportRequest,
     PurpleReportReleaseRequest,
@@ -1068,6 +1085,8 @@ def competitive_red_social_simulator_run(
         campaign_name=payload.campaign_name,
         employee_segment=payload.employee_segment,
         email_count=payload.email_count,
+        campaign_type=payload.campaign_type,
+        template_pack_code=payload.template_pack_code,
         difficulty=payload.difficulty,
         impersonation_brand=payload.impersonation_brand,
         dry_run=payload.dry_run,
@@ -1101,6 +1120,15 @@ def competitive_red_social_roster(
     return list_social_roster(db, site_id=site_id, active_only=active_only, limit=limit)
 
 
+@router.get("/red/social-simulator/template-packs")
+def competitive_red_social_template_packs(
+    campaign_type: str = "",
+    jurisdiction: str = "th",
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return list_social_template_packs(campaign_type=campaign_type, jurisdiction=jurisdiction)
+
+
 @router.post("/sites/{site_id}/red/social-simulator/policy")
 def competitive_red_social_policy_upsert(
     site_id: UUID,
@@ -1124,6 +1152,10 @@ def competitive_red_social_policy_upsert(
         kill_switch_active=payload.kill_switch_active,
         allowed_domains=payload.allowed_domains,
         connector_config=payload.connector_config,
+        campaign_type=payload.campaign_type,
+        template_pack_code=payload.template_pack_code,
+        evidence_retention_days=payload.evidence_retention_days,
+        legal_ack_required=payload.legal_ack_required,
         enabled=payload.enabled,
         owner=payload.owner,
     )
@@ -2019,6 +2051,55 @@ def competitive_blue_managed_responder_runs(
     return list_managed_responder_runs(db, site_id=site_id, limit=limit)
 
 
+@router.get("/blue/managed-responder/vendor-packs")
+def competitive_blue_managed_responder_vendor_packs(
+    source: str = "",
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return list_managed_responder_vendor_packs(source=source)
+
+
+@router.get("/sites/{site_id}/blue/managed-responder/callbacks")
+def competitive_blue_managed_responder_callbacks(
+    site_id: UUID,
+    run_id: UUID | None = None,
+    connector_source: str = "",
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return list_managed_responder_callbacks(
+        db,
+        site_id=site_id,
+        run_id=run_id,
+        connector_source=connector_source,
+        limit=limit,
+    )
+
+
+@router.post("/sites/{site_id}/blue/managed-responder/runs/{run_id}/callback")
+def competitive_blue_managed_responder_callback(
+    site_id: UUID,
+    run_id: UUID,
+    payload: BlueManagedResponderCallbackIngestRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_APPROVE)),
+) -> dict[str, object]:
+    return ingest_managed_responder_callback(
+        db,
+        site_id=site_id,
+        run_id=run_id,
+        connector_source=payload.connector_source,
+        contract_code=payload.contract_code,
+        callback_type=payload.callback_type,
+        webhook_event_id=payload.webhook_event_id,
+        external_action_ref=payload.external_action_ref,
+        status=payload.status,
+        payload=payload.payload,
+        actor=payload.actor,
+    )
+
+
 @router.post("/sites/{site_id}/blue/managed-responder/runs/{run_id}/review")
 def competitive_blue_managed_responder_review(
     site_id: UUID,
@@ -2110,20 +2191,44 @@ def competitive_purple_roi_dashboard_snapshots(
 def competitive_purple_roi_dashboard_trends(
     site_id: UUID,
     limit: int = 12,
+    metric_focus: str = "",
+    min_automation_coverage_pct: float = 0.0,
+    min_noise_reduction_pct: float = 0.0,
     db: Session = Depends(get_db),
     _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
 ) -> dict[str, object]:
-    return list_purple_roi_trends(db, site_id=site_id, limit=limit)
+    return list_purple_roi_trends(
+        db,
+        site_id=site_id,
+        limit=limit,
+        metric_focus=metric_focus,
+        min_automation_coverage_pct=min_automation_coverage_pct,
+        min_noise_reduction_pct=min_noise_reduction_pct,
+    )
 
 
 @router.get("/purple/roi-dashboard/portfolio")
 def competitive_purple_roi_dashboard_portfolio(
     tenant_code: str = "",
+    site_code: str = "",
+    status: str = "",
+    min_automation_coverage_pct: float = 0.0,
+    min_noise_reduction_pct: float = 0.0,
+    sort_by: str = "estimated_manual_effort_saved_usd",
     limit: int = 200,
     db: Session = Depends(get_db),
     _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
 ) -> dict[str, object]:
-    return build_purple_roi_portfolio_rollup(db, tenant_code=tenant_code, limit=limit)
+    return build_purple_roi_portfolio_rollup(
+        db,
+        tenant_code=tenant_code,
+        site_code=site_code,
+        status=status,
+        min_automation_coverage_pct=min_automation_coverage_pct,
+        min_noise_reduction_pct=min_noise_reduction_pct,
+        sort_by=sort_by,
+        limit=limit,
+    )
 
 
 @router.get("/purple/roi-dashboard/template-packs")
@@ -2162,6 +2267,31 @@ def competitive_purple_export_template_packs(
     return list_purple_export_template_packs(kind=kind, audience=audience)
 
 
+@router.get("/sites/{site_id}/purple/control-family-map")
+def competitive_purple_control_family_map(
+    site_id: UUID,
+    framework: str = "combined",
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return build_purple_control_family_map(db, site_id=site_id, framework=framework)
+
+
+@router.post("/sites/{site_id}/purple/control-family-map/export")
+def competitive_purple_control_family_map_export(
+    site_id: UUID,
+    payload: PurpleControlFamilyMapExportRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_APPROVE)),
+) -> dict[str, object]:
+    return export_purple_control_family_map(
+        db,
+        site_id=site_id,
+        framework=payload.framework,
+        export_format=payload.export_format,
+    )
+
+
 @router.post("/sites/{site_id}/purple/mitre-heatmap/export")
 def competitive_purple_mitre_heatmap_export(
     site_id: UUID,
@@ -2178,6 +2308,82 @@ def competitive_purple_mitre_heatmap_export(
         lookback_runs=payload.lookback_runs,
         lookback_events=payload.lookback_events,
         sla_target_seconds=payload.sla_target_seconds,
+    )
+
+
+@router.get("/sites/{site_id}/purple/mitre-heatmap/layers")
+def competitive_purple_attack_layer_workspaces(
+    site_id: UUID,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return list_purple_attack_layer_workspaces(db, site_id=site_id, limit=limit)
+
+
+@router.post("/sites/{site_id}/purple/mitre-heatmap/layers/import")
+def competitive_purple_attack_layer_import(
+    site_id: UUID,
+    payload: PurpleAttackLayerImportRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_APPROVE)),
+) -> dict[str, object]:
+    return import_purple_attack_layer_workspace(
+        db,
+        site_id=site_id,
+        layer_name=payload.layer_name,
+        layer_document=payload.layer_document,
+        actor=payload.actor,
+        notes=payload.notes,
+    )
+
+
+@router.post("/sites/{site_id}/purple/mitre-heatmap/layers/{layer_id}/edit")
+def competitive_purple_attack_layer_edit(
+    site_id: UUID,
+    layer_id: UUID,
+    payload: PurpleAttackLayerUpdateRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_APPROVE)),
+) -> dict[str, object]:
+    return update_purple_attack_layer_workspace(
+        db,
+        site_id=site_id,
+        layer_id=layer_id,
+        layer_name=payload.layer_name,
+        notes=payload.notes,
+        technique_overrides=payload.technique_overrides,
+        actor=payload.actor,
+    )
+
+
+@router.post("/sites/{site_id}/purple/mitre-heatmap/layers/{layer_id}/export")
+def competitive_purple_attack_layer_export(
+    site_id: UUID,
+    layer_id: UUID,
+    payload: PurpleAttackLayerExportRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return export_purple_attack_layer_workspace(
+        db,
+        site_id=site_id,
+        layer_id=layer_id,
+        export_format=payload.export_format,
+    )
+
+
+@router.post("/sites/{site_id}/purple/mitre-heatmap/graphical-export")
+def competitive_purple_attack_layer_live_export(
+    site_id: UUID,
+    payload: PurpleAttackLayerExportRequest,
+    db: Session = Depends(get_db),
+    _admin: dict[str, object] = Depends(require_permission(PERM_VIEW)),
+) -> dict[str, object]:
+    return export_live_purple_attack_layer_graphic(
+        db,
+        site_id=site_id,
+        export_format=payload.export_format,
     )
 
 
@@ -2300,8 +2506,28 @@ def competitive_soar_marketplace_overview(limit: int = 500, db: Session = Depend
 
 
 @router.get("/soar/marketplace/packs")
-def competitive_soar_marketplace_packs(category: str = "", audience: str = "", limit: int = 200) -> dict[str, object]:
-    return list_marketplace_packs(category=category, audience=audience, limit=limit)
+def competitive_soar_marketplace_packs(
+    category: str = "",
+    audience: str = "",
+    scope: str = "",
+    source_type: str = "",
+    trust_tier: str = "",
+    connector_source: str = "",
+    search: str = "",
+    featured_only: bool = False,
+    limit: int = 200,
+) -> dict[str, object]:
+    return list_marketplace_packs(
+        category=category,
+        audience=audience,
+        scope=scope,
+        source_type=source_type,
+        trust_tier=trust_tier,
+        connector_source=connector_source,
+        search=search,
+        featured_only=featured_only,
+        limit=limit,
+    )
 
 
 @router.get("/soar/contracts/results")

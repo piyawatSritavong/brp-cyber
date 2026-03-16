@@ -24,6 +24,54 @@ from app.db.models import (
 CONNECTOR_TYPES = {"simulated", "smtp", "webhook"}
 FINAL_SOCIAL_STATUSES = {"completed", "rejected", "killed", "blocked_by_kill_switch", "roster_required"}
 CALLBACK_EVENT_TYPES = {"delivered", "opened", "clicked", "reported", "bounced", "complained"}
+SOCIAL_CAMPAIGN_TYPES = {"awareness", "credential_reset", "hr_notice", "finance_notice", "brand_protection"}
+
+SOCIAL_TEMPLATE_PACKS: list[dict[str, Any]] = [
+    {
+        "template_pack_code": "th_awareness_basic",
+        "campaign_type": "awareness",
+        "jurisdiction": "th",
+        "title": "Thai Awareness Basic",
+        "approval_required": True,
+        "evidence_retention_days": 90,
+        "legal_notice_th": "ใช้เพื่อการทดสอบภายในที่ได้รับอนุมัติเท่านั้น ต้องเก็บหลักฐานการส่งและการยินยอมตาม SOP ภายในองค์กร",
+        "compliance_controls_th": ["PDPA awareness", "security awareness evidence", "internal change approval"],
+        "recommended_subject_suffixes": ["ยืนยันการเข้าใช้งานบัญชีภายในวันนี้", "ตรวจสอบการแจ้งเตือนความปลอดภัยล่าสุด"],
+    },
+    {
+        "template_pack_code": "th_hr_notice_pdpa",
+        "campaign_type": "hr_notice",
+        "jurisdiction": "th",
+        "title": "Thai HR Notice / PDPA",
+        "approval_required": True,
+        "evidence_retention_days": 180,
+        "legal_notice_th": "ใช้กับแบบทดสอบที่เลียนแบบเอกสาร HR/PDPA โดยต้องมีผู้อนุมัติจาก HR และ Security ก่อนส่งทุกครั้ง",
+        "compliance_controls_th": ["PDPA notification handling", "HR approval trace", "awareness drill evidence"],
+        "recommended_subject_suffixes": ["ยืนยันเอกสาร HR/PDPA ภายในวันทำการนี้", "ตรวจสอบการอัปเดตข้อมูลพนักงาน"],
+    },
+    {
+        "template_pack_code": "th_finance_regulated",
+        "campaign_type": "finance_notice",
+        "jurisdiction": "th",
+        "title": "Thai Finance Regulated",
+        "approval_required": True,
+        "evidence_retention_days": 365,
+        "legal_notice_th": "เหมาะกับแคมเปญสายการเงินหรือหน่วยงานกำกับ ต้องมี evidence chain, reviewer และ retention ยาวกว่าปกติ",
+        "compliance_controls_th": ["regulated phishing simulation record", "finance reviewer evidence", "extended retention"],
+        "recommended_subject_suffixes": ["ตรวจสอบรายการชำระเงินที่ผิดปกติ", "ยืนยันการโอนเงินนอกเวลา"],
+    },
+    {
+        "template_pack_code": "th_brand_protection",
+        "campaign_type": "brand_protection",
+        "jurisdiction": "th",
+        "title": "Thai Brand Protection",
+        "approval_required": True,
+        "evidence_retention_days": 120,
+        "legal_notice_th": "ใช้กับเคสเลียนแบบแบรนด์หรือ partner notification โดยต้องตรวจสอบผลกระทบด้าน reputational risk ก่อนทุกครั้ง",
+        "compliance_controls_th": ["brand impersonation review", "stakeholder notification", "reputation evidence pack"],
+        "recommended_subject_suffixes": ["แจ้งเตือนการปลอมแปลงแบรนด์องค์กร", "ตรวจสอบการใช้งาน partner portal ผิดปกติ"],
+    },
+]
 
 
 def _now() -> datetime:
@@ -82,6 +130,55 @@ def _normalize_callback_event_type(value: str) -> str:
     return normalized if normalized in CALLBACK_EVENT_TYPES else "delivered"
 
 
+def _normalize_campaign_type(value: str) -> str:
+    normalized = str(value or "awareness").strip().lower()
+    return normalized if normalized in SOCIAL_CAMPAIGN_TYPES else "awareness"
+
+
+def _template_pack_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "template_pack_code": str(row.get("template_pack_code") or ""),
+        "campaign_type": _normalize_campaign_type(str(row.get("campaign_type") or "awareness")),
+        "jurisdiction": str(row.get("jurisdiction") or "th"),
+        "title": str(row.get("title") or ""),
+        "approval_required": bool(row.get("approval_required", True)),
+        "evidence_retention_days": int(row.get("evidence_retention_days") or 90),
+        "legal_notice_th": str(row.get("legal_notice_th") or ""),
+        "compliance_controls_th": [str(item) for item in row.get("compliance_controls_th", []) if str(item).strip()],
+        "recommended_subject_suffixes": [str(item) for item in row.get("recommended_subject_suffixes", []) if str(item).strip()],
+    }
+
+
+def list_social_template_packs(*, campaign_type: str = "", jurisdiction: str = "th") -> dict[str, Any]:
+    normalized_campaign_type = _normalize_campaign_type(campaign_type) if campaign_type else ""
+    normalized_jurisdiction = str(jurisdiction or "th").strip().lower() or "th"
+    rows = [
+        _template_pack_row(row)
+        for row in SOCIAL_TEMPLATE_PACKS
+        if (not normalized_campaign_type or _normalize_campaign_type(str(row.get("campaign_type"))) == normalized_campaign_type)
+        and str(row.get("jurisdiction") or "th").strip().lower() == normalized_jurisdiction
+    ]
+    return {
+        "status": "ok",
+        "campaign_type": normalized_campaign_type,
+        "jurisdiction": normalized_jurisdiction,
+        "count": len(rows),
+        "rows": rows,
+    }
+
+
+def _resolve_social_template_pack(*, campaign_type: str, template_pack_code: str = "") -> dict[str, Any]:
+    normalized_campaign_type = _normalize_campaign_type(campaign_type)
+    normalized_pack_code = str(template_pack_code or "").strip().lower()
+    for row in SOCIAL_TEMPLATE_PACKS:
+        if normalized_pack_code and str(row.get("template_pack_code") or "").strip().lower() == normalized_pack_code:
+            return _template_pack_row(row)
+    for row in SOCIAL_TEMPLATE_PACKS:
+        if _normalize_campaign_type(str(row.get("campaign_type") or "awareness")) == normalized_campaign_type:
+            return _template_pack_row(row)
+    return _template_pack_row(SOCIAL_TEMPLATE_PACKS[0])
+
+
 def _bool_from_config(config: dict[str, Any], key: str, default: bool) -> bool:
     value = config.get(key, default)
     if isinstance(value, bool):
@@ -132,7 +229,17 @@ def _default_policy(site: Site) -> dict[str, Any]:
         "max_emails_per_run": 200,
         "kill_switch_active": False,
         "allowed_domains": [domain] if domain else [],
-        "connector_config": {"simulate_delivery": True},
+        "connector_config": {
+            "simulate_delivery": True,
+            "campaign_type": "awareness",
+            "template_pack_code": "th_awareness_basic",
+            "evidence_retention_days": 90,
+            "legal_ack_required": True,
+        },
+        "campaign_type": "awareness",
+        "template_pack_code": "th_awareness_basic",
+        "evidence_retention_days": 90,
+        "legal_ack_required": True,
         "enabled": True,
         "owner": "security",
         "created_at": "",
@@ -143,6 +250,7 @@ def _default_policy(site: Site) -> dict[str, Any]:
 def _policy_row(row: RedSocialCampaignPolicy | None, *, site: Site) -> dict[str, Any]:
     if row is None:
         return _default_policy(site)
+    connector_config = _safe_json_dict(row.connector_config_json)
     return {
         "policy_id": str(row.id),
         "site_id": str(row.site_id),
@@ -158,7 +266,11 @@ def _policy_row(row: RedSocialCampaignPolicy | None, *, site: Site) -> dict[str,
         "max_emails_per_run": int(row.max_emails_per_run or 200),
         "kill_switch_active": bool(row.kill_switch_active),
         "allowed_domains": [str(item) for item in _safe_json_list(row.allowed_domains_json)],
-        "connector_config": _safe_json_dict(row.connector_config_json),
+        "connector_config": connector_config,
+        "campaign_type": _normalize_campaign_type(str(connector_config.get("campaign_type") or "awareness")),
+        "template_pack_code": str(connector_config.get("template_pack_code") or "th_awareness_basic"),
+        "evidence_retention_days": int(connector_config.get("evidence_retention_days") or 90),
+        "legal_ack_required": _bool_from_config(connector_config, "legal_ack_required", True),
         "enabled": bool(row.enabled),
         "owner": row.owner,
         "created_at": _safe_iso(row.created_at),
@@ -293,6 +405,10 @@ def upsert_social_engineering_policy(
     kill_switch_active: bool,
     allowed_domains: list[str],
     connector_config: dict[str, Any],
+    campaign_type: str = "awareness",
+    template_pack_code: str = "th_awareness_basic",
+    evidence_retention_days: int = 90,
+    legal_ack_required: bool = True,
     enabled: bool,
     owner: str,
 ) -> dict[str, Any]:
@@ -304,7 +420,16 @@ def upsert_social_engineering_policy(
     created = row is None
     normalized_domains = sorted({str(item).strip().lower() for item in allowed_domains if str(item).strip()})
     normalized_connector = _normalize_connector_type(connector_type)
-    payload_json = _as_json(connector_config or {})
+    normalized_campaign_type = _normalize_campaign_type(campaign_type)
+    template_pack = _resolve_social_template_pack(campaign_type=normalized_campaign_type, template_pack_code=template_pack_code)
+    enriched_connector_config = {
+        **(connector_config or {}),
+        "campaign_type": normalized_campaign_type,
+        "template_pack_code": template_pack["template_pack_code"],
+        "evidence_retention_days": max(1, min(int(evidence_retention_days), 3650)),
+        "legal_ack_required": bool(legal_ack_required),
+    }
+    payload_json = _as_json(enriched_connector_config)
     if row is None:
         row = RedSocialCampaignPolicy(
             site_id=site.id,
@@ -661,6 +786,8 @@ def run_social_engineering_simulator(
     email_count: int = 50,
     difficulty: str = "medium",
     impersonation_brand: str = "",
+    campaign_type: str = "awareness",
+    template_pack_code: str = "",
     dry_run: bool = True,
     actor: str = "red_social_sim_ai",
 ) -> dict[str, Any]:
@@ -674,6 +801,11 @@ def run_social_engineering_simulator(
 
     policy_row = _load_policy_row(db, site=site)
     policy = _policy_row(policy_row, site=site)
+    effective_campaign_type = _normalize_campaign_type(campaign_type or str(policy.get("campaign_type") or "awareness"))
+    template_pack = _resolve_social_template_pack(
+        campaign_type=effective_campaign_type,
+        template_pack_code=template_pack_code or str(policy.get("template_pack_code") or ""),
+    )
 
     phishing_packs = db.scalars(
         select(ThreatContentPack)
@@ -714,9 +846,13 @@ def run_social_engineering_simulator(
     brand = impersonation_brand.strip() or site.display_name
     landing_path = "/security-review" if difficulty_value == "low" else "/urgent-access-check"
     landing_url = f"{(policy.get('landing_base_url') or site.base_url.rstrip('/')).rstrip('/')}{landing_path}"
+    subject_suffixes = list(template_pack.get("recommended_subject_suffixes", [])) or [
+        "ยืนยันการเข้าใช้งานบัญชีภายในวันนี้",
+        "ตรวจสอบการแจ้งเตือนความปลอดภัยล่าสุด",
+    ]
     subject_lines = [
-        f"{policy.get('subject_prefix', '[Awareness]')} {brand}: ยืนยันการเข้าใช้งานบัญชีภายในวันนี้",
-        f"{policy.get('subject_prefix', '[Awareness]')} {brand} แจ้งเตือนการเข้าถึงผิดปกติ กรุณาตรวจสอบทันที",
+        f"{policy.get('subject_prefix', '[Awareness]')} {brand}: {subject_suffixes[0]}",
+        f"{policy.get('subject_prefix', '[Awareness]')} {brand}: {subject_suffixes[min(1, len(subject_suffixes) - 1)]}",
         f"{policy.get('subject_prefix', '[Awareness]')} แบบประเมินความปลอดภัยประจำเดือนของ {brand}",
     ]
     lures = [
@@ -742,7 +878,7 @@ def run_social_engineering_simulator(
     elif bool(policy.get("kill_switch_active", False)) and not dry_run:
         warnings.append("kill_switch_active")
         execution_status = "blocked_by_kill_switch"
-    elif not dry_run and bool(policy.get("require_approval", True)):
+    elif not dry_run and (bool(policy.get("require_approval", True)) or bool(template_pack.get("approval_required", True))):
         execution_status = "pending_approval"
 
     summary_th = (
@@ -754,6 +890,7 @@ def run_social_engineering_simulator(
     details = {
         "campaign_name": campaign_name,
         "employee_segment": employee_segment,
+        "campaign_type": effective_campaign_type,
         "language": "th",
         "difficulty": difficulty_value,
         "impersonation_brand": brand,
@@ -762,6 +899,9 @@ def run_social_engineering_simulator(
         "landing_url": landing_url,
         "lure_scenarios_th": lures,
         "recommended_controls_th": recommended_controls,
+        "legal_template_pack": template_pack,
+        "legal_notice_th": template_pack.get("legal_notice_th", ""),
+        "compliance_controls_th": template_pack.get("compliance_controls_th", []),
         "phishing_pack_codes": [pack.pack_code for pack in phishing_packs],
         "suspicious_signal_count": len(suspicious_events),
         "dry_run": bool(dry_run),
@@ -799,7 +939,7 @@ def run_social_engineering_simulator(
         run_id=run.id,
         connector_type=str(policy.get("connector_type", "simulated")),
         status=execution_status,
-        approval_required=bool(policy.get("require_approval", True) and not dry_run),
+        approval_required=bool((bool(policy.get("require_approval", True)) or bool(template_pack.get("approval_required", True))) and not dry_run),
         requested_by=actor,
         dispatch_mode="dry_run" if dry_run else "queued",
         connector_config_json=_as_json(policy.get("connector_config", {})),

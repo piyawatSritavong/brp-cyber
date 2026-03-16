@@ -63,6 +63,11 @@ Phase 64 APIs for objective-scoped competitive build-out.
 - `POST /competitive/sites/{site_id}/blue/managed-responder/runs/{run_id}/rollback`
 - `GET /competitive/sites/{site_id}/blue/managed-responder/evidence/verify?limit=`
 - `POST /competitive/blue/managed-responder/scheduler/run?limit=&dry_run_override=&actor=`
+- `GET /competitive/blue/managed-responder/vendor-packs?source=`
+- `GET /competitive/sites/{site_id}/blue/managed-responder/callbacks?run_id=&connector_source=&limit=`
+- `POST /competitive/sites/{site_id}/blue/managed-responder/runs/{run_id}/callback`
+- `POST /integrations/blue/managed-responder/sites/{site_code}/runs/{run_id}/callback`
+  - Header: `X-BRP-Signature: <shared-secret-hmac>`
 
 ## Red: Exploit Path
 - `POST /competitive/sites/{site_id}/red/exploit-path/simulate`
@@ -92,6 +97,7 @@ Phase 64 APIs for objective-scoped competitive build-out.
 ## Red: Social Engineering Production Path (Phase 90)
 - `POST /competitive/sites/{site_id}/red/social-simulator/roster/import`
 - `GET /competitive/sites/{site_id}/red/social-simulator/roster?active_only=&limit=`
+- `GET /competitive/red/social-simulator/template-packs?campaign_type=&jurisdiction=`
 - `POST /competitive/sites/{site_id}/red/social-simulator/policy`
 - `GET /competitive/sites/{site_id}/red/social-simulator/policy`
 - `POST /competitive/sites/{site_id}/red/social-simulator/run`
@@ -100,6 +106,11 @@ Phase 64 APIs for objective-scoped competitive build-out.
 - `POST /competitive/sites/{site_id}/red/social-simulator/{run_id}/kill`
 - `GET /competitive/sites/{site_id}/red/social-simulator/telemetry?run_id=&limit=`
 - `POST /competitive/sites/{site_id}/red/social-simulator/provider-callback`
+  - policy/run payload extensions:
+    - `campaign_type`
+    - `template_pack_code`
+    - `evidence_retention_days`
+    - `legal_ack_required`
 
 ## Blue: Detection Copilot
 - `POST /competitive/sites/{site_id}/blue/detection-copilot/tune`
@@ -133,14 +144,14 @@ Phase 64 APIs for objective-scoped competitive build-out.
 ## Purple: ROI Executive Export Layer (Phase 92/98)
 - `POST /competitive/sites/{site_id}/purple/roi-dashboard/generate`
 - `GET /competitive/sites/{site_id}/purple/roi-dashboard/snapshots?limit=`
-- `GET /competitive/sites/{site_id}/purple/roi-dashboard/trends?limit=`
-- `GET /competitive/purple/roi-dashboard/portfolio?tenant_code=&limit=`
+- `GET /competitive/sites/{site_id}/purple/roi-dashboard/trends?limit=&metric_focus=&min_automation_coverage_pct=&min_noise_reduction_pct=`
+- `GET /competitive/purple/roi-dashboard/portfolio?tenant_code=&site_code=&status=&min_automation_coverage_pct=&min_noise_reduction_pct=&sort_by=&limit=`
 - `GET /competitive/purple/roi-dashboard/template-packs?audience=`
 - `POST /competitive/sites/{site_id}/purple/roi-dashboard/export`
 
 ## SOAR Marketplace & Verification (Phase 100)
 - `GET /competitive/soar/marketplace/overview?limit=`
-- `GET /competitive/soar/marketplace/packs?category=&audience=&limit=`
+- `GET /competitive/soar/marketplace/packs?category=&audience=&scope=&source_type=&trust_tier=&connector_source=&search=&featured_only=&limit=`
 - `POST /competitive/soar/marketplace/packs/{pack_code}/install`
 - `POST /competitive/soar/executions/{execution_id}/verify`
 - `GET /competitive/soar/contracts/results?connector_source=`
@@ -166,6 +177,7 @@ Phase 64 APIs for objective-scoped competitive build-out.
 - `POST /competitive/sites/{site_id}/red/plugins/{plugin_code}/lint`
 - `POST /competitive/sites/{site_id}/red/plugins/{plugin_code}/export`
 - `POST /competitive/sites/{site_id}/red/plugins/red_template_writer/publish-threat-pack`
+  - `red_exploit_code_generator` รองรับ `target_language=python|bash|curl`
 
 ## Purple: Plugin Export Layer (Phase 94)
 - `GET /competitive/purple/export/template-packs?kind=&audience=`
@@ -173,9 +185,19 @@ Phase 64 APIs for objective-scoped competitive build-out.
 - `POST /competitive/sites/{site_id}/purple/incident-report/export`
 - `POST /competitive/sites/{site_id}/purple/regulatory-report/export`
   - `incident-report` และ `regulatory-report` รองรับ `markdown|json|pdf|docx`
+- `mitre-heatmap` รองรับ `markdown|csv|attack_layer_json|svg`
 - `GET /competitive/sites/{site_id}/purple/report-releases?limit=`
 - `POST /competitive/sites/{site_id}/purple/report-releases`
 - `POST /competitive/purple/report-releases/{release_id}/review`
+
+## Purple: Control-Family Mapping & ATT&CK Layer Workflow (Phase 113/114)
+- `GET /competitive/sites/{site_id}/purple/control-family-map?framework=`
+- `POST /competitive/sites/{site_id}/purple/control-family-map/export`
+- `GET /competitive/sites/{site_id}/purple/mitre-heatmap/layers?limit=`
+- `POST /competitive/sites/{site_id}/purple/mitre-heatmap/layers/import`
+- `POST /competitive/sites/{site_id}/purple/mitre-heatmap/layers/{layer_id}/edit`
+- `POST /competitive/sites/{site_id}/purple/mitre-heatmap/layers/{layer_id}/export`
+- `POST /competitive/sites/{site_id}/purple/mitre-heatmap/graphical-export`
 
 ## Blue: AI Log Refiner Production Mode (Phase 95)
 - `GET /competitive/blue/log-refiner/mapping-packs?source=`

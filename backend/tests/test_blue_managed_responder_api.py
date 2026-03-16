@@ -54,6 +54,28 @@ def test_managed_responder_routes_require_permission_and_return_payload(monkeypa
     )
     monkeypatch.setattr(
         competitive_api,
+        "list_managed_responder_vendor_packs",
+        lambda source="": {"status": "ok", "count": 1, "rows": [{"connector_source": source or "cloudflare"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "list_managed_responder_callbacks",
+        lambda db, **kwargs: {"status": "ok", "site_id": str(kwargs["site_id"]), "site_code": "duck-sec-ai", "count": 1, "rows": [{"callback_id": "cb_demo"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "ingest_managed_responder_callback",
+        lambda db, **kwargs: {
+            "status": "ok",
+            "site_id": str(kwargs["site_id"]),
+            "site_code": "duck-sec-ai",
+            "run": {"run_id": str(kwargs["run_id"]), "status": "verified"},
+            "callback": {"callback_id": "cb_demo", "contract_code": kwargs["contract_code"]},
+            "contract": {"contract_code": kwargs["contract_code"]},
+        },
+    )
+    monkeypatch.setattr(
+        competitive_api,
         "list_managed_responder_runs",
         lambda db, site_id, limit=20: {"site_id": str(site_id), "count": 1, "rows": [{"run_id": "run_demo"}]},
     )
@@ -91,7 +113,14 @@ def test_managed_responder_routes_require_permission_and_return_payload(monkeypa
             f"/competitive/sites/{site_id}/blue/managed-responder/evidence/verify",
             headers={"Authorization": "Bearer demo"},
         )
+        vendor_packs_ok = client.get("/competitive/blue/managed-responder/vendor-packs?source=cloudflare", headers={"Authorization": "Bearer demo"})
+        callbacks_ok = client.get(
+            f"/competitive/sites/{site_id}/blue/managed-responder/callbacks?connector_source=cloudflare",
+            headers={"Authorization": "Bearer demo"},
+        )
         assert evidence_ok.status_code == 200
+        assert vendor_packs_ok.status_code == 200
+        assert callbacks_ok.status_code == 200
 
     monkeypatch.setattr(
         competitive_api,
@@ -124,6 +153,15 @@ def test_managed_responder_routes_require_permission_and_return_payload(monkeypa
             f"/competitive/sites/{site_id}/blue/managed-responder/evidence/verify",
             headers={"Authorization": "Bearer demo"},
         )
+        callback_ingest = client.post(
+            f"/competitive/sites/{site_id}/blue/managed-responder/runs/{uuid4()}/callback",
+            json={
+                "connector_source": "cloudflare",
+                "contract_code": "cloudflare_firewall_rule_result_v2",
+                "payload": {"rule_id": "cf-rule-001"},
+            },
+            headers={"Authorization": "Bearer demo"},
+        )
         assert write_ok.status_code == 200
         assert write_ok.json()["status"] == "updated"
         assert run_ok.status_code == 200
@@ -136,6 +174,8 @@ def test_managed_responder_routes_require_permission_and_return_payload(monkeypa
         assert runs_ok.json()["count"] == 1
         assert evidence_verify.status_code == 200
         assert evidence_verify.json()["valid"] is True
+        assert callback_ingest.status_code == 200
+        assert callback_ingest.json()["callback"]["contract_code"] == "cloudflare_firewall_rule_result_v2"
         scheduler_ok = client.post("/competitive/blue/managed-responder/scheduler/run", headers={"Authorization": "Bearer demo"})
         assert scheduler_ok.status_code == 200
         assert scheduler_ok.json()["executed_count"] == 1

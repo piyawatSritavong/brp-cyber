@@ -360,3 +360,52 @@ def test_run_managed_responder_scheduler_executes_due_policies(monkeypatch) -> N
     assert result["scheduled_policy_count"] == 1
     assert result["executed_count"] == 1
     assert result["skipped_count"] == 0
+
+
+def test_list_managed_responder_vendor_packs_includes_extended_connectors() -> None:
+    result = blue_managed_responder.list_managed_responder_vendor_packs()
+
+    sources = {row["connector_source"] for row in result["rows"]}
+    assert result["status"] == "ok"
+    assert {"paloalto", "fortinet", "defender", "sentinelone"}.issubset(sources)
+
+
+def test_ingest_managed_responder_callback_updates_run_to_verified() -> None:
+    site_id = uuid4()
+    run_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck-sec-ai")
+    run = SimpleNamespace(
+        id=run_id,
+        site_id=site_id,
+        event_id=None,
+        status="applied",
+        dry_run=False,
+        selected_severity="high",
+        selected_action="block_ip",
+        playbook_code="",
+        playbook_execution_id="",
+        action_applied=True,
+        playbook_dispatched=False,
+        details_json='{"connector_action_result":{"status":"confirmed","confirmation":{"status":"pending"}}}',
+        created_at=None,
+    )
+    db = _FakeDB(object_map={site_id: site, run_id: run}, scalar_values=[None])
+
+    result = blue_managed_responder.ingest_managed_responder_callback(
+        db,
+        site_id=site_id,
+        run_id=run_id,
+        connector_source="paloalto",
+        contract_code="paloalto_dynamic_block_result_v1",
+        callback_type="dynamic_block",
+        webhook_event_id="cb-001",
+        external_action_ref="pan-commit-001",
+        status="confirmed",
+        payload={"rule_name": "brp-duck-sec-ai-dynamic-block"},
+        actor="vendor_callback",
+    )
+
+    assert result["status"] == "ok"
+    assert result["run"]["status"] == "verified"
+    assert result["callback"]["connector_source"] == "paloalto"
+    assert result["callback"]["contract_code"] == "paloalto_dynamic_block_result_v1"

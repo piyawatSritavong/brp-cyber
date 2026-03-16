@@ -299,6 +299,30 @@ def export_purple_mitre_heatmap(
             ensure_ascii=True,
             indent=2,
         )
+    elif format_name == "svg":
+        cells: list[str] = []
+        cell_width = 180
+        cell_height = 58
+        cols = 4
+        for index, row in enumerate(rows):
+            x = 20 + (index % cols) * (cell_width + 12)
+            y = 86 + (index // cols) * (cell_height + 12)
+            detection_status = str(row.get("detection_status", "") or "")
+            color = "#3bb273" if detection_status == "covered" else ("#f7b045" if detection_status == "partial" else "#f76c45")
+            cells.append(
+                f'<g><rect x="{x}" y="{y}" width="{cell_width}" height="{cell_height}" rx="12" fill="{color}" opacity="0.92" />'
+                f'<text x="{x + 12}" y="{y + 22}" font-size="14" font-family="Arial" fill="#110B0A">{row.get("technique_id", "")}</text>'
+                f'<text x="{x + 12}" y="{y + 40}" font-size="10" font-family="Arial" fill="#110B0A">{detection_status} | attack_count={row.get("attack_count", 0)}</text></g>'
+            )
+        svg_height = 120 + (max(1, (len(rows) + cols - 1) // cols) * (cell_height + 12))
+        content = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="860" height="{svg_height}" viewBox="0 0 860 {svg_height}">'
+            '<rect width="100%" height="100%" fill="#FFFFFF"/>'
+            f'<text x="20" y="34" font-size="24" font-family="Arial" fill="#110B0A">{title}</text>'
+            f'<text x="20" y="56" font-size="12" font-family="Arial" fill="#F76C45">heatmap_coverage={summary.get("heatmap_coverage", 0)} sla={remediation.get("sla_status", "unknown")}</text>'
+            f"{''.join(cells)}"
+            "</svg>"
+        )
     else:
         lines = [
             f"# {title}",
@@ -323,7 +347,7 @@ def export_purple_mitre_heatmap(
         content = "\n".join(lines)
         format_name = "markdown"
 
-    filename_ext = "md" if format_name == "markdown" else ("csv" if format_name == "csv" else "json")
+    filename_ext = "md" if format_name == "markdown" else ("csv" if format_name == "csv" else ("svg" if format_name == "svg" else "json"))
     return {
         "status": "ok",
         "site_id": str(site.id),

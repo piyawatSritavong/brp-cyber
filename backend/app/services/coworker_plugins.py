@@ -477,6 +477,9 @@ def _run_blue_auto_playbook_executor(db: Session, site: Site, config: dict[str, 
 def _run_red_exploit_code_generator(db: Session, site: Site, config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     target_surface = str(config.get("target_surface", "/admin-login") or "/admin-login")
     target_type = str(config.get("target_type", "web") or "web").strip().lower()[:32] or "web"
+    target_language = str(config.get("target_language", "python") or "python").strip().lower()
+    if target_language not in {"python", "bash", "curl"}:
+        target_language = "python"
     latest_scan = db.scalar(
         select(RedScanRun)
         .where(RedScanRun.site_id == site.id)
@@ -506,45 +509,90 @@ def _run_red_exploit_code_generator(db: Session, site: Site, config: dict[str, A
     elif intelligence:
         header_lines.append(f"# Intelligence: {intelligence.get('source_type', 'article')} | {intelligence.get('title', '')}")
 
-    script_lines = list(header_lines)
-    script_lines.append("")
-    if safety_policy.get("allow_network_calls", True):
-        script_lines.extend(
-            [
-                "import requests",
-                "",
-                f'BASE_URL = "{site.base_url.rstrip("/")}"',
-                f'PATH = "{target_surface}"',
-                "",
-                "response = requests.get(f\"{BASE_URL}{PATH}\", timeout=10)",
-                "print(response.status_code)",
-                "print(response.text[:400])",
-            ]
-        )
-    else:
-        script_lines.extend(
-            [
-                "SAFE_MODE = True",
-                f'BASE_URL = "{site.base_url.rstrip("/")}"',
-                f'PATH = "{target_surface}"',
-                'print("Network execution disabled by safety policy")',
-                'print(f"Review target manually: {BASE_URL}{PATH}")',
-            ]
-        )
-    poc_preview = "\n".join(script_lines)
+    base_url = site.base_url.rstrip("/")
+    preview_by_language: dict[str, str] = {}
+    for language in ("python", "bash", "curl"):
+        comment_prefix = "#" if language in {"python", "bash", "curl"} else "#"
+        lines = [line.replace("#", comment_prefix, 1) if line.startswith("#") else line for line in header_lines]
+        lines.append("")
+        if not safety_policy.get("allow_network_calls", True):
+            if language == "python":
+                lines.extend(
+                    [
+                        "SAFE_MODE = True",
+                        f'BASE_URL = "{base_url}"',
+                        f'PATH = "{target_surface}"',
+                        'print("Network execution disabled by safety policy")',
+                        'print(f"Review target manually: {BASE_URL}{PATH}")',
+                    ]
+                )
+            elif language == "bash":
+                lines.extend(
+                    [
+                        "SAFE_MODE=true",
+                        f'BASE_URL="{base_url}"',
+                        f'PATH="{target_surface}"',
+                        'echo "Network execution disabled by safety policy"',
+                        'echo "Review target manually: ${BASE_URL}${PATH}"',
+                    ]
+                )
+            else:
+                lines.extend(
+                    [
+                        f'# Review target manually: {base_url}{target_surface}',
+                        "echo 'Network execution disabled by safety policy'",
+                    ]
+                )
+        elif language == "python":
+            lines.extend(
+                [
+                    "import requests",
+                    "",
+                    f'BASE_URL = "{base_url}"',
+                    f'PATH = "{target_surface}"',
+                    "",
+                    "response = requests.get(f\"{BASE_URL}{PATH}\", timeout=10)",
+                    "print(response.status_code)",
+                    "print(response.text[:400])",
+                ]
+            )
+        elif language == "bash":
+            lines.extend(
+                [
+                    "set -euo pipefail",
+                    f'BASE_URL="{base_url}"',
+                    f'PATH="{target_surface}"',
+                    'response_file="$(mktemp)"',
+                    'status_code=$(curl -sS --max-time 10 -o "$response_file" -w "%{http_code}" "${BASE_URL}${PATH}")',
+                    'echo "$status_code"',
+                    'head -c 400 "$response_file"',
+                    'rm -f "$response_file"',
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    f'curl -sS -D - "{base_url}{target_surface}" \\',
+                    "  --max-time 10 | head -c 400",
+                ]
+            )
+        preview_by_language[language] = "\n".join(lines)
+    poc_preview = preview_by_language[target_language]
     input_summary = {
         "target_surface": target_surface,
         "target_type": target_type,
         "has_scan": latest_scan is not None,
         "sensitive_paths": len(sensitive_paths),
         "has_intelligence": intelligence is not None,
+        "target_language": target_language,
     }
     output_summary = {
-        "headline": f"Exploit Code Generator ร่าง Python PoC สำหรับ {site.site_code}",
+        "headline": f"Exploit Code Generator ร่าง {target_language} PoC สำหรับ {site.site_code}",
         "severity": "medium" if latest_scan is not None else "low",
-        "summary_th": "แปลง finding ล่าสุดให้เป็น Python script เบื้องต้นสำหรับทดสอบเชิงยืนยันแบบปลอดภัยก่อนนำไปต่อยอดโดยทีม Red",
-        "language": "python",
+        "summary_th": f"แปลง finding ล่าสุดให้เป็น {target_language} script เบื้องต้นสำหรับทดสอบเชิงยืนยันแบบปลอดภัยก่อนนำไปต่อยอดโดยทีม Red",
+        "language": target_language,
         "script_preview": poc_preview,
+        "script_variants": preview_by_language,
         "source_intelligence": intelligence or {},
         "target_type": target_type,
         "safety_policy": safety_policy,

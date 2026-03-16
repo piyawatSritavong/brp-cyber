@@ -20,7 +20,19 @@ def test_soar_marketplace_pack_routes_respect_permissions(monkeypatch) -> None:
     monkeypatch.setattr(
         competitive_api,
         "list_marketplace_packs",
-        lambda **kwargs: {"count": 1, "rows": [{"pack_code": "thai_identity_containment_pack", "audience": "soc"}]},
+        lambda **kwargs: {
+            "count": 1,
+            "rows": [
+                {
+                    "pack_code": "thai_identity_containment_pack",
+                    "audience": "soc",
+                    "source_type": kwargs.get("source_type", "community"),
+                    "trust_tier": kwargs.get("trust_tier", "community_reviewed"),
+                    "supported_connectors": [kwargs.get("connector_source", "generic") or "generic"],
+                }
+            ],
+            "available_filters": {"source_type": ["community", "partner"]},
+        },
     )
     monkeypatch.setattr(
         competitive_api,
@@ -54,9 +66,10 @@ def test_soar_marketplace_pack_routes_respect_permissions(monkeypatch) -> None:
     )
 
     with TestClient(app) as client:
-        packs = client.get("/competitive/soar/marketplace/packs")
+        packs = client.get("/competitive/soar/marketplace/packs?source_type=community&connector_source=generic")
         assert packs.status_code == 200
         assert packs.json()["count"] == 1
+        assert packs.json()["rows"][0]["source_type"] == "community"
 
     monkeypatch.setattr(
         competitive_api,

@@ -105,7 +105,7 @@ def test_purple_plugin_export_routes_enforce_permissions(monkeypatch) -> None:
     with TestClient(app) as client:
         mitre_ok = client.post(
             f"/competitive/sites/{site_id}/purple/mitre-heatmap/export",
-            json={"export_format": "csv"},
+            json={"export_format": "svg"},
             headers={"Authorization": "Bearer demo"},
         )
         incident_ok = client.post(

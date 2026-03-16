@@ -16,6 +16,7 @@ import {
   fetchSiteRedSocialRoster,
   fetchSiteRedScans,
   fetchSiteRedSocialSimulatorRuns,
+  fetchSiteRedSocialTemplatePacks,
   fetchSiteRedSocialTelemetry,
   fetchSiteRedVulnerabilityFindings,
   fetchSiteRedVulnerabilityRemediationExport,
@@ -76,6 +77,7 @@ import type {
   SiteRedSocialProviderCallbackResponse,
   SiteRedSocialRosterResponse,
   SiteRedSocialSimulatorRunListResponse,
+  SiteRedSocialTemplatePackResponse,
   SiteRedSocialTelemetryResponse,
   SiteRedVulnerabilityFindingListResponse,
   SiteRedVulnerabilityRemediationExportResponse,
@@ -225,6 +227,8 @@ const SOCIAL_ROSTER_SAMPLE = JSON.stringify(
   2,
 );
 
+const SOCIAL_CAMPAIGN_TYPES = ["awareness", "credential_reset", "hr_notice", "finance_notice", "brand_protection"] as const;
+
 export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, canEditPolicy, canApprove }: Props) {
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
@@ -234,6 +238,13 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
   const [autopilotPolicyBySite, setAutopilotPolicyBySite] = useState<Record<string, SiteRedExploitAutopilotPolicyResponse["policy"]>>({});
   const [autopilotRunsBySite, setAutopilotRunsBySite] = useState<Record<string, SiteRedExploitAutopilotRunListResponse>>({});
   const [socialPolicyBySite, setSocialPolicyBySite] = useState<Record<string, SiteRedSocialPolicyResponse["policy"]>>({});
+  const [socialTemplatePacks, setSocialTemplatePacks] = useState<SiteRedSocialTemplatePackResponse>({
+    status: "ok",
+    campaign_type: "",
+    jurisdiction: "th",
+    count: 0,
+    rows: [],
+  });
   const [socialRosterBySite, setSocialRosterBySite] = useState<Record<string, SiteRedSocialRosterResponse>>({});
   const [socialRunsBySite, setSocialRunsBySite] = useState<Record<string, SiteRedSocialSimulatorRunListResponse>>({});
   const [socialTelemetryBySite, setSocialTelemetryBySite] = useState<Record<string, SiteRedSocialTelemetryResponse>>({});
@@ -283,6 +294,8 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
   const [socialCampaignName, setSocialCampaignName] = useState("thai_phishing_awareness");
   const [socialEmployeeSegment, setSocialEmployeeSegment] = useState("all_staff");
   const [socialEmailCount, setSocialEmailCount] = useState(50);
+  const [socialCampaignType, setSocialCampaignType] = useState<(typeof SOCIAL_CAMPAIGN_TYPES)[number]>("awareness");
+  const [socialTemplatePackCode, setSocialTemplatePackCode] = useState("th_awareness_basic");
   const [socialDifficulty, setSocialDifficulty] = useState<"low" | "medium" | "high">("medium");
   const [socialImpersonationBrand, setSocialImpersonationBrand] = useState("");
   const [socialRosterPayload, setSocialRosterPayload] = useState(SOCIAL_ROSTER_SAMPLE);
@@ -328,6 +341,7 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
   const [pluginSyncIntervalMinutes, setPluginSyncIntervalMinutes] = useState(1440);
   const [pluginSyncEnabled, setPluginSyncEnabled] = useState(true);
   const [pluginSyncSummary, setPluginSyncSummary] = useState("");
+  const [pluginExploitLanguage, setPluginExploitLanguage] = useState<"python" | "bash" | "curl">("python");
   const [pluginSafetyTargetType, setPluginSafetyTargetType] = useState("web");
   const [pluginSafetyMaxRequests, setPluginSafetyMaxRequests] = useState(5);
   const [pluginSafetyMaxLines, setPluginSafetyMaxLines] = useState(80);
@@ -383,6 +397,8 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
     setSocialSubjectPrefix(policy.subject_prefix);
     setSocialLandingBaseUrl(policy.landing_base_url);
     setSocialReportMailbox(policy.report_mailbox);
+    setSocialCampaignType((policy.campaign_type as (typeof SOCIAL_CAMPAIGN_TYPES)[number]) || "awareness");
+    setSocialTemplatePackCode(policy.template_pack_code || "th_awareness_basic");
     setSocialRequireApproval(Boolean(policy.require_approval));
     setSocialOpenTracking(Boolean(policy.enable_open_tracking));
     setSocialClickTracking(Boolean(policy.enable_click_tracking));
@@ -502,8 +518,24 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
       const response = await fetchSiteRedSocialPolicy(siteId);
       setSocialPolicyBySite((prev) => ({ ...prev, [siteId]: response.policy }));
       applySocialPolicyForm(response.policy);
+      const campaignType = (response.policy.campaign_type as (typeof SOCIAL_CAMPAIGN_TYPES)[number] | undefined) || "awareness";
+      await loadSocialTemplatePacks(campaignType);
     } catch (err) {
       setError(err instanceof Error ? err.message : "social_policy_load_failed");
+    }
+  };
+
+  const loadSocialTemplatePacks = async (campaignType = socialCampaignType) => {
+    if (!canView) return;
+    try {
+      const response = await fetchSiteRedSocialTemplatePacks({ campaign_type: campaignType, jurisdiction: "th" });
+      setSocialTemplatePacks(response);
+      const currentExists = response.rows.some((row) => row.template_pack_code === socialTemplatePackCode);
+      if (!currentExists && response.rows[0]) {
+        setSocialTemplatePackCode(response.rows[0].template_pack_code);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "social_template_packs_load_failed");
     }
   };
 
@@ -1017,6 +1049,8 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
         campaign_name: socialCampaignName,
         employee_segment: socialEmployeeSegment,
         email_count: socialEmailCount,
+        campaign_type: socialCampaignType,
+        template_pack_code: socialTemplatePackCode,
         difficulty: socialDifficulty,
         impersonation_brand: socialImpersonationBrand,
         dry_run: dryRun,
@@ -1071,6 +1105,12 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
         connector_config: {
           simulate_delivery: socialConnectorSimulateDelivery,
         },
+        campaign_type: socialCampaignType,
+        template_pack_code: socialTemplatePackCode,
+        evidence_retention_days:
+          socialTemplatePacks.rows.find((row) => row.template_pack_code === socialTemplatePackCode)?.evidence_retention_days || 90,
+        legal_ack_required:
+          socialTemplatePacks.rows.find((row) => row.template_pack_code === socialTemplatePackCode)?.approval_required ?? true,
         enabled: socialPolicyEnabled,
         owner: "security",
       });
@@ -1167,7 +1207,10 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
         auto_run: false,
         schedule_interval_minutes: 60,
         notify_channels: [],
-        config: { target_surface: targetSurface || "/admin-login" },
+        config:
+          pluginCode === "red_exploit_code_generator"
+            ? { target_surface: targetSurface || "/admin-login", target_language: pluginExploitLanguage }
+            : { target_surface: targetSurface || "/admin-login" },
         owner: "red_service",
       });
       await runSiteCoworkerPlugin(siteId, pluginCode, {
@@ -1432,6 +1475,7 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
           const latestIntel = pluginIntel?.rows?.[0] as RedPluginIntelligenceRow | undefined;
           const latestPluginSyncRun = pluginSyncRuns?.rows?.[0];
           const latestPluginSyncSource = pluginSyncSources?.rows?.[0];
+          const selectedSocialTemplatePack = socialTemplatePacks.rows.find((row) => row.template_pack_code === socialTemplatePackCode);
           return (
             <div key={site.site_id} className="rounded-md border border-slate-800 bg-panelAlt/30 p-3">
               <button
@@ -1547,6 +1591,24 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                             />
                           </label>
                           <label className="text-slate-400">
+                            <span className="mb-1 block text-[11px]">Campaign Type</span>
+                            <select
+                              value={socialCampaignType}
+                              onChange={(event) => {
+                                const next = event.target.value as (typeof SOCIAL_CAMPAIGN_TYPES)[number];
+                                setSocialCampaignType(next);
+                                void loadSocialTemplatePacks(next);
+                              }}
+                              className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+                            >
+                              {SOCIAL_CAMPAIGN_TYPES.map((row) => (
+                                <option key={row} value={row}>
+                                  {row}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="text-slate-400">
                             <span className="mb-1 block text-[11px]">Difficulty</span>
                             <select
                               value={socialDifficulty}
@@ -1556,6 +1618,20 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                               <option value="low">low</option>
                               <option value="medium">medium</option>
                               <option value="high">high</option>
+                            </select>
+                          </label>
+                          <label className="text-slate-400 md:col-span-2">
+                            <span className="mb-1 block text-[11px]">Template Pack</span>
+                            <select
+                              value={socialTemplatePackCode}
+                              onChange={(event) => setSocialTemplatePackCode(event.target.value)}
+                              className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+                            >
+                              {(socialTemplatePacks.rows || []).map((row) => (
+                                <option key={row.template_pack_code} value={row.template_pack_code}>
+                                  {row.title} ({row.template_pack_code})
+                                </option>
+                              ))}
                             </select>
                           </label>
                           <label className="text-slate-400 md:col-span-2">
@@ -1569,6 +1645,16 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                             />
                           </label>
                         </div>
+                        {selectedSocialTemplatePack ? (
+                          <div className="mt-2 rounded border border-slate-800 bg-panel/70 p-2">
+                            <p className="text-slate-200 wrap-anywhere">
+                              {selectedSocialTemplatePack.legal_notice_th}
+                            </p>
+                            <p className="mt-1 text-[11px] text-slate-500 wrap-anywhere">
+                              controls={(selectedSocialTemplatePack.compliance_controls_th || []).join(" | ")}
+                            </p>
+                          </div>
+                        ) : null}
                         <div className="mt-2 flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -1685,6 +1771,20 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                               className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
                             />
                           </label>
+                          <label className="text-slate-400">
+                            <span className="mb-1 block text-[11px]">Template Pack</span>
+                            <select
+                              value={socialTemplatePackCode}
+                              onChange={(event) => setSocialTemplatePackCode(event.target.value)}
+                              className="w-full rounded border border-slate-700 bg-panel px-2 py-1 text-xs text-slate-200"
+                            >
+                              {(socialTemplatePacks.rows || []).map((row) => (
+                                <option key={row.template_pack_code} value={row.template_pack_code}>
+                                  {row.template_pack_code}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
                           <label className="flex items-center gap-2 text-slate-400">
                             <input type="checkbox" checked={socialRequireApproval} onChange={(event) => setSocialRequireApproval(event.target.checked)} />
                             Require approval
@@ -1715,6 +1815,14 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                           </label>
                           <button
                             type="button"
+                            disabled={busyKey.length > 0}
+                            onClick={() => void loadSocialTemplatePacks()}
+                            className="rounded border border-slate-600 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-400 disabled:opacity-60"
+                          >
+                            Reload Template Packs
+                          </button>
+                          <button
+                            type="button"
                             disabled={busyKey.length > 0 || !canEditPolicy}
                             onClick={() => void saveSocialPolicy(site.site_id)}
                             className="rounded border border-slate-600 px-2 py-1 text-[11px] text-slate-200 hover:border-slate-400 disabled:opacity-60"
@@ -1722,6 +1830,12 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                             Save Social Policy
                           </button>
                         </div>
+                        {selectedSocialTemplatePack ? (
+                          <p className="mt-2 text-[11px] text-slate-500 wrap-anywhere">
+                            retention={selectedSocialTemplatePack.evidence_retention_days}d approval=
+                            {String(selectedSocialTemplatePack.approval_required)}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -2491,9 +2605,21 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                           </span>
                         </div>
                         <p className="mt-1 text-slate-500 wrap-anywhere">
-                          แปลง finding ล่าสุดให้เป็น Python proof-of-concept draft สำหรับยืนยัน exploitability แบบปลอดภัย
+                          แปลง finding ล่าสุดให้เป็น Python/Bash/cURL proof-of-concept draft สำหรับยืนยัน exploitability แบบปลอดภัย
                         </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <label className="text-[11px] text-slate-400">
+                            language
+                            <select
+                              value={pluginExploitLanguage}
+                              onChange={(event) => setPluginExploitLanguage(event.target.value as "python" | "bash" | "curl")}
+                              className="ml-2 rounded border border-slate-700 bg-panel px-2 py-1 text-[11px] text-slate-200"
+                            >
+                              <option value="python">python</option>
+                              <option value="bash">bash</option>
+                              <option value="curl">curl</option>
+                            </select>
+                          </label>
                           <button
                             type="button"
                             disabled={busyKey.length > 0 || !canApprove}
@@ -2539,7 +2665,8 @@ export function RedTeamPanel({ sites, selectedSiteId, onSelectSite, canView, can
                               {String(latestExploitCodeRun.output_summary.script_preview || "No exploit preview yet.")}
                             </pre>
                             <p className="mt-2 text-[11px] text-slate-500 wrap-anywhere">
-                              safety={(latestExploitCodeRun.output_summary.safety_policy as Record<string, unknown> | undefined)?.target_type
+                              language={String(latestExploitCodeRun.output_summary.language || "python")} | safety=
+                              {(latestExploitCodeRun.output_summary.safety_policy as Record<string, unknown> | undefined)?.target_type
                                 ? `target=${String((latestExploitCodeRun.output_summary.safety_policy as Record<string, unknown>).target_type)} network=${String((latestExploitCodeRun.output_summary.safety_policy as Record<string, unknown>).allow_network_calls)}`
                                 : "default"}
                             </p>

@@ -1326,6 +1326,28 @@ class BlueManagedResponderRun(Base):
     event: Mapped[BlueEventLog | None] = relationship("BlueEventLog")
 
 
+class BlueManagedResponderCallbackEvent(Base):
+    __tablename__ = "blue_managed_responder_callback_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    site_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sites.id", ondelete="CASCADE"), index=True)
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("blue_managed_responder_runs.id", ondelete="CASCADE"),
+        index=True,
+    )
+    connector_source: Mapped[str] = mapped_column(String(64), index=True, default="generic")
+    contract_code: Mapped[str] = mapped_column(String(128), default="")
+    callback_type: Mapped[str] = mapped_column(String(32), default="result_confirmed")
+    webhook_event_id: Mapped[str] = mapped_column(String(255), default="")
+    external_action_ref: Mapped[str] = mapped_column(String(255), default="")
+    status: Mapped[str] = mapped_column(String(32), default="received")
+    actor: Mapped[str] = mapped_column(String(128), default="vendor_callback")
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    details_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class PhaseObjectiveCheck(Base):
     __tablename__ = "phase_objective_checks"
 
@@ -1397,6 +1419,22 @@ class PurpleReportRelease(Base):
     approved_by: Mapped[str] = mapped_column(String(128), default="")
     note: Mapped[str] = mapped_column(Text, default="")
     payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class PurpleAttackLayerWorkspace(Base):
+    __tablename__ = "purple_attack_layer_workspaces"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    site_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sites.id", ondelete="CASCADE"), index=True)
+    layer_name: Mapped[str] = mapped_column(String(255), default="")
+    source_kind: Mapped[str] = mapped_column(String(32), default="imported")
+    actor: Mapped[str] = mapped_column(String(128), default="purple_operator")
+    title: Mapped[str] = mapped_column(String(255), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    layer_json: Mapped[str] = mapped_column(Text, default="{}")
+    details_json: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 

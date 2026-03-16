@@ -5,7 +5,7 @@
 อัปเดตหลัง re-audit implementation จริงล่าสุดเมื่อ `2026-03-16`
 
 หมายเหตุรอบนี้:
-- re-audit code + API + UI + tests จริงอีกครั้งหลังปิด Phase 102-107
+- re-audit code + API + UI + tests จริงอีกครั้งหลังปิด Phase 102-114
 - แยก `baseline acceptance` ออกจาก `future hardening backlog` ให้ชัด
 - เป้าหมายของ checklist นี้คือยืนยันว่า Service Menu และ Plugin Catalog ตาม requirement ของผู้ใช้ “ครบ baseline แล้ว”
 
@@ -47,6 +47,8 @@
     - delivery/open/click/report telemetry baseline ต่อ recipient
     - campaign approval / reject / kill switch flow
     - external provider callback ingestion baseline สำหรับ delivery/open/click/report feedback
+    - campaign-type-specific legal/compliance template packs (`awareness/hr/finance/brand`)
+    - retention / legal-ack / approval baseline ต่อ template pack
 
 - `[x] Vulnerability Auto-Validator`
   - มีแล้ว:
@@ -61,12 +63,13 @@
 ### Plugins
 - `[x] Exploit Code Generator`
   - มีแล้ว:
-    - generate Python PoC draft จาก finding ล่าสุด
+    - generate Python/Bash/cURL PoC draft จาก finding ล่าสุด
     - run ได้จาก Red page และเก็บ plugin run history
     - import CVE/news/article intelligence baseline ต่อ site
     - external intelligence sync source + sync run history baseline
     - exploit safety policy per target type
     - lint/export baseline ผ่าน Red page และ competitive API
+    - language-aware lint/export (`.py/.sh/.txt`) และ script variants ต่อ run
 
 - `[x] Nuclei AI-Template Writer`
   - มีแล้ว:
@@ -101,8 +104,11 @@
     - scheduler + autonomous runtime integration
     - embedded workflow + SOAR/playbook path
     - vendor-aware direct action plan/confirmation สำหรับ `Cloudflare`, `CrowdStrike`, `Splunk`, `generic`
+    - deeper vendor coverage baseline สำหรับ `Palo Alto`, `Fortinet`, `Defender`, `SentinelOne`
     - connector action status / confirmation status / rollback status ใน run history
     - connector rollback confirmation baseline
+    - admin + public callback ingestion สำหรับ vendor-side confirmation/update
+    - vendor callback contract validation + callback event history per run/site
 
 - `[x] Threat Intelligence Localizer`
   - มีแล้ว:
@@ -132,6 +138,8 @@
     - SOAR playbook dispatch path
     - embedded endpoint presets สำหรับ CrowdStrike/Cloudflare
     - SOAR marketplace content packs baseline
+    - community/partner catalog metadata (`source`, `trust tier`, `publisher`, `connectors`, `install_count`)
+    - marketplace filter/search baseline สำหรับ community/partner catalog ที่ลึกกว่า starter bundles
     - post-action verification baseline ต่อ SOAR execution
     - connector-native webhook/result contracts
     - vendor callback ingestion กลับเข้า execution summary
@@ -156,6 +164,7 @@
     - snapshot history
     - trend view จาก snapshot history
     - tenant portfolio roll-up baseline
+    - finer ROI segmentation/filtering ระดับ trend/portfolio (`metric focus`, `threshold`, `site/status`, `sort_by`)
     - board-pack export baseline (`pdf/ppt`)
     - native binary `pdf/pptx` renderer baseline
     - board template packs สำหรับ `board`, `risk_committee`, `mssp_monthly`
@@ -166,7 +175,9 @@
     - plugin run ได้จริง
     - MITRE/evidence correlation baseline
     - executive scorecard/federation support
-    - export baseline (`markdown`, `csv`, `attack_layer_json`)
+    - export baseline (`markdown`, `csv`, `attack_layer_json`, `svg`)
+    - ATT&CK layer workspace import/list/edit/export baseline
+    - live graphical attack-layer export baseline
 
 - `[x] Incident Report Ghostwriter`
   - มีแล้ว:
@@ -186,27 +197,20 @@
 - `[x] Delivery approval SLA + escalation scheduler`
 - `[x] Embedded activation bundles + federation readiness posture`
 - `[x] Multi-site federation views for Purple / delivery / embedded readiness`
+- `[x] Purple control-family evidence mapping for ISO/NIST policy/evidence families`
+- `[x] Vendor callback evidence capture for Blue managed responder`
 
 ## Acceptance Result
 - `[x]` Baseline requirement จาก Service Menu + Plugin Catalog ตาม user requirement ปิดครบแล้ว
 - `[x]` Checklist baseline ถือว่า complete 100%
 
 ## Future Hardening Backlog
-รายการนี้ไม่ใช่ blocker ของ baseline acceptance แต่เป็น maturity backlog ระยะถัดไป
+รายการ backlog กลุ่มนี้ถูกปิดแล้วใน Phase 111-114
 
-### Red
-- multi-language exploit output นอกเหนือจาก Python draft
-- richer legal/compliance template packs ต่อ social campaign type
-
-### Blue
-- deeper vendor coverage สำหรับ Managed AI Responder มากกว่าชุด baseline ปัจจุบัน
-- live connector callback ingestion ที่ลึกกว่าระดับ orchestration baseline
-- richer community/partner playbook pack catalog beyond starter bundles
-
-### Purple
-- policy/evidence mapping ที่ลงลึกขึ้นต่อ control family
-- finer ROI segmentation/filtering ระดับ tenant/site/portfolio
-- graphical heatmap export และ richer ATT&CK layer import/edit workflow
+- `[x]` deeper vendor coverage สำหรับ Managed AI Responder
+- `[x]` live connector callback ingestion ที่ลึกกว่าระดับ orchestration baseline
+- `[x]` policy/evidence mapping ที่ลงลึกขึ้นต่อ control family
+- `[x]` graphical heatmap export และ richer ATT&CK layer import/edit workflow
 
 ## Source of Truth in Code
 - Red service: [RedTeamPanel.tsx](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/frontend/components/RedTeamPanel.tsx)
@@ -220,6 +224,9 @@
 - Threat localizer: [blue_threat_localizer.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/blue_threat_localizer.py)
 - Threat localizer promotion: [blue_threat_localizer_promotion.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/blue_threat_localizer_promotion.py)
 - Blue log refiner: [blue_log_refiner.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/blue_log_refiner.py)
+- Blue managed responder: [blue_managed_responder.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/blue_managed_responder.py)
 - SOAR playbook hub: [soar_playbook_hub.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/soar_playbook_hub.py)
 - Purple exports: [purple_plugin_exports.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/purple_plugin_exports.py)
+- Purple control family mapping: [purple_control_mapping.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/purple_control_mapping.py)
+- Purple ATT&CK layer workflows: [purple_attack_layer_workflows.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/purple_attack_layer_workflows.py)
 - ROI dashboard: [purple_roi_dashboard.py](/Users/gustyle/Documents/networkmanGithub/BRP-Cyber/backend/app/services/purple_roi_dashboard.py)

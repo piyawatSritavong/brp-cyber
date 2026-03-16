@@ -339,3 +339,110 @@ def test_publish_red_template_to_threat_pack_creates_pack(monkeypatch) -> None:
     assert result["pack"]["pack_code"].startswith("duck-")
     assert result["pack"]["is_active"] is True
     assert "Validate admin auth bypass safely" in result["pack"]["attack_steps"]
+
+
+def test_lint_red_plugin_output_marks_bash_language() -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck")
+    plugin = SimpleNamespace(id=uuid4(), plugin_code="red_exploit_code_generator")
+    run = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        plugin_id=plugin.id,
+        input_summary_json='{"target_surface":"/admin-login","target_type":"web"}',
+        output_summary_json='{"script_preview":"# BRP Red Plugin Draft\\n# Authorized validation only. Do not use outside approved scope.\\nset -euo pipefail\\ncurl -sS --max-time 10 https://duck-sec-ai.vercel.app/admin-login","target_type":"web","language":"bash"}',
+        created_at=datetime.now(timezone.utc),
+    )
+    policy = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        target_type="web",
+        max_http_requests_per_run=5,
+        max_script_lines=80,
+        allow_network_calls=True,
+        require_comment_header=True,
+        require_disclaimer=True,
+        allowed_modules_json='["requests"]',
+        blocked_modules_json='["subprocess","socket"]',
+        enabled=True,
+        owner="security",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    db = _FakeDB(object_map={site_id: site}, scalar_values=[plugin, run, policy])
+
+    result = red_plugin_intelligence.lint_red_plugin_output(
+        db,
+        site_id=site_id,
+        plugin_code="red_exploit_code_generator",
+    )
+
+    assert result["status"] == "ok"
+    assert result["lint"]["language"] == "bash"
+    assert result["lint"]["kind"] == "bash_exploit_script"
+    assert result["lint"]["warnings"] == []
+
+
+def test_export_red_plugin_output_uses_bash_extension() -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck", display_name="Duck")
+    plugin = SimpleNamespace(id=uuid4(), plugin_code="red_exploit_code_generator", display_name="Exploit Code Generator")
+    run = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        plugin_id=plugin.id,
+        input_summary_json='{"target_surface":"/admin-login","target_type":"web"}',
+        output_summary_json='{"script_preview":"# BRP Red Plugin Draft\\n# Authorized validation only. Do not use outside approved scope.\\nset -euo pipefail\\nBASE_URL=\\"https://duck-sec-ai.vercel.app\\"\\nPATH=\\"/admin-login\\"\\nstatus_code=$(curl -sS --max-time 10 -o \\"$response_file\\" -w \\"%{http_code}\\" \\"${BASE_URL}${PATH}\\")","target_type":"web","language":"bash"}',
+        created_at=datetime.now(timezone.utc),
+    )
+    policy = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        target_type="web",
+        max_http_requests_per_run=5,
+        max_script_lines=80,
+        allow_network_calls=True,
+        require_comment_header=True,
+        require_disclaimer=True,
+        allowed_modules_json='["requests"]',
+        blocked_modules_json='["subprocess","socket"]',
+        enabled=True,
+        owner="security",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    intel = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        source_type="article",
+        source_name="manual",
+        source_item_id="a1",
+        title="Thai auth bypass article",
+        summary_th="summary",
+        cve_id="CVE-2026-0001",
+        target_surface="/admin-login",
+        target_type="web",
+        tags_json='["web"]',
+        references_json='["https://example.com/article"]',
+        payload_json="{}",
+        published_at=datetime.now(timezone.utc),
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    db = _FakeDB(
+        object_map={site_id: site},
+        scalar_values=[plugin, run, plugin, run, policy],
+        scalar_batches=[[intel]],
+    )
+
+    result = red_plugin_intelligence.export_red_plugin_output(
+        db,
+        site_id=site_id,
+        plugin_code="red_exploit_code_generator",
+        export_kind="bundle",
+    )
+
+    assert result["status"] == "ok"
+    assert result["export"]["filename"].endswith(".sh.json")
+    assert result["export"]["artifact_type"] == "exploit_script"

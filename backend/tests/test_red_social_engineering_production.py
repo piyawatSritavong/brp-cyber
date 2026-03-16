@@ -99,6 +99,8 @@ def test_run_social_engineering_simulator_creates_pending_approval_with_roster()
     assert result["run"]["execution"]["status"] == "pending_approval"
     assert result["run"]["execution"]["approval_required"] is True
     assert result["run"]["email_count"] == 2
+    assert result["run"]["details"]["campaign_type"] == "awareness"
+    assert result["run"]["details"]["legal_template_pack"]["template_pack_code"] == "th_awareness_basic"
 
 
 def test_review_social_campaign_approval_dispatches_telemetry() -> None:
@@ -353,3 +355,61 @@ def test_ingest_social_provider_callback_updates_recipient_and_summary() -> None
     assert result["run"]["execution"]["status"] == "completed"
     assert int(result["run"]["execution"]["telemetry_summary"]["clicked_count"]) == 1
     assert int(result["run"]["execution"]["telemetry_summary"]["opened_count"]) == 1
+
+
+def test_list_social_template_packs_filters_by_campaign_type() -> None:
+    result = red_social_engineering.list_social_template_packs(campaign_type="finance_notice", jurisdiction="th")
+
+    assert result["status"] == "ok"
+    assert result["campaign_type"] == "finance_notice"
+    assert result["count"] >= 1
+    assert all(row["campaign_type"] == "finance_notice" for row in result["rows"])
+
+
+def test_run_social_engineering_simulator_uses_requested_template_pack() -> None:
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, tenant_id=uuid4(), site_code="duck", display_name="Duck Sec AI", base_url="https://duck-sec-ai.vercel.app/")
+    policy = SimpleNamespace(
+        id=uuid4(),
+        site_id=site_id,
+        connector_type="simulated",
+        sender_name="Security Awareness",
+        sender_email="security@duck.test",
+        subject_prefix="[Awareness]",
+        landing_base_url="https://duck-sec-ai.vercel.app",
+        report_mailbox="soc@duck.test",
+        require_approval=False,
+        enable_open_tracking=True,
+        enable_click_tracking=True,
+        max_emails_per_run=20,
+        kill_switch_active=False,
+        allowed_domains_json='["duck-sec-ai.vercel.app"]',
+        connector_config_json='{"simulate_delivery":true,"campaign_type":"awareness","template_pack_code":"th_awareness_basic"}',
+        enabled=True,
+        owner="security",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    roster = [
+        SimpleNamespace(id=uuid4(), email="narisara@duck-sec-ai.vercel.app", full_name="Narisara", department="finance", tags_json='["finance"]'),
+    ]
+    db = _FakeDB(object_map={site_id: site}, scalar_values=[policy], scalar_batches=[[], [], roster])
+
+    result = red_social_engineering.run_social_engineering_simulator(
+        db,
+        site_id=site_id,
+        campaign_name="finance_regulated_thai_drill",
+        employee_segment="all_staff",
+        email_count=1,
+        campaign_type="finance_notice",
+        template_pack_code="th_finance_regulated",
+        difficulty="high",
+        dry_run=False,
+        actor="red_social_ai",
+    )
+
+    assert result["status"] == "pending_approval"
+    assert result["run"]["execution"]["approval_required"] is True
+    assert result["run"]["details"]["campaign_type"] == "finance_notice"
+    assert result["run"]["details"]["legal_template_pack"]["template_pack_code"] == "th_finance_regulated"
+    assert "regulated phishing simulation record" in result["run"]["details"]["compliance_controls_th"]
