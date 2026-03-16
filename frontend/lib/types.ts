@@ -2073,12 +2073,13 @@ export type SiteCoworkerDeliverySlaResponse = {
     average_approval_latency_seconds: number;
   };
   pending_rows: Array<{
+    [x: string]: string;
     event_id: string;
     channel: string;
     title: string;
     created_at: string;
     due_at: string;
-    overdue: boolean;
+    overdue: string;
   }>;
 };
 
