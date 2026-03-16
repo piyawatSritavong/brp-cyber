@@ -21,6 +21,7 @@ type Props = {
   canView: boolean;
   canEditPolicy: boolean;
   canApprove: boolean;
+  fixedCategory?: "red" | "blue" | "purple";
 };
 
 type BindingFormState = {
@@ -89,12 +90,12 @@ function categoryHeading(category: string): string {
   }
 }
 
-export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canApprove }: Props) {
+export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canApprove, fixedCategory }: Props) {
   const [catalog, setCatalog] = useState<CoworkerPluginCatalogResponse | null>(null);
   const [plugins, setPlugins] = useState<SiteCoworkerPluginListResponse | null>(null);
   const [runs, setRuns] = useState<SiteCoworkerPluginRunListResponse | null>(null);
   const [bindingForms, setBindingForms] = useState<Record<string, BindingFormState>>({});
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(fixedCategory || "");
   const [loading, setLoading] = useState(false);
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
@@ -113,8 +114,8 @@ export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canA
     try {
       const [catalogData, pluginData, runData] = await Promise.all([
         fetchCoworkerPlugins({ active_only: true }),
-        fetchSiteCoworkerPlugins(selectedSite.site_id, { category: categoryFilter || undefined }),
-        fetchSiteCoworkerPluginRuns(selectedSite.site_id, { category: categoryFilter || undefined, limit: 20 }),
+        fetchSiteCoworkerPlugins(selectedSite.site_id, { category: fixedCategory || categoryFilter || undefined }),
+        fetchSiteCoworkerPluginRuns(selectedSite.site_id, { category: fixedCategory || categoryFilter || undefined, limit: 20 }),
       ]);
       setCatalog(catalogData);
       setPlugins(pluginData);
@@ -134,7 +135,7 @@ export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canA
 
   useEffect(() => {
     void load();
-  }, [selectedSite?.site_id, categoryFilter, canView]);
+  }, [selectedSite?.site_id, categoryFilter, canView, fixedCategory]);
 
   const latestRunByPlugin = useMemo(() => {
     const map = new Map<string, SiteCoworkerPluginRunListResponse["rows"][number]>();
@@ -293,17 +294,23 @@ export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canA
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
-            className="rounded-md border border-slate-700 bg-panelAlt/40 px-3 py-2 text-xs text-slate-100"
-          >
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          {!fixedCategory ? (
+            <select
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              className="rounded-md border border-slate-700 bg-panelAlt/40 px-3 py-2 text-xs text-slate-100"
+            >
+              {CATEGORY_OPTIONS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase ${categoryClass(fixedCategory)}`}>
+              {fixedCategory} only
+            </span>
+          )}
           <button
             type="button"
             onClick={() => void load()}
@@ -349,7 +356,16 @@ export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canA
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mt-4 space-y-4">
+        <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">What This Plugin Page Covers</h3>
+          <div className="mt-3 space-y-2 text-xs text-slate-300">
+            <p className="wrap-anywhere">1. Site-level plugin binding, ownership, scheduler interval, and config JSON.</p>
+            <p className="wrap-anywhere">2. Manual dry-run/apply execution of plugins in the selected category.</p>
+            <p className="wrap-anywhere">3. Recent plugin output so operators can validate AI behavior without leaving the category page.</p>
+          </div>
+        </div>
+
         <div className="space-y-5">
           {(plugins?.rows || []).length === 0 ? (
             <div className="rounded-md border border-slate-800 bg-panelAlt/25 p-4 text-xs text-slate-500">
@@ -515,38 +531,27 @@ export function CoworkerPluginPanel({ selectedSite, canView, canEditPolicy, canA
           ))}
         </div>
 
-        <aside className="space-y-4">
-          <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">Why This Layer Exists</h3>
-            <div className="mt-3 space-y-2 text-xs text-slate-300">
-              <p className="wrap-anywhere">1. Keep the customer workflow. AI enriches the current stack instead of replacing it.</p>
-              <p className="wrap-anywhere">2. Lower adoption friction in Thai enterprises with focused co-workers per role.</p>
-              <p className="wrap-anywhere">3. Translate cyber outputs into Thai operational context and compliance evidence.</p>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">Recent Plugin Output</h3>
-            <div className="mt-3 max-h-[520px] overflow-auto space-y-2">
-              {(runs?.rows || []).length === 0 ? <p className="text-xs text-slate-500">No plugin runs for this site yet.</p> : null}
-              {(runs?.rows || []).map((row) => (
-                <div key={row.run_id} className="rounded-md border border-slate-800 bg-panelAlt/25 p-3 text-xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase ${categoryClass(row.category)}`}>
-                      {row.category}
-                    </span>
-                    <span className="text-slate-400 wrap-anywhere">{row.created_at}</span>
-                  </div>
-                  <p className="mt-2 text-slate-100 wrap-anywhere">
-                    {row.display_name_th} [{row.status}]
-                  </p>
-                  <p className="mt-1 text-slate-300 wrap-anywhere">{compactSummary(row.output_summary?.headline)}</p>
-                  <p className="mt-1 text-slate-400 wrap-anywhere">{compactSummary(row.output_summary?.summary_th)}</p>
+        <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">Recent Plugin Output</h3>
+          <div className="mt-3 max-h-[520px] overflow-auto space-y-2">
+            {(runs?.rows || []).length === 0 ? <p className="text-xs text-slate-500">No plugin runs for this site yet.</p> : null}
+            {(runs?.rows || []).map((row) => (
+              <div key={row.run_id} className="rounded-md border border-slate-800 bg-panelAlt/25 p-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase ${categoryClass(row.category)}`}>
+                    {row.category}
+                  </span>
+                  <span className="text-slate-400 wrap-anywhere">{row.created_at}</span>
                 </div>
-              ))}
-            </div>
+                <p className="mt-2 text-slate-100 wrap-anywhere">
+                  {row.display_name_th} [{row.status}]
+                </p>
+                <p className="mt-1 text-slate-300 wrap-anywhere">{compactSummary(row.output_summary?.headline)}</p>
+                <p className="mt-1 text-slate-400 wrap-anywhere">{compactSummary(row.output_summary?.summary_th)}</p>
+              </div>
+            ))}
           </div>
-        </aside>
+        </div>
       </div>
     </section>
   );

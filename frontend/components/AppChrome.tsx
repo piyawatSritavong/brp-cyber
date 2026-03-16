@@ -39,15 +39,20 @@ const PAGE_META: Record<string, { eyebrow: string; title: string; description: s
     title: "Purple Service",
     description: "Correlation, compliance mapping, and executive reporting workflows.",
   },
-  "/plugins": {
-    eyebrow: "Plugin Catalog",
-    title: "Plugins",
-    description: "Role-based AI co-workers installed and operated per site.",
+  "/red-plugin": {
+    eyebrow: "Red Plugin Category",
+    title: "Red Plugin",
+    description: "Template generation, exploit draft output, and Red plugin delivery operations.",
   },
-  "/delivery-layer": {
-    eyebrow: "Delivery Layer",
-    title: "Delivery Layer",
-    description: "Thai-native message routing, preview, and audit trail delivery.",
+  "/blue-plugin": {
+    eyebrow: "Blue Plugin Category",
+    title: "Blue Plugin",
+    description: "Alert translation, playbook execution plugins, and Blue plugin delivery operations.",
+  },
+  "/purple-plugin": {
+    eyebrow: "Purple Plugin Category",
+    title: "Purple Plugin",
+    description: "Heatmap/report plugins and Purple plugin delivery operations.",
   },
 };
 
@@ -70,8 +75,9 @@ const MENU_GROUPS: Array<{ label: string; items: MenuItem[] }> = [
   {
     label: "Plugin Categories",
     items: [
-      { label: "Plugin Catalog", href: "/plugins", exact: true, icon: <MenuIcon kind="plug" /> },
-      { label: "Delivery Layer", href: "/delivery-layer", exact: true, icon: <MenuIcon kind="send" /> },
+      { label: "Red Plugin", href: "/red-plugin", exact: true, icon: <MenuIcon kind="bolt" /> },
+      { label: "Blue Plugin", href: "/blue-plugin", exact: true, icon: <MenuIcon kind="shield" /> },
+      { label: "Purple Plugin", href: "/purple-plugin", exact: true, icon: <MenuIcon kind="pulse" /> },
     ],
   },
 ];
@@ -166,16 +172,6 @@ export function AppChrome({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
-
-        <div className="app-sidebar-footer">
-          <p className="sidebar-section-label">Support</p>
-          <div className="mt-3 mx-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm font-medium text-white">AI Orchestrator</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--sidebar-muted)]">
-              Safe-mode automation, policy gates, and audit-ready delivery are enabled from the same control plane.
-            </p>
-          </div>
-        </div>
       </aside>
 
       <div className="app-page">

@@ -9,6 +9,7 @@ import { TenantTable } from "@/components/TenantTable";
 import { RedTeamPanel } from "@/components/RedTeamPanel";
 import { BlueTeamPanel } from "@/components/BlueTeamPanel";
 import { PurpleReportsPanel } from "@/components/PurpleReportsPanel";
+import { FeatureGuidePanel } from "@/components/FeatureGuidePanel";
 import { SOARPlaybookPanel } from "@/components/SOARPlaybookPanel";
 import { ConnectorReliabilityPanel } from "@/components/ConnectorReliabilityPanel";
 import { ActionCenterPanel } from "@/components/ActionCenterPanel";
@@ -36,7 +37,7 @@ import type {
   TenantRemediation,
 } from "@/lib/types";
 
-export type WorkspaceMode = "overview" | "red" | "blue" | "purple" | "plugins" | "delivery";
+export type WorkspaceMode = "overview" | "red" | "blue" | "purple" | "redPlugin" | "bluePlugin" | "purplePlugin";
 
 const WORKSPACE_COPY: Record<WorkspaceMode, { eyebrow: string; title: string; description: string }> = {
   overview: {
@@ -63,18 +64,131 @@ const WORKSPACE_COPY: Record<WorkspaceMode, { eyebrow: string; title: string; de
     description:
       "Review Purple analysis, federation posture, and case context on a page dedicated to strategic security operations.",
   },
-  plugins: {
-    eyebrow: "Plugin Catalog",
-    title: "Role-based AI co-worker plugins",
+  redPlugin: {
+    eyebrow: "Red Plugin Category",
+    title: "Red plugin execution, binding, and delivery",
     description:
-      "Manage Red, Blue, and Purple plugin bindings and manual runs from a page focused only on the plugin catalog.",
+      "Operate Exploit Code Generator and Nuclei AI-Template Writer as Red-specific AI co-workers with their own delivery controls.",
   },
-  delivery: {
-    eyebrow: "Delivery Layer",
-    title: "Thai-native delivery and channel routing",
+  bluePlugin: {
+    eyebrow: "Blue Plugin Category",
+    title: "Blue plugin execution, binding, and delivery",
     description:
-      "Dispatch AI outputs to LINE, Telegram, Teams, and webhooks from a page focused on message delivery and audit trail.",
+      "Operate Thai alert translation and Auto-Playbook Executor as Blue-specific AI co-workers with their own delivery controls.",
   },
+  purplePlugin: {
+    eyebrow: "Purple Plugin Category",
+    title: "Purple plugin execution, binding, and delivery",
+    description:
+      "Operate MITRE heatmap and incident-report plugins with Purple-specific binding, run, and delivery workflows.",
+  },
+};
+
+const FEATURE_GUIDES: Record<WorkspaceMode, Array<{ title: string; summary: string; details: string[] }>> = {
+  overview: [
+    {
+      title: "Dashboard",
+      summary: "หน้ารวมสำหรับดู tenant readiness, governance posture, และ feature-to-menu map ก่อนลงมือปฏิบัติการ",
+      details: ["Objective gate summary", "Tenant status/detail", "Governance dashboard", "Menu-to-feature routing map"],
+    },
+    {
+      title: "Configuration",
+      summary: "หน้าตั้งค่าพื้นฐานของไซต์, embedded workflow, vendor preset, activation bundle, และ control-plane bootstrap",
+      details: ["Sites", "Adapters", "Embedded endpoints", "Activation bundles", "Automation verification"],
+    },
+    {
+      title: "Service / Plugin Separation",
+      summary: "Service pages เน้น operational workflows ส่วน Plugin pages เน้น binding/run/delivery ของ AI co-workers ตามหมวด",
+      details: ["Red/Blue/Purple Service pages", "Red Plugin", "Blue Plugin", "Purple Plugin"],
+    },
+  ],
+  red: [
+    {
+      title: "24/7 Shadow Pentest",
+      summary: "งาน continuous passive validation, drift detection, zero-day pack assignment, deploy-trigger, และ asset validation",
+      details: ["Policy", "Run history", "Scheduler", "Asset inventory", "Pack validation"],
+    },
+    {
+      title: "Social Engineering Simulator",
+      summary: "งาน phishing simulation ภาษาไทย, roster, policy, campaign approval, telemetry, และ provider callback",
+      details: ["Roster import", "Policy", "Campaign run/review/kill", "Telemetry", "Provider callback"],
+    },
+    {
+      title: "Vulnerability Auto-Validator",
+      summary: "งาน import finding จาก scanner และพิสูจน์ exploitability พร้อม remediation export",
+      details: ["Nessus/Burp import", "Exploit-path validation", "False-positive reduction", "Remediation export"],
+    },
+  ],
+  blue: [
+    {
+      title: "AI Log Refiner",
+      summary: "ลด noise, เก็บ KPI/storage saving, callback ingestion, feedback loop, และ schedule policy ต่อ connector",
+      details: ["Policy", "Run KPI", "Feedback", "Mapping packs", "Callback ingestion", "Scheduler"],
+    },
+    {
+      title: "Managed AI Responder",
+      summary: "ตรวจจับ-ตอบสนอง, approval/rollback/evidence, vendor action confirmation, callback contracts, และ scheduler",
+      details: ["Policy", "Dry-run/apply", "Review/rollback", "Evidence verify", "Vendor packs", "Callback history"],
+    },
+    {
+      title: "Threat Intelligence Localizer + SecOps Ops",
+      summary: "Thai threat localization, gap promotion, detection/response platform ops, SOAR, reliability, and data-tier governance",
+      details: ["Threat feed/adapters", "Routing/promotions", "SOAR marketplace", "Action center", "Connector reliability", "SecOps data tier"],
+    },
+  ],
+  purple: [
+    {
+      title: "Automated ISO/NIST Gap Analysis",
+      summary: "สร้าง compliance mapping, case graph, executive scorecard, และ control-family evidence correlation",
+      details: ["ISO gap", "NIST gap", "Case graph", "Executive scorecard", "Control-family map"],
+    },
+    {
+      title: "ROI Security Dashboard",
+      summary: "สร้าง snapshot/trend/portfolio/board export และ final release workflow สำหรับรายงานระดับบริหาร",
+      details: ["ROI snapshots", "Trends", "Portfolio roll-up", "Board export", "Release approvals"],
+    },
+    {
+      title: "Purple Federation",
+      summary: "ดู multi-site posture และ cross-team evidence aggregation ในหน้าเดียว",
+      details: ["Federation ops", "Executive federation", "Report history", "Release status"],
+    },
+  ],
+  redPlugin: [
+    {
+      title: "Exploit Code Generator",
+      summary: "สร้าง exploit draft หลายภาษา, bind policy, manual run, lint/export, และ delivery profile ของ Red plugin",
+      details: ["Binding", "Dry-run/apply", "Config JSON", "Run history", "Delivery/escalation"],
+    },
+    {
+      title: "Nuclei AI-Template Writer",
+      summary: "สร้าง YAML template, bind policy, manual run, lint/export, และ threat-pack publishing support",
+      details: ["Binding", "Scheduler", "Run history", "Delivery/escalation", "Threat-pack workflow"],
+    },
+  ],
+  bluePlugin: [
+    {
+      title: "Thai Alert Translator & Summarizer",
+      summary: "แปล alert เป็นภาษาไทย, bind policy, manual run, และ route ออก channel ตาม delivery policy",
+      details: ["Binding", "Dry-run/apply", "Run history", "Thai delivery preview", "Approval workflow"],
+    },
+    {
+      title: "Auto-Playbook Executor",
+      summary: "สร้าง/dispatch response payload, bind policy, manual run, และ route plugin output ผ่าน delivery/escalation",
+      details: ["Binding", "Run history", "Delivery/escalation", "SOAR-oriented outputs"],
+    },
+  ],
+  purplePlugin: [
+    {
+      title: "MITRE ATT&CK Heatmap Generator",
+      summary: "bind/run/export heatmap plugin พร้อมส่งออก markdown/csv/ATT&CK layer/SVG และ route ผ่าน delivery policy",
+      details: ["Binding", "Run history", "Heatmap outputs", "Delivery/escalation"],
+    },
+    {
+      title: "Incident Report Ghostwriter",
+      summary: "bind/run report-writing plugin พร้อมสร้าง draft ภาษาไทยและ route ผ่าน delivery/review workflow",
+      details: ["Binding", "Run history", "Thai report draft", "Delivery/escalation"],
+    },
+  ],
 };
 
 function CategoryHeader({
@@ -397,6 +511,12 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
 
       {mode === "overview" ? (
         <>
+          <FeatureGuidePanel
+            eyebrow="Menu Coverage"
+            title="Feature-to-menu mapping from the implementation docs"
+            description="เมนูทั้งหมดด้านซ้ายถูกจัดใหม่ตาม `VIRTUAL_EXPERT_CHECKLIST.md`, `PHASE_CHECKLIST.md`, และ `COMPETITIVE_ENGINE_API.md` เพื่อให้ service workflows กับ plugin workflows แยกกันชัดเจน"
+            items={FEATURE_GUIDES.overview}
+          />
           <OverviewStats total={stats.total} passing={stats.passing} failing={stats.failing} />
 
           <p className="text-xs text-slate-500 wrap-anywhere">
@@ -408,7 +528,7 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
             </p>
           ) : null}
 
-          <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="space-y-4">
             <TenantTable rows={rows} selectedTenantId={selectedTenantId} onSelectTenant={setSelectedTenantId} />
             <TenantDetailPanel
               tenantId={selectedTenantId}
@@ -432,6 +552,12 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
             title="Active testing, validation, and threat content"
             description="Red service handles simulated scanning, exploit-path validation, threat-content refresh, and policy-driven autonomous attack validation for the selected site."
           />
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Red Service"
+            description="หน้านี้รวมเฉพาะ operational Red workflows ตาม checklist ไม่รวม plugin binding/delivery ซึ่งถูกย้ายไปหน้า Red Plugin"
+            items={FEATURE_GUIDES.red}
+          />
           <RedTeamPanel
             sites={sites}
             selectedSiteId={selectedSiteId}
@@ -450,7 +576,13 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
             title="Detection, response, routing, and SecOps operations"
             description="Blue service covers event triage, detection autotune, SOAR execution, connector reliability, notification routing, and SecOps data-tier operations."
           />
-          <section className="grid gap-4 xl:grid-cols-3">
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Blue Service"
+            description="หน้านี้รวม Blue operational workflows และ platform ops ที่ต้องใช้ระหว่าง detection/response จริง ไม่รวม plugin binding/delivery ซึ่งถูกย้ายไปหน้า Blue Plugin"
+            items={FEATURE_GUIDES.blue}
+          />
+          <section className="space-y-4">
             <BlueTeamPanel
               selectedSite={selectedSite}
               canView={canViewCompetitive}
@@ -469,8 +601,6 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
               canEditPolicy={canEditPolicy}
               canApprove={canApprove}
             />
-          </section>
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <ConnectorReliabilityPanel
               selectedSite={selectedSite}
               canView={canViewCompetitive}
@@ -494,41 +624,105 @@ export function CompetitiveWorkspace({ mode }: { mode: WorkspaceMode }) {
             title="Correlation, compliance, executive reporting, and federation"
             description="Purple service correlates Red and Blue evidence, builds case graphs, generates executive scorecards, and surfaces multi-site federation posture."
           />
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Purple Service"
+            description="หน้านี้รวม Purple strategic/compliance/executive workflows ไม่รวม plugin binding/delivery ซึ่งถูกย้ายไปหน้า Purple Plugin"
+            items={FEATURE_GUIDES.purple}
+          />
+          <section className="space-y-4">
             <PurpleReportsPanel selectedSite={selectedSite} />
             <FederationOpsPanel canView={canViewCompetitive} />
           </section>
         </>
       ) : null}
 
-      {mode === "plugins" ? (
+      {mode === "redPlugin" ? (
         <>
           <CategoryHeader
-            eyebrow="Plugins Categories"
-            title="Red / Blue / Purple AI co-workers"
-            description="Plugins are grouped by operational role. Each plugin can be installed per site and run manually or automatically."
+            eyebrow="Red Plugin Category"
+            title="Red plugin binding, execution, and delivery"
+            description="หน้านี้รวม Red plugin lifecycle ทั้ง binding, run, scheduler, preview, delivery, และ escalation."
+          />
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Red Plugin"
+            description="เฉพาะ Red AI co-workers และ delivery controls ของ Red plugin เท่านั้น"
+            items={FEATURE_GUIDES.redPlugin}
           />
           <CoworkerPluginPanel
             selectedSite={selectedSite}
             canView={canViewCompetitive}
             canEditPolicy={canEditPolicy}
             canApprove={canApprove}
-          />
-        </>
-      ) : null}
-
-      {mode === "delivery" ? (
-        <>
-          <CategoryHeader
-            eyebrow="Delivery Layer"
-            title="Thai-native delivery and embedded workflow routing"
-            description="Dispatch plugin output to LINE, Telegram, Teams, or generic webhooks with preview, dry-run validation, and audit visibility."
+            fixedCategory="red"
           />
           <CoworkerDeliveryPanel
             selectedSite={selectedSite}
             canView={canViewCompetitive}
             canEditPolicy={canEditPolicy}
             canApprove={canApprove}
+            pluginCategory="red"
+          />
+        </>
+      ) : null}
+
+      {mode === "bluePlugin" ? (
+        <>
+          <CategoryHeader
+            eyebrow="Blue Plugin Category"
+            title="Blue plugin binding, execution, and delivery"
+            description="หน้านี้รวม Blue plugin lifecycle ทั้ง binding, run, preview, delivery, approval, และ escalation."
+          />
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Blue Plugin"
+            description="เฉพาะ Blue AI co-workers และ delivery controls ของ Blue plugin เท่านั้น"
+            items={FEATURE_GUIDES.bluePlugin}
+          />
+          <CoworkerPluginPanel
+            selectedSite={selectedSite}
+            canView={canViewCompetitive}
+            canEditPolicy={canEditPolicy}
+            canApprove={canApprove}
+            fixedCategory="blue"
+          />
+          <CoworkerDeliveryPanel
+            selectedSite={selectedSite}
+            canView={canViewCompetitive}
+            canEditPolicy={canEditPolicy}
+            canApprove={canApprove}
+            pluginCategory="blue"
+          />
+        </>
+      ) : null}
+
+      {mode === "purplePlugin" ? (
+        <>
+          <CategoryHeader
+            eyebrow="Purple Plugin Category"
+            title="Purple plugin binding, execution, and delivery"
+            description="หน้านี้รวม Purple plugin lifecycle ทั้ง binding, run, export-related delivery, approval, และ escalation."
+          />
+          <FeatureGuidePanel
+            eyebrow="Feature Coverage"
+            title="What belongs in Purple Plugin"
+            description="เฉพาะ Purple AI co-workers และ delivery controls ของ Purple plugin เท่านั้น"
+            items={FEATURE_GUIDES.purplePlugin}
+          />
+          <CoworkerPluginPanel
+            selectedSite={selectedSite}
+            canView={canViewCompetitive}
+            canEditPolicy={canEditPolicy}
+            canApprove={canApprove}
+            fixedCategory="purple"
+          />
+          <CoworkerDeliveryPanel
+            selectedSite={selectedSite}
+            canView={canViewCompetitive}
+            canEditPolicy={canEditPolicy}
+            canApprove={canApprove}
+            pluginCategory="purple"
           />
         </>
       ) : null}

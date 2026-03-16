@@ -33,6 +33,7 @@ type Props = {
   canView: boolean;
   canEditPolicy: boolean;
   canApprove: boolean;
+  pluginCategory?: "red" | "blue" | "purple";
 };
 
 type ChannelFormState = {
@@ -68,7 +69,7 @@ function buildChannelForm(profile: SiteCoworkerDeliveryProfileRow): ChannelFormS
   };
 }
 
-export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, canApprove }: Props) {
+export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, canApprove, pluginCategory }: Props) {
   const [plugins, setPlugins] = useState<SiteCoworkerPluginListResponse | null>(null);
   const [profiles, setProfiles] = useState<SiteCoworkerDeliveryProfileRow[]>([]);
   const [events, setEvents] = useState<SiteCoworkerDeliveryEventsResponse | null>(null);
@@ -110,7 +111,7 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
     try {
       const [federationData, pluginData, profileData, eventData, slaData] = await Promise.all([
         fetchCoworkerDeliveryEscalationFederation({ limit: 200 }),
-        fetchSiteCoworkerPlugins(selectedSite.site_id),
+        fetchSiteCoworkerPlugins(selectedSite.site_id, { category: pluginCategory }),
         fetchSiteCoworkerDeliveryProfiles(selectedSite.site_id),
         fetchSiteCoworkerDeliveryEvents(selectedSite.site_id, { limit: 20 }),
         fetchSiteCoworkerDeliverySla(selectedSite.site_id, { limit: 100 }),
@@ -139,7 +140,7 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
 
   useEffect(() => {
     void load();
-  }, [selectedSite?.site_id, canView]);
+  }, [selectedSite?.site_id, canView, pluginCategory]);
 
   const installedPlugins = useMemo(() => (plugins?.rows || []).filter((row) => row.installed), [plugins]);
   const selectedPlugin = useMemo(
@@ -150,6 +151,14 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
     () => escalationFederation?.rows.find((row) => row.site_id === selectedSite?.site_id) || null,
     [escalationFederation, selectedSite?.site_id],
   );
+  const visibleEvents = useMemo(() => {
+    const allowedCodes = new Set(installedPlugins.map((row) => row.plugin_code));
+    return (events?.rows || []).filter((row) => allowedCodes.has(row.plugin_code));
+  }, [events?.rows, installedPlugins]);
+  const visiblePendingRows = useMemo(() => {
+    const allowedCodes = new Set(installedPlugins.map((row) => row.plugin_code));
+    return (sla?.pending_rows || []).filter((row) => allowedCodes.has(row.plugin_code));
+  }, [sla?.pending_rows, installedPlugins]);
 
   useEffect(() => {
     if (!selectedPlugin && installedPlugins[0]) {
@@ -379,7 +388,7 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
     <section className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Phase 77 Delivery Layer</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Plugin Delivery & Escalation</h2>
           <p className="mt-1 text-xs text-slate-400 wrap-anywhere">
             Thai-native delivery profiles for AI co-workers. Preview and push plugin output to Telegram, LINE, Teams, or webhook
             without changing the customer workflow.
@@ -402,7 +411,16 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
       {error ? <p className="mt-3 text-sm text-danger wrap-anywhere">{error}</p> : null}
       {message ? <p className="mt-3 text-xs text-accent wrap-anywhere">{message}</p> : null}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+      <div className="mt-4 space-y-4">
+        <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">What This Section Covers</h3>
+          <div className="mt-3 space-y-2 text-xs text-slate-300">
+            <p className="wrap-anywhere">1. Delivery profile policy for AI plugin outputs by channel.</p>
+            <p className="wrap-anywhere">2. Thai preview, dispatch, approval, and review workflow for plugin messages.</p>
+            <p className="wrap-anywhere">3. Escalation policy, SLA tracking, and federation posture for plugin notifications.</p>
+          </div>
+        </div>
+
         <div>
           <div className="grid gap-3 md:grid-cols-2">
             {CHANNELS.map((channel) => {
@@ -510,7 +528,7 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
           </div>
         </div>
 
-        <aside className="space-y-4">
+        <div className="space-y-4">
           <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">Escalation Policy</h3>
             <p className="mt-2 text-[11px] text-slate-400 wrap-anywhere">
@@ -648,9 +666,9 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
                 </p>
               </div>
             </div>
-            {(sla?.pending_rows || []).length > 0 ? (
+            {visiblePendingRows.length > 0 ? (
               <div className="mt-3 max-h-48 space-y-2 overflow-auto">
-                {(sla?.pending_rows || []).map((row) => (
+                {visiblePendingRows.map((row) => (
                   <div key={row.event_id} className="rounded-md border border-slate-800 bg-panelAlt/25 p-3 text-xs">
                     <p className="text-slate-100 wrap-anywhere">
                       [{row.channel}] {row.title}
@@ -781,8 +799,8 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
           <div className="rounded-lg border border-slate-800 bg-panelAlt/20 p-4">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-300">Delivery Event Feed</h3>
             <div className="mt-3 max-h-[420px] overflow-auto space-y-2">
-              {(events?.rows || []).length === 0 ? <p className="text-xs text-slate-500">No delivery events yet.</p> : null}
-              {(events?.rows || []).map((row) => (
+              {visibleEvents.length === 0 ? <p className="text-xs text-slate-500">No delivery events yet.</p> : null}
+              {visibleEvents.map((row) => (
                 <div key={row.event_id} className="rounded-md border border-slate-800 bg-panelAlt/25 p-3 text-xs">
                   <p className="text-slate-100 wrap-anywhere">
                     {row.display_name_th || row.plugin_code} [{row.channel}] [{row.status}]
@@ -828,7 +846,7 @@ export function CoworkerDeliveryPanel({ selectedSite, canView, canEditPolicy, ca
               ))}
             </div>
           </div>
-        </aside>
+        </div>
       </div>
     </section>
   );
