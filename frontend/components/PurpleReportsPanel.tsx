@@ -1,18 +1,42 @@
 import { useEffect, useState } from "react";
 
 import {
+  exportSitePurpleIncidentReport,
+  exportSitePurpleMitreHeatmap,
+  exportSitePurpleRegulatedReport,
+  exportSitePurpleRoiBoardPack,
+  fetchPurpleExportTemplatePacks,
+  fetchPurpleRoiPortfolioRollup,
+  fetchPurpleRoiTemplatePacks,
   fetchSiteCaseGraph,
   fetchSitePurpleExecutiveFederation,
   fetchSitePurpleExecutiveScorecard,
   fetchSitePurpleIsoGapTemplate,
+  fetchSitePurpleNistGapTemplate,
+  fetchSitePurpleRoiDashboardSnapshots,
+  fetchSitePurpleRoiDashboardTrends,
+  fetchSitePurpleReportReleases,
   fetchSitePurpleReports,
+  generateSitePurpleRoiDashboard,
   generateSitePurpleAnalysis,
+  requestSitePurpleReportRelease,
+  reviewPurpleReportRelease,
 } from "@/lib/api";
 import type {
+  PurpleExportTemplatePackResponse,
+  PurpleRoiPortfolioRollupResponse,
+  PurpleRoiTemplatePackResponse,
   SiteCaseGraphResponse,
+  SitePurpleIncidentReportExportResponse,
+  SitePurpleMitreHeatmapExportResponse,
+  SitePurpleRegulatedReportExportResponse,
+  SitePurpleRoiBoardExportResponse,
   SitePurpleExecutiveFederationResponse,
   SitePurpleExecutiveScorecardResponse,
   SitePurpleIsoGapTemplateResponse,
+  SitePurpleReportReleaseListResponse,
+  SitePurpleRoiDashboardSnapshotListResponse,
+  SitePurpleRoiDashboardTrendResponse,
   SitePurpleReportHistoryResponse,
   SiteRow,
 } from "@/lib/types";
@@ -20,6 +44,23 @@ import type {
 type Props = {
   selectedSite: SiteRow | null;
 };
+
+const PURPLE_SERVICE_MENUS = [
+  {
+    title: "Automated ISO/NIST Gap Analysis",
+    fit: "บริษัทที่ต้องทำ compliance หรือเตรียม audit",
+    value: "ลดเวลาทำเอกสารจากหลายสัปดาห์เหลือระดับนาที และพร้อมส่งตรวจได้เร็วขึ้น",
+    status: "live",
+    note: "Mapped to ISO 27001 + NIST CSF gap templates with unified evidence correlation",
+  },
+  {
+    title: "ROI Security Dashboard",
+    fit: "CISO หรือผู้บริหารที่ต้องสื่อสารความคุ้มค่าของงบ security",
+    value: "สรุปผลลัพธ์ของเครื่องมือความปลอดภัยเป็นตัวเลขที่ผู้บริหารเข้าใจได้ทันที",
+    status: "live",
+    note: "Board-ready ROI snapshot with quantified noise reduction, automation coverage, and effort saved",
+  },
+];
 
 export function PurpleReportsPanel({ selectedSite }: Props) {
   const [reports, setReports] = useState<SitePurpleReportHistoryResponse | null>(null);
@@ -30,13 +71,51 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
   const [caseGraph, setCaseGraph] = useState<SiteCaseGraphResponse | null>(null);
   const [executive, setExecutive] = useState<SitePurpleExecutiveScorecardResponse | null>(null);
   const [federation, setFederation] = useState<SitePurpleExecutiveFederationResponse | null>(null);
+  const [roiSnapshots, setRoiSnapshots] = useState<SitePurpleRoiDashboardSnapshotListResponse | null>(null);
+  const [roiTrends, setRoiTrends] = useState<SitePurpleRoiDashboardTrendResponse | null>(null);
+  const [roiPortfolio, setRoiPortfolio] = useState<PurpleRoiPortfolioRollupResponse | null>(null);
+  const [roiTemplatePacks, setRoiTemplatePacks] = useState<PurpleRoiTemplatePackResponse | null>(null);
+  const [roiExport, setRoiExport] = useState<SitePurpleRoiBoardExportResponse | null>(null);
+  const [purpleTemplatePacks, setPurpleTemplatePacks] = useState<PurpleExportTemplatePackResponse | null>(null);
+  const [mitreExport, setMitreExport] = useState<SitePurpleMitreHeatmapExportResponse | null>(null);
+  const [incidentExport, setIncidentExport] = useState<SitePurpleIncidentReportExportResponse | null>(null);
+  const [regulatedExport, setRegulatedExport] = useState<SitePurpleRegulatedReportExportResponse | null>(null);
+  const [reportReleases, setReportReleases] = useState<SitePurpleReportReleaseListResponse | null>(null);
+  const [roiLookbackDays, setRoiLookbackDays] = useState(30);
+  const [roiHourlyCost, setRoiHourlyCost] = useState(18);
+  const [roiMinutesPerAlert, setRoiMinutesPerAlert] = useState(12);
+  const [roiExportFormat, setRoiExportFormat] = useState<"pdf" | "ppt">("pdf");
+  const [roiTemplatePack, setRoiTemplatePack] = useState("roi_board_minimal");
+  const [roiExportTitle, setRoiExportTitle] = useState("");
+  const [roiIncludePortfolio, setRoiIncludePortfolio] = useState(true);
+  const [purpleMitreExportFormat, setPurpleMitreExportFormat] = useState<"markdown" | "csv" | "attack_layer_json">("markdown");
+  const [purpleMitreIncludeRecommendations, setPurpleMitreIncludeRecommendations] = useState(true);
+  const [purpleIncidentTemplatePack, setPurpleIncidentTemplatePack] = useState("incident_company_standard");
+  const [purpleIncidentExportFormat, setPurpleIncidentExportFormat] = useState<"markdown" | "json" | "pdf" | "docx">("markdown");
+  const [purpleRegulatedTemplatePack, setPurpleRegulatedTemplatePack] = useState("regulated_nca_th");
+  const [purpleRegulatedExportFormat, setPurpleRegulatedExportFormat] = useState<"markdown" | "json" | "pdf" | "docx">("markdown");
 
   const load = async () => {
     if (!selectedSite) return;
     setLoading(true);
     setError("");
     try {
-      setReports(await fetchSitePurpleReports(selectedSite.site_id, 20));
+      const [reportRows, roiRows, trendRows, portfolioRows, templatePacks, roiPackRows, releaseRows] = await Promise.all([
+        fetchSitePurpleReports(selectedSite.site_id, 20),
+        fetchSitePurpleRoiDashboardSnapshots(selectedSite.site_id, 10),
+        fetchSitePurpleRoiDashboardTrends(selectedSite.site_id, 12),
+        fetchPurpleRoiPortfolioRollup({ tenant_code: selectedSite.tenant_code, limit: 100 }),
+        fetchPurpleExportTemplatePacks(),
+        fetchPurpleRoiTemplatePacks(),
+        fetchSitePurpleReportReleases(selectedSite.site_id, 10),
+      ]);
+      setReports(reportRows);
+      setRoiSnapshots(roiRows);
+      setRoiTrends(trendRows);
+      setRoiPortfolio(portfolioRows);
+      setPurpleTemplatePacks(templatePacks);
+      setRoiTemplatePacks(roiPackRows);
+      setReportReleases(releaseRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "purple_reports_load_failed");
     } finally {
@@ -73,6 +152,19 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
       setIsoTemplate(await fetchSitePurpleIsoGapTemplate(selectedSite.site_id, 200));
     } catch (err) {
       setError(err instanceof Error ? err.message : "purple_iso_template_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const generateNistTemplate = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      setIsoTemplate(await fetchSitePurpleNistGapTemplate(selectedSite.site_id, 200));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_nist_template_failed");
     } finally {
       setBusy(false);
     }
@@ -118,7 +210,157 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
     }
   };
 
+  const generateRoiDashboard = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      await generateSitePurpleRoiDashboard(selectedSite.site_id, {
+        lookback_days: roiLookbackDays,
+        analyst_hourly_cost_usd: roiHourlyCost,
+        analyst_minutes_per_alert: roiMinutesPerAlert,
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "roi_dashboard_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportRoiBoardPack = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      setRoiExport(
+        await exportSitePurpleRoiBoardPack(selectedSite.site_id, {
+          export_format: roiExportFormat,
+          template_pack: roiTemplatePack,
+          title_override: roiExportTitle,
+          include_portfolio: roiIncludePortfolio,
+          tenant_code: selectedSite.tenant_code,
+          site_limit: 100,
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "roi_export_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportMitreHeatmap = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      setMitreExport(
+        await exportSitePurpleMitreHeatmap(selectedSite.site_id, {
+          export_format: purpleMitreExportFormat,
+          include_recommendations: purpleMitreIncludeRecommendations,
+          lookback_runs: 30,
+          lookback_events: 500,
+          sla_target_seconds: 120,
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_mitre_export_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportIncidentReport = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      setIncidentExport(
+        await exportSitePurpleIncidentReport(selectedSite.site_id, {
+          template_pack: purpleIncidentTemplatePack,
+          export_format: purpleIncidentExportFormat,
+          include_regulatory_mapping: true,
+          blue_event_limit: 20,
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_incident_export_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportRegulatedReport = async () => {
+    if (!selectedSite) return;
+    setBusy(true);
+    setError("");
+    try {
+      setRegulatedExport(
+        await exportSitePurpleRegulatedReport(selectedSite.site_id, {
+          template_pack: purpleRegulatedTemplatePack,
+          export_format: purpleRegulatedExportFormat,
+          include_incident_context: true,
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_regulated_export_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const requestRelease = async (reportKind: "incident_report" | "regulated_report") => {
+    if (!selectedSite) return;
+    const activeExport = reportKind === "incident_report" ? incidentExport?.export : regulatedExport?.export;
+    if (!activeExport) return;
+    setBusy(true);
+    setError("");
+    try {
+      await requestSitePurpleReportRelease(selectedSite.site_id, {
+        report_kind: reportKind,
+        export_format: activeExport.export_format as "markdown" | "json" | "pdf" | "docx",
+        title: activeExport.title,
+        filename: activeExport.filename,
+        payload: {
+          template_pack: activeExport.template_pack,
+          generated_at: activeExport.generated_at,
+          byte_size: activeExport.byte_size || 0,
+          renderer: activeExport.renderer || "text",
+        },
+        requester: "purple_service_operator",
+        note: "requested_from_purple_dashboard",
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_release_request_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reviewRelease = async (releaseId: string, approve: boolean) => {
+    setBusy(true);
+    setError("");
+    try {
+      await reviewPurpleReportRelease(releaseId, {
+        approve,
+        approver: "security_lead",
+        note: approve ? "approved_from_purple_dashboard" : "rejected_from_purple_dashboard",
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "purple_release_review_failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const latest = reports?.rows?.[0];
+  const incidentTemplatePacks = (purpleTemplatePacks?.rows || []).filter((row) => row.kind === "incident_report");
+  const regulatedTemplatePacks = (purpleTemplatePacks?.rows || []).filter((row) => row.kind === "regulated_report");
+  const selectedRoiTemplate = (roiTemplatePacks?.rows || []).find((row) => row.pack_code === roiTemplatePack) || null;
+  const latestRelease = reportReleases?.rows?.[0] || null;
 
   return (
     <section className="card p-4">
@@ -143,6 +385,14 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
         <button
           type="button"
           disabled={!selectedSite || busy}
+          onClick={() => void generateNistTemplate()}
+          className="rounded-md border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-400 disabled:opacity-60"
+        >
+          NIST CSF Gap
+        </button>
+        <button
+          type="button"
+          disabled={!selectedSite || busy}
           onClick={() => void loadCaseGraph()}
           className="rounded-md border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-400 disabled:opacity-60"
         >
@@ -156,8 +406,47 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
         >
           Executive Scorecard
         </button>
+        <button
+          type="button"
+          disabled={!selectedSite || busy}
+          onClick={() => void generateRoiDashboard()}
+          className="rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+        >
+          Generate ROI Dashboard
+        </button>
+        <button
+          type="button"
+          disabled={!selectedSite || busy}
+          onClick={() => void exportRoiBoardPack()}
+          className="rounded-md border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-400 disabled:opacity-60"
+        >
+          Build ROI Board Pack
+        </button>
       </div>
       <p className="mt-1 text-xs text-slate-400">AI correlates Red + Blue operations and generates strategic feedback.</p>
+
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {PURPLE_SERVICE_MENUS.map((item) => (
+          <div key={item.title} className="rounded-md border border-slate-800 bg-panelAlt/20 p-3 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-semibold text-slate-100 wrap-anywhere">{item.title}</p>
+              <span
+                className={
+                  "rounded-full border px-2 py-0.5 text-[10px] uppercase " +
+                  (item.status === "live"
+                    ? "border-accent/60 bg-accent/10 text-accent"
+                    : "border-warning/60 bg-warning/10 text-warning")
+                }
+              >
+                {item.status}
+              </span>
+            </div>
+            <p className="mt-2 text-slate-300 wrap-anywhere">เหมาะกับ: {item.fit}</p>
+            <p className="mt-1 text-slate-300 wrap-anywhere">Value: {item.value}</p>
+            <p className="mt-2 text-[11px] text-slate-500 wrap-anywhere">{item.note}</p>
+          </div>
+        ))}
+      </div>
 
       {loading ? <p className="mt-3 text-sm text-slate-400">Analyzing...</p> : null}
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
@@ -179,6 +468,507 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
             <p className="mt-1 text-slate-200 wrap-anywhere">{row.summary}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-3 rounded border border-slate-800 bg-panelAlt/20 p-2 text-xs">
+        <p className="text-slate-300">ROI Security Dashboard</p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <label className="text-[11px] text-slate-400">
+            Lookback Days
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={roiLookbackDays}
+              onChange={(event) => setRoiLookbackDays(Number(event.target.value))}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            />
+          </label>
+          <label className="text-[11px] text-slate-400">
+            Analyst $/hour
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={roiHourlyCost}
+              onChange={(event) => setRoiHourlyCost(Number(event.target.value))}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            />
+          </label>
+          <label className="text-[11px] text-slate-400">
+            Minutes / alert
+            <input
+              type="number"
+              min={1}
+              max={240}
+              value={roiMinutesPerAlert}
+              onChange={(event) => setRoiMinutesPerAlert(Number(event.target.value))}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            />
+          </label>
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <label className="text-[11px] text-slate-400">
+            Export Format
+            <select
+              value={roiExportFormat}
+              onChange={(event) => setRoiExportFormat(event.target.value as "pdf" | "ppt")}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            >
+              <option value="pdf">pdf</option>
+              <option value="ppt">ppt</option>
+            </select>
+          </label>
+          <label className="text-[11px] text-slate-400">
+            Template Pack
+            <select
+              value={roiTemplatePack}
+              onChange={(event) => setRoiTemplatePack(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            >
+              {(roiTemplatePacks?.rows || []).map((pack) => (
+                <option key={pack.pack_code} value={pack.pack_code}>
+                  {pack.display_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[11px] text-slate-400 col-span-2">
+            Export Title Override
+            <input
+              type="text"
+              value={roiExportTitle}
+              onChange={(event) => setRoiExportTitle(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+            />
+          </label>
+        </div>
+        {selectedRoiTemplate ? (
+          <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-200 wrap-anywhere">
+              {selectedRoiTemplate.display_name} [{selectedRoiTemplate.audience}] accent=#{selectedRoiTemplate.accent_hex}
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">{selectedRoiTemplate.description}</p>
+            <p className="mt-1 text-slate-500 wrap-anywhere">
+              layout={selectedRoiTemplate.layout_style} cover={selectedRoiTemplate.cover_label} footer={selectedRoiTemplate.footer_label}
+            </p>
+            <p className="mt-1 text-slate-500 wrap-anywhere">sections={selectedRoiTemplate.section_order.join(" -> ")}</p>
+          </div>
+        ) : null}
+        <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-slate-300">
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={roiIncludePortfolio}
+              onChange={(event) => setRoiIncludePortfolio(event.target.checked)}
+            />
+            include tenant portfolio roll-up
+          </label>
+        </div>
+        {(roiSnapshots?.rows || []).length > 0 ? (
+          <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-200 wrap-anywhere">{String(roiSnapshots?.rows[0].summary?.headline_th || "")}</p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">{String(roiSnapshots?.rows[0].summary?.board_statement_th || "")}</p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              validated_findings=
+              {String((roiSnapshots?.rows[0].summary?.board_metrics as Record<string, unknown> | undefined)?.validated_findings ?? 0)}
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              automation_coverage_pct=
+              {String((roiSnapshots?.rows[0].summary?.board_metrics as Record<string, unknown> | undefined)?.automation_coverage_pct ?? 0)}
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              estimated_manual_effort_saved_usd=
+              {String((roiSnapshots?.rows[0].summary?.board_metrics as Record<string, unknown> | undefined)?.estimated_manual_effort_saved_usd ?? 0)}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-slate-500">No ROI snapshot yet.</p>
+        )}
+        {roiTrends ? (
+          <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-300">
+              Trend: points={roiTrends.summary.trend_points} direction={roiTrends.summary.direction} latest={roiTrends.summary.latest_created_at || "n/a"}
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              delta validated={roiTrends.summary.validated_findings_delta} automation={roiTrends.summary.automation_coverage_delta_pct}
+              noise={roiTrends.summary.noise_reduction_delta_pct} saved_usd={roiTrends.summary.estimated_manual_effort_saved_delta_usd}
+            </p>
+            <div className="mt-2 max-h-32 overflow-auto rounded border border-slate-800 p-2">
+              {(roiTrends.rows || []).slice(0, 6).map((row) => (
+                <p key={row.snapshot_id} className="text-slate-300 wrap-anywhere">
+                  {row.created_at} findings={row.validated_findings} auto={row.automation_coverage_pct}% noise={row.noise_reduction_pct}% saved=${row.estimated_manual_effort_saved_usd}
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {roiPortfolio ? (
+          <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-300">
+              Portfolio: tenant={roiPortfolio.summary.tenant_code || selectedSite?.tenant_code || "all"} sites={roiPortfolio.summary.total_sites}
+              snapshots={roiPortfolio.summary.sites_with_snapshots} avg_auto={roiPortfolio.summary.average_automation_coverage_pct}%
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              total_validated={roiPortfolio.summary.total_validated_findings} total_saved_usd={roiPortfolio.summary.total_estimated_manual_effort_saved_usd}
+              top_site={roiPortfolio.summary.highest_value_site_code || "n/a"}
+            </p>
+            <div className="mt-2 max-h-36 overflow-auto rounded border border-slate-800 p-2">
+              {(roiPortfolio.rows || []).slice(0, 6).map((row) => (
+                <p key={row.site_id} className="text-slate-300 wrap-anywhere">
+                  {row.tenant_code}/{row.site_code} [{row.status}] findings={row.validated_findings} auto={row.automation_coverage_pct}% noise={row.noise_reduction_pct}% saved=${row.estimated_manual_effort_saved_usd}
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {roiExport ? (
+          <div className="mt-2 rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-200 wrap-anywhere">
+              Export Pack: {roiExport.export.title} {"->"} {roiExport.export.filename}
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              format={roiExport.export.export_format} renderer={roiExport.export.renderer} mime={roiExport.export.mime_type} size={roiExport.export.byte_size}B
+            </p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              template={roiExport.export.template_pack.display_name} includes_portfolio={String(roiExport.export.includes_portfolio)} generated={roiExport.export.generated_at}
+            </p>
+            <a
+              href={`data:${roiExport.export.mime_type};base64,${roiExport.export.content_base64}`}
+              download={roiExport.export.filename}
+              className="mt-2 inline-flex rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25"
+            >
+              Download Native {roiExport.export.export_format === "ppt" ? "PPTX" : "PDF"}
+            </a>
+            <div className="mt-2 max-h-36 overflow-auto rounded border border-slate-800 p-2">
+              {roiExport.export.sections.map((section) => (
+                <div key={section.section} className="mb-2">
+                  <p className="text-slate-200 wrap-anywhere">{section.section}</p>
+                  {section.content.map((line, index) => (
+                    <p key={`${section.section}-${index}`} className="text-slate-400 wrap-anywhere">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-3 rounded border border-slate-800 bg-panelAlt/20 p-3 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-slate-200">Purple Plugin Export Layer</p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              Export MITRE heatmap, incident packs, และ regulatory outputs จาก evidence ล่าสุดของ Red/Blue/Purple
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            packs={purpleTemplatePacks?.count ?? 0} incident={incidentTemplatePacks.length} regulated={regulatedTemplatePacks.length}
+          </p>
+        </div>
+
+        {(purpleTemplatePacks?.rows || []).length > 0 ? (
+          <div className="mt-2 max-h-32 overflow-auto rounded border border-slate-800 bg-panelAlt/30 p-2">
+            {purpleTemplatePacks?.rows.map((pack) => (
+              <div key={pack.pack_code} className="mb-2 rounded border border-slate-800 p-2">
+                <p className="text-slate-200 wrap-anywhere">
+                  {pack.display_name} [{pack.kind}] audience={pack.audience}
+                </p>
+                <p className="mt-1 text-slate-400 wrap-anywhere">{pack.description}</p>
+                <p className="mt-1 text-slate-500 wrap-anywhere">sections: {pack.sections.join(", ")}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-slate-500">No export template packs loaded.</p>
+        )}
+
+        <div className="mt-3 grid gap-3 xl:grid-cols-3">
+          <div className="rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-300">MITRE Heatmap Export</p>
+            <div className="mt-2 grid gap-2">
+              <label className="text-[11px] text-slate-400">
+                Format
+                <select
+                  value={purpleMitreExportFormat}
+                  onChange={(event) =>
+                    setPurpleMitreExportFormat(event.target.value as "markdown" | "csv" | "attack_layer_json")
+                  }
+                  className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+                >
+                  <option value="markdown">markdown</option>
+                  <option value="csv">csv</option>
+                  <option value="attack_layer_json">attack_layer_json</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={purpleMitreIncludeRecommendations}
+                  onChange={(event) => setPurpleMitreIncludeRecommendations(event.target.checked)}
+                />
+                include recommendations
+              </label>
+              <button
+                type="button"
+                disabled={!selectedSite || busy}
+                onClick={() => void exportMitreHeatmap()}
+                className="rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+              >
+                Export MITRE Heatmap
+              </button>
+            </div>
+            {mitreExport ? (
+              <div className="mt-2 rounded border border-slate-800 p-2">
+                <p className="text-slate-200 wrap-anywhere">
+                  {mitreExport.export.filename} [{mitreExport.export.export_format}]
+                </p>
+                <p className="mt-1 text-slate-400 wrap-anywhere">
+                  attacked={String(mitreExport.export.summary.attacked_techniques ?? 0)} covered=
+                  {String(mitreExport.export.summary.covered_techniques ?? 0)} sla=
+                  {String(mitreExport.export.remediation_sla.sla_status ?? "unknown")}
+                </p>
+                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-slate-400">
+                  {mitreExport.export.content}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-300">Incident Report Export</p>
+            <div className="mt-2 grid gap-2">
+              <label className="text-[11px] text-slate-400">
+                Template Pack
+                <select
+                  value={purpleIncidentTemplatePack}
+                  onChange={(event) => setPurpleIncidentTemplatePack(event.target.value)}
+                  className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+                >
+                  {incidentTemplatePacks.map((pack) => (
+                    <option key={pack.pack_code} value={pack.pack_code}>
+                      {pack.display_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-400">
+                Format
+                <select
+                  value={purpleIncidentExportFormat}
+                  onChange={(event) => setPurpleIncidentExportFormat(event.target.value as "markdown" | "json" | "pdf" | "docx")}
+                  className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+                >
+                  <option value="markdown">markdown</option>
+                  <option value="json">json</option>
+                  <option value="pdf">pdf</option>
+                  <option value="docx">docx</option>
+                </select>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!selectedSite || busy}
+                  onClick={() => void exportIncidentReport()}
+                  className="rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+                >
+                  Export Incident Report
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedSite || busy || !incidentExport}
+                  onClick={() => void requestRelease("incident_report")}
+                  className="rounded-md border border-warning/60 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning hover:bg-warning/20 disabled:opacity-60"
+                >
+                  Request Final Release
+                </button>
+              </div>
+            </div>
+            {incidentExport ? (
+              <div className="mt-2 rounded border border-slate-800 p-2">
+                <p className="text-slate-200 wrap-anywhere">
+                  {incidentExport.export.filename} [{incidentExport.export.export_format}]
+                </p>
+                <p className="mt-1 text-slate-400 wrap-anywhere">
+                  renderer={incidentExport.export.renderer || "text"} mime={incidentExport.export.mime_type || "text/plain"} size=
+                  {String(incidentExport.export.byte_size || 0)}B
+                </p>
+                {incidentExport.export.content_base64 ? (
+                  <a
+                    href={`data:${incidentExport.export.mime_type || "application/octet-stream"};base64,${incidentExport.export.content_base64}`}
+                    download={incidentExport.export.filename}
+                    className="mt-2 inline-flex rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25"
+                  >
+                    Download Native {incidentExport.export.export_format.toUpperCase()}
+                  </a>
+                ) : null}
+                <div className="mt-2 max-h-40 overflow-auto rounded border border-slate-800 p-2">
+                  {incidentExport.export.sections.map((section) => (
+                    <div key={section.section} className="mb-2">
+                      <p className="text-slate-200 wrap-anywhere">{section.section}</p>
+                      {section.content.map((line, index) => (
+                        <p key={`${section.section}-${index}`} className="text-slate-400 wrap-anywhere">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded border border-slate-800 bg-panelAlt/30 p-2">
+            <p className="text-slate-300">Regulated Report Export</p>
+            <div className="mt-2 grid gap-2">
+              <label className="text-[11px] text-slate-400">
+                Template Pack
+                <select
+                  value={purpleRegulatedTemplatePack}
+                  onChange={(event) => setPurpleRegulatedTemplatePack(event.target.value)}
+                  className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+                >
+                  {regulatedTemplatePacks.map((pack) => (
+                    <option key={pack.pack_code} value={pack.pack_code}>
+                      {pack.display_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-[11px] text-slate-400">
+                Format
+                <select
+                  value={purpleRegulatedExportFormat}
+                  onChange={(event) => setPurpleRegulatedExportFormat(event.target.value as "markdown" | "json" | "pdf" | "docx")}
+                  className="mt-1 w-full rounded border border-slate-700 bg-panelAlt/40 px-2 py-1 text-[11px] text-slate-100"
+                >
+                  <option value="markdown">markdown</option>
+                  <option value="json">json</option>
+                  <option value="pdf">pdf</option>
+                  <option value="docx">docx</option>
+                </select>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!selectedSite || busy}
+                  onClick={() => void exportRegulatedReport()}
+                  className="rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+                >
+                  Export Regulated Report
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedSite || busy || !regulatedExport}
+                  onClick={() => void requestRelease("regulated_report")}
+                  className="rounded-md border border-warning/60 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning hover:bg-warning/20 disabled:opacity-60"
+                >
+                  Request Final Release
+                </button>
+              </div>
+            </div>
+            {regulatedExport ? (
+              <div className="mt-2 rounded border border-slate-800 p-2">
+                <p className="text-slate-200 wrap-anywhere">
+                  {regulatedExport.export.filename} [{regulatedExport.export.export_format}]
+                </p>
+                <p className="mt-1 text-slate-400 wrap-anywhere">
+                  renderer={regulatedExport.export.renderer || "text"} mime={regulatedExport.export.mime_type || "text/plain"} size=
+                  {String(regulatedExport.export.byte_size || 0)}B
+                </p>
+                {regulatedExport.export.content_base64 ? (
+                  <a
+                    href={`data:${regulatedExport.export.mime_type || "application/octet-stream"};base64,${regulatedExport.export.content_base64}`}
+                    download={regulatedExport.export.filename}
+                    className="mt-2 inline-flex rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25"
+                  >
+                    Download Native {regulatedExport.export.export_format.toUpperCase()}
+                  </a>
+                ) : null}
+                <div className="mt-2 max-h-40 overflow-auto rounded border border-slate-800 p-2">
+                  {regulatedExport.export.sections.map((section) => (
+                    <div key={section.section} className="mb-2">
+                      <p className="text-slate-200 wrap-anywhere">{section.section}</p>
+                      {section.content.map((line, index) => (
+                        <p key={`${section.section}-${index}`} className="text-slate-400 wrap-anywhere">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded border border-slate-800 bg-panelAlt/20 p-3 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-slate-200">Final Report Release Approval</p>
+            <p className="mt-1 text-slate-400 wrap-anywhere">
+              ใช้ workflow นี้เพื่อขออนุมัติ report ขั้นสุดท้ายหลัง export เป็น markdown/json/pdf/docx แล้ว
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            latest={latestRelease?.status || "none"} count={reportReleases?.count ?? 0}
+          </p>
+        </div>
+        <div className="mt-2 max-h-48 overflow-auto rounded border border-slate-800 bg-panelAlt/30 p-2">
+          {(reportReleases?.rows || []).map((row) => (
+            <div key={row.release_id} className="mb-2 rounded border border-slate-800 p-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-slate-200 wrap-anywhere">
+                  {row.report_kind} [{row.export_format}] {row.filename}
+                </p>
+                <span
+                  className={
+                    "rounded-full border px-2 py-0.5 text-[10px] uppercase " +
+                    (row.status === "approved"
+                      ? "border-accent/60 bg-accent/10 text-accent"
+                      : row.status === "rejected"
+                        ? "border-danger/60 bg-danger/10 text-danger"
+                        : "border-warning/60 bg-warning/10 text-warning")
+                  }
+                >
+                  {row.status}
+                </span>
+              </div>
+              <p className="mt-1 text-slate-400 wrap-anywhere">
+                requested_by={row.requested_by} approved_by={row.approved_by || "-"} created={row.created_at}
+              </p>
+              <p className="mt-1 text-slate-500 wrap-anywhere">{row.note || "no note"}</p>
+              <p className="mt-1 text-slate-500 wrap-anywhere">
+                renderer={String(row.payload.renderer || "text")} size={String(row.payload.byte_size || 0)} generated=
+                {String(row.payload.generated_at || "-")}
+              </p>
+              {row.status === "pending_approval" ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void reviewRelease(row.release_id, true)}
+                    className="rounded-md border border-accent/70 bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/25 disabled:opacity-60"
+                  >
+                    Approve Release
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void reviewRelease(row.release_id, false)}
+                    className="rounded-md border border-danger/60 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/20 disabled:opacity-60"
+                  >
+                    Reject Release
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ))}
+          {(reportReleases?.rows || []).length === 0 ? <p className="text-slate-500">No report releases requested yet.</p> : null}
+        </div>
       </div>
 
       {isoTemplate ? (

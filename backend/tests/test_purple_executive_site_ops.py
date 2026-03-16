@@ -127,3 +127,23 @@ def test_purple_executive_federation_aggregates_sites(monkeypatch) -> None:
     assert result["count"] == 2
     assert result["at_risk_sites"] == 1
     assert result["rows"][0]["site_code"] == "zeta-app"
+
+
+def test_generate_nist_csf_gap_template_returns_framework_controls() -> None:
+    now = datetime.now(timezone.utc)
+    site_id = uuid4()
+    site = SimpleNamespace(id=site_id, site_code="duck-sec-ai", tenant=SimpleNamespace(tenant_code="acb"))
+    red_rows = [SimpleNamespace(findings_json='{"risk_score":55,"missing_security_headers":["content-security-policy"],"sensitive_paths_open":[{"path":"/admin"}]}', created_at=now)]
+    blue_rows = [
+        _BlueEvent(ai_severity="high", status="applied", created_at=now),
+        _BlueEvent(ai_severity="medium", status="open", created_at=now),
+    ]
+    purple_rows = [SimpleNamespace(created_at=now)]
+    db = _FakeDB(scalar_batches=[red_rows, blue_rows, purple_rows], site_map={site_id: site})
+
+    result = site_ops.generate_nist_csf_gap_template(db, site_id, limit=100)
+
+    assert result["status"] == "completed"
+    assert result["framework"] == "NIST Cybersecurity Framework 2.0"
+    assert len(result["controls"]) == 4
+    assert result["controls"][0]["control_id"] == "ID.RA-01"

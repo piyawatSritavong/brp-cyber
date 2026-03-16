@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AppChrome } from "@/components/AppChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,23 +9,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="grid-noise">
-        <nav className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 text-xs sm:px-6 lg:px-8">
-          <Link href="/" className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-slate-500">
-            Dashboard
-          </Link>
-          <Link
-            href="/configuration"
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-slate-500"
-          >
-            Configuration
-          </Link>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
-        </nav>
-        {children}
+    <html lang="en" data-theme="light">
+      <body>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

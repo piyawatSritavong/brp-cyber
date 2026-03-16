@@ -419,7 +419,7 @@ def list_purple_site_reports(db: Session, site_id: UUID, *, limit: int = 30) -> 
     }
 
 
-def generate_iso27001_gap_template(db: Session, site_id: UUID, *, limit: int = 200) -> dict[str, object]:
+def _gap_analysis_context(db: Session, site_id: UUID, *, limit: int = 200) -> dict[str, Any]:
     site = db.get(Site, site_id)
     if not site:
         return {"status": "not_found", "site_id": str(site_id)}
@@ -445,6 +445,37 @@ def generate_iso27001_gap_template(db: Session, site_id: UUID, *, limit: int = 2
     blue_total = len(blue_rows)
     mttr_hint_seconds = 0 if applied_blue == 0 else int((high_blue + 1) * 30)
     coverage = 0.0 if blue_total == 0 else round(applied_blue / blue_total, 4)
+    return {
+        "status": "ok",
+        "site": site,
+        "red_rows": red_rows,
+        "blue_rows": blue_rows,
+        "purple_rows": purple_rows,
+        "missing_headers": missing_headers,
+        "sensitive_open": sensitive_open,
+        "high_blue": high_blue,
+        "applied_blue": applied_blue,
+        "blue_total": blue_total,
+        "mttr_hint_seconds": mttr_hint_seconds,
+        "coverage": coverage,
+    }
+
+
+def generate_iso27001_gap_template(db: Session, site_id: UUID, *, limit: int = 200) -> dict[str, object]:
+    context = _gap_analysis_context(db, site_id, limit=limit)
+    if context.get("status") != "ok":
+        return context
+    site = context["site"]
+    red_rows = context["red_rows"]
+    blue_rows = context["blue_rows"]
+    purple_rows = context["purple_rows"]
+    missing_headers = int(context["missing_headers"])
+    sensitive_open = int(context["sensitive_open"])
+    high_blue = int(context["high_blue"])
+    applied_blue = int(context["applied_blue"])
+    blue_total = int(context["blue_total"])
+    mttr_hint_seconds = int(context["mttr_hint_seconds"])
+    coverage = float(context["coverage"])
 
     def _status(pass_condition: bool, partial_condition: bool) -> str:
         if pass_condition:
@@ -497,6 +528,78 @@ def generate_iso27001_gap_template(db: Session, site_id: UUID, *, limit: int = 2
     return {
         "status": "completed",
         "framework": "ISO/IEC 27001:2022",
+        "summary": summary,
+        "controls": control_rows,
+    }
+
+
+def generate_nist_csf_gap_template(db: Session, site_id: UUID, *, limit: int = 200) -> dict[str, object]:
+    context = _gap_analysis_context(db, site_id, limit=limit)
+    if context.get("status") != "ok":
+        return context
+    site = context["site"]
+    red_rows = context["red_rows"]
+    blue_rows = context["blue_rows"]
+    purple_rows = context["purple_rows"]
+    missing_headers = int(context["missing_headers"])
+    sensitive_open = int(context["sensitive_open"])
+    high_blue = int(context["high_blue"])
+    applied_blue = int(context["applied_blue"])
+    blue_total = int(context["blue_total"])
+    mttr_hint_seconds = int(context["mttr_hint_seconds"])
+    coverage = float(context["coverage"])
+
+    def _status(pass_condition: bool, partial_condition: bool) -> str:
+        if pass_condition:
+            return "pass"
+        if partial_condition:
+            return "partial"
+        return "gap"
+
+    control_rows = [
+        {
+            "control_id": "ID.RA-01",
+            "control_name": "Asset and vulnerability risk visibility",
+            "status": _status(len(red_rows) > 0 and missing_headers == 0 and sensitive_open == 0, len(red_rows) > 0),
+            "evidence": f"red_scans={len(red_rows)} missing_headers={missing_headers} sensitive_paths_open={sensitive_open}",
+            "recommendation": "Maintain continuous discovery plus vulnerability validation for exposed paths and missing protective controls.",
+        },
+        {
+            "control_id": "DE.CM-01",
+            "control_name": "Security continuous monitoring",
+            "status": _status(blue_total > 0 and high_blue == 0, blue_total > 0),
+            "evidence": f"blue_events={blue_total} high_severity={high_blue}",
+            "recommendation": "Expand telemetry coverage and keep detection tuning active for high-severity signals.",
+        },
+        {
+            "control_id": "RS.MA-01",
+            "control_name": "Incident response execution and mitigation",
+            "status": _status(applied_blue > 0 and mttr_hint_seconds <= 120, applied_blue > 0),
+            "evidence": f"applied_actions={applied_blue} mttr_hint_seconds={mttr_hint_seconds}",
+            "recommendation": "Use managed responder approval policies and playbook automation to keep MTTR inside target.",
+        },
+        {
+            "control_id": "GV.RM-01",
+            "control_name": "Risk management strategy informed by operations",
+            "status": _status(len(purple_rows) > 0 and coverage >= 0.5, len(purple_rows) > 0 or coverage > 0),
+            "evidence": f"purple_reports={len(purple_rows)} blue_applied_ratio={coverage}",
+            "recommendation": "Feed Red/Blue evidence into governance reviews and refresh security priorities from measured outcomes.",
+        },
+    ]
+
+    summary = {
+        "site_id": str(site.id),
+        "site_code": site.site_code,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "red_scan_count": len(red_rows),
+        "blue_event_count": blue_total,
+        "purple_report_count": len(purple_rows),
+        "blue_applied_ratio": coverage,
+        "mttr_hint_seconds": mttr_hint_seconds,
+    }
+    return {
+        "status": "completed",
+        "framework": "NIST Cybersecurity Framework 2.0",
         "summary": summary,
         "controls": control_rows,
     }

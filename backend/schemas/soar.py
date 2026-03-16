@@ -30,6 +30,25 @@ class SoarPlaybookApprovalRequest(BaseModel):
     note: str = Field(default="", max_length=2000)
 
 
+class SoarMarketplacePackInstallRequest(BaseModel):
+    actor: str = Field(default="marketplace_installer", min_length=2, max_length=128)
+    scope_override: str = Field(default="", pattern="^(|community|partner|private)$")
+
+
+class SoarPlaybookVerificationRequest(BaseModel):
+    actor: str = Field(default="soar_verifier", min_length=2, max_length=128)
+
+
+class SoarConnectorResultCallbackRequest(BaseModel):
+    connector_source: str = Field(default="generic", min_length=2, max_length=64)
+    contract_code: str = Field(min_length=3, max_length=128)
+    external_action_ref: str = Field(default="", max_length=255)
+    webhook_event_id: str = Field(default="", max_length=255)
+    status: str = Field(default="received", max_length=32)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    actor: str = Field(default="connector_callback", min_length=2, max_length=128)
+
+
 class TenantPlaybookPolicyUpsertRequest(BaseModel):
     tenant_code: str = Field(min_length=2, max_length=64)
     policy_version: str = Field(default="1.0", min_length=1, max_length=16)

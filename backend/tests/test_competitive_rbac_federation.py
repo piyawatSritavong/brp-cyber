@@ -352,6 +352,50 @@ def test_competitive_connector_hygiene_policy_and_scheduler_rbac(monkeypatch) ->
         assert allowed_scheduler.json()["executed_count"] == 1
 
 
+def test_competitive_delivery_escalation_federation_requires_view_scope(monkeypatch) -> None:
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "viewer", "scopes": ["control_plane:read"]},
+    )
+    monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
+    monkeypatch.setattr(
+        competitive_api,
+        "coworker_delivery_escalation_federation_snapshot",
+        lambda db, plugin_code="", approval_sla_minutes=None, limit=200: {
+            "status": "ok",
+            "generated_at": "2026-03-15T00:00:00+00:00",
+            "plugin_code": plugin_code,
+            "approval_sla_minutes": approval_sla_minutes or 15,
+            "count": 1,
+            "summary": {
+                "total_sites": 1,
+                "healthy_sites": 1,
+                "attention_sites": 0,
+                "not_configured_sites": 0,
+                "pending_approval_total": 0,
+                "overdue_total": 0,
+                "enabled_profile_total": 2,
+                "enabled_escalation_policy_total": 1,
+            },
+            "rows": [],
+        },
+    )
+
+    with TestClient(app) as client:
+        denied = client.get("/competitive/coworker/delivery/escalation/federation")
+        assert denied.status_code == 403
+
+        allowed = client.get(
+            "/competitive/coworker/delivery/escalation/federation?plugin_code=blue_thai_alert_translator&approval_sla_minutes=20",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed.status_code == 200
+        payload = allowed.json()
+        assert payload["status"] == "ok"
+        assert payload["summary"]["healthy_sites"] == 1
+
+
 def test_competitive_connector_reliability_rbac(monkeypatch) -> None:
     monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
     monkeypatch.setattr(
@@ -801,6 +845,234 @@ def test_competitive_threat_content_pipeline_rbac(monkeypatch) -> None:
         assert allowed_scheduler.json()["executed_count"] == 1
 
 
+def test_competitive_coworker_plugin_rbac(monkeypatch) -> None:
+    monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
+    monkeypatch.setattr(
+        competitive_api,
+        "list_coworker_plugins",
+        lambda db, category="", active_only=True: {"count": 2, "rows": [{"plugin_code": "blue_log_refiner"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "list_site_coworker_plugins",
+        lambda db, site_id, category="": {"site_id": str(site_id), "count": 1, "rows": [{"plugin_code": "blue_log_refiner"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "upsert_site_coworker_plugin_binding",
+        lambda db, **kwargs: {"status": "created", "binding": kwargs},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "run_site_coworker_plugin",
+        lambda db, site_id, plugin_code, dry_run=None, force=False, actor="": {
+            "status": "dry_run",
+            "site_id": str(site_id),
+            "plugin": {"plugin_code": plugin_code},
+            "run": {"run_id": "run-1"},
+        },
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "list_site_coworker_plugin_runs",
+        lambda db, site_id, category="", limit=100: {"site_id": str(site_id), "count": 1, "rows": [{"run_id": "r1"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "run_coworker_plugin_scheduler",
+        lambda db, limit=200, dry_run_override=None, actor="coworker_plugin_ai": {
+            "timestamp": "2026-03-14T00:00:00+00:00",
+            "scheduled_binding_count": 1,
+            "executed_count": 1,
+            "skipped_count": 0,
+        },
+    )
+
+    site_id = str(uuid4())
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "viewer", "scopes": ["control_plane:read"]},
+    )
+    with TestClient(app) as client:
+        allowed_catalog = client.get("/competitive/coworker/plugins", headers={"Authorization": "Bearer demo"})
+        assert allowed_catalog.status_code == 200
+        assert allowed_catalog.json()["count"] == 2
+
+        allowed_site_plugins = client.get(
+            f"/competitive/sites/{site_id}/coworker/plugins",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_site_plugins.status_code == 200
+        assert allowed_site_plugins.json()["count"] == 1
+
+        allowed_runs = client.get(
+            f"/competitive/sites/{site_id}/coworker/plugins/runs?limit=20",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_runs.status_code == 200
+        assert allowed_runs.json()["count"] == 1
+
+        denied_binding = client.post(
+            f"/competitive/sites/{site_id}/coworker/plugins/bindings",
+            json={"plugin_code": "blue_log_refiner"},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert denied_binding.status_code == 403
+
+        denied_run = client.post(
+            f"/competitive/sites/{site_id}/coworker/plugins/blue_log_refiner/run",
+            json={"dry_run": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert denied_run.status_code == 403
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "editor", "scopes": ["competitive:policy:write"]},
+    )
+    with TestClient(app) as client:
+        allowed_binding = client.post(
+            f"/competitive/sites/{site_id}/coworker/plugins/bindings",
+            json={"plugin_code": "blue_log_refiner", "auto_run": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_binding.status_code == 200
+        assert allowed_binding.json()["status"] == "created"
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "approver", "scopes": ["competitive:approve"]},
+    )
+    with TestClient(app) as client:
+        allowed_run = client.post(
+            f"/competitive/sites/{site_id}/coworker/plugins/blue_log_refiner/run",
+            json={"dry_run": True, "force": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_run.status_code == 200
+        assert allowed_run.json()["status"] == "dry_run"
+
+        allowed_scheduler = client.post(
+            "/competitive/coworker/plugins/scheduler/run?limit=10&dry_run_override=true",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_scheduler.status_code == 200
+        assert allowed_scheduler.json()["executed_count"] == 1
+
+
+def test_competitive_coworker_delivery_rbac(monkeypatch) -> None:
+    monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
+    monkeypatch.setattr(
+        competitive_api,
+        "list_site_coworker_delivery_profiles",
+        lambda db, site_id: {"site_id": str(site_id), "count": 4, "rows": [{"channel": "telegram"}]},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "upsert_site_coworker_delivery_profile",
+        lambda db, **kwargs: {"status": "created", "profile": kwargs},
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "preview_site_coworker_delivery",
+        lambda db, site_id, plugin_code, channel: {
+            "status": "ok",
+            "site_id": str(site_id),
+            "plugin": {"plugin_code": plugin_code},
+            "preview": {"channel": channel, "message": "preview"},
+        },
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "dispatch_site_coworker_delivery",
+        lambda db, site_id, plugin_code, channel, dry_run=None, force=False, actor="": {
+            "status": "dry_run",
+            "site_id": str(site_id),
+            "plugin": {"plugin_code": plugin_code},
+            "event": {"event_id": "evt-1", "channel": channel},
+        },
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "list_site_coworker_delivery_events",
+        lambda db, site_id, channel="", limit=100: {"site_id": str(site_id), "count": 1, "rows": [{"event_id": "evt-1"}]},
+    )
+
+    site_id = str(uuid4())
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "viewer", "scopes": ["control_plane:read"]},
+    )
+    with TestClient(app) as client:
+        allowed_profiles = client.get(
+            f"/competitive/sites/{site_id}/coworker/delivery/profiles",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_profiles.status_code == 200
+        assert allowed_profiles.json()["count"] == 4
+
+        allowed_preview = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/blue_log_refiner/preview",
+            json={"channel": "telegram"},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_preview.status_code == 200
+        assert allowed_preview.json()["status"] == "ok"
+
+        allowed_events = client.get(
+            f"/competitive/sites/{site_id}/coworker/delivery/events?limit=20",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_events.status_code == 200
+        assert allowed_events.json()["count"] == 1
+
+        denied_profile = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/profiles",
+            json={"channel": "telegram"},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert denied_profile.status_code == 403
+
+        denied_dispatch = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/blue_log_refiner/dispatch",
+            json={"channel": "telegram", "dry_run": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert denied_dispatch.status_code == 403
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "editor", "scopes": ["competitive:policy:write"]},
+    )
+    with TestClient(app) as client:
+        allowed_profile = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/profiles",
+            json={"channel": "telegram", "enabled": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_profile.status_code == 200
+        assert allowed_profile.json()["status"] == "created"
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "approver", "scopes": ["competitive:approve"]},
+    )
+    with TestClient(app) as client:
+        allowed_dispatch = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/blue_log_refiner/dispatch",
+            json={"channel": "telegram", "dry_run": True, "force": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed_dispatch.status_code == 200
+        assert allowed_dispatch.json()["status"] == "dry_run"
+
+
 class _FakeScalarResult:
     def __init__(self, rows):
         self._rows = rows
@@ -854,3 +1126,85 @@ def test_action_center_sla_federation_snapshot_builds_risk_tiers() -> None:
     assert snapshot["rows"][0]["tenant_code"] == "acb"
     assert snapshot["rows"][0]["risk_tier"] in {"medium", "high", "critical"}
     assert snapshot["rows"][0]["breach_count"] == 2
+
+
+def test_competitive_delivery_review_and_sla_routes_require_permissions(monkeypatch) -> None:
+    site_id = uuid4()
+    event_id = uuid4()
+    monkeypatch.setattr(competitive_api, "token_has_scope", _token_has_scope)
+    monkeypatch.setattr(
+        competitive_api,
+        "get_site_coworker_delivery_sla",
+        lambda db, site_id, limit=100, approval_sla_minutes=None: {
+            "status": "ok",
+            "site_id": str(site_id),
+            "site_code": "duck-sec-ai",
+            "approval_sla_minutes": 15,
+            "summary": {
+                "total_events": 1,
+                "pending_approval_count": 1,
+                "overdue_count": 0,
+                "approved_or_reviewed_count": 0,
+                "average_approval_latency_seconds": 0,
+            },
+            "pending_rows": [],
+        },
+    )
+    monkeypatch.setattr(
+        competitive_api,
+        "review_site_coworker_delivery_event",
+        lambda db, site_id, event_id, approve, actor="security_reviewer", note="": {
+            "status": "sent" if approve else "rejected",
+            "site_id": str(site_id),
+            "site_code": "duck-sec-ai",
+            "event": {
+                "event_id": str(event_id),
+                "site_id": str(site_id),
+                "plugin_id": "",
+                "plugin_code": "blue_log_refiner",
+                "display_name_th": "AI Log Refiner",
+                "channel": "telegram",
+                "status": "sent" if approve else "rejected",
+                "dry_run": False,
+                "severity": "high",
+                "title": "delivery",
+                "preview_text": "delivery preview",
+                "actor": actor,
+                "response": {},
+                "approval_required": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        },
+    )
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "viewer", "scopes": ["competitive:read"]},
+    )
+    with TestClient(app) as client:
+        allowed = client.get(
+            f"/competitive/sites/{site_id}/coworker/delivery/sla",
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert allowed.status_code == 200
+        denied = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/events/{event_id}/review",
+            json={"approve": True},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert denied.status_code == 403
+
+    monkeypatch.setattr(
+        competitive_api,
+        "verify_admin_token",
+        lambda _token: {"valid": True, "actor": "approver", "scopes": ["competitive:approve"]},
+    )
+    with TestClient(app) as client:
+        reviewed = client.post(
+            f"/competitive/sites/{site_id}/coworker/delivery/events/{event_id}/review",
+            json={"approve": True, "actor": "security_reviewer"},
+            headers={"Authorization": "Bearer demo"},
+        )
+        assert reviewed.status_code == 200
+        assert reviewed.json()["status"] == "sent"

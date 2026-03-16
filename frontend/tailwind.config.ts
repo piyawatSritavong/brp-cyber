@@ -5,15 +5,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        panel: "#09141f",
-        panelAlt: "#0f2030",
-        ink: "#d9eef7",
-        accent: "#17c964",
-        warning: "#f5a524",
-        danger: "#f31260"
+        panel: "#FFFFFF",
+        panelAlt: "#FFF4EF",
+        ink: "#110B0A",
+        accent: "#F76C45",
+        warning: "#F76C45",
+        danger: "#110B0A"
       },
       boxShadow: {
-        neon: "0 0 30px rgba(23, 201, 100, 0.2)"
+        neon: "0 0 28px rgba(247, 108, 69, 0.18)"
       }
     }
   },

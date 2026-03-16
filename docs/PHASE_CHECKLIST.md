@@ -2,7 +2,7 @@
 
 ใช้เอกสารนี้เป็นเกณฑ์ตรวจรับงาน (`Done/Not Done`) ต่อ Phase โดยไม่อิงเวลา
 
-## Progress Snapshot (2026-03-11)
+## Progress Snapshot (2026-03-16)
 - [x] Phase 0: Foundation & Governance (`Completed`)
 - [x] Phase 1: Blue Core (`Completed`)
 - [x] Phase 2: Purple Core (`Completed`)
@@ -79,63 +79,95 @@
 - [x] Phase 73: Blue Detection Autotune Policy Scheduler & Closed-Loop Guardrails (`Completed`)
 - [x] Phase 74: Red Exploit Autopilot Policy Scheduler & Autonomous Validation Guardrails (`Completed`)
 - [x] Phase 75: Continuous Threat Content Pipeline Automation & Federation Freshness (`Completed`)
+- [x] Phase 76: AI Co-worker Plugin Foundation & Plugin-First Control Surface (`Completed`)
+- [x] Phase 77: Thai-Native Co-worker Delivery Layer & Category Dashboard (`Completed`)
+- [x] Phase 78: Virtual Expert Workflow Activation (`Completed`)
+- [x] Phase 79: Service-Page Workflow Closure for Red/Blue Execution (`Completed`)
+- [x] Phase 80: Embedded Workflow API + Webhook Trigger Surface (`Completed`)
+- [x] Phase 81: Managed AI Responder Persistence & Embedded Adapter Templates (`Completed`)
+- [x] Phase 82: Managed Responder Scheduler, Guardrails & Vendor Presets (`Completed`)
+- [x] Phase 83: Embedded Invoke Packs, Response Evidence Chain & Rollback Controls (`Completed`)
+- [x] Phase 84: Delivery Approval SLA, Vendor-Native Presets & Embedded Automation Hardening (`Completed`)
+- [x] Phase 85: Direct Vendor Automation Packs, Verification & Delivery Escalation Scheduler (`Completed`)
+- [x] Phase 86: Vendor Activation Bundles & Federation Readiness Posture (`Completed`)
+- [x] Phase 87: Vulnerability Auto-Validator Completion (`Completed`)
+- [x] Phase 88: Managed Responder Vendor Closure (`Completed`)
+- [x] Phase 89: ISO/NIST Gap Baseline Completion (`Completed`)
+- [x] Phase 90: Social Engineering Production Path (`Completed`)
+- [x] Phase 91: Threat Intelligence Localizer External Feeds & Digest Scheduler (`Completed`)
+- [x] Phase 92: ROI Executive Export Layer (`Completed`)
+- [x] Phase 93: Red Plugin Intelligence Upgrade (`Completed`)
+- [x] Phase 94: Purple Plugin Export Layer (`Completed`)
+- [x] Phase 95: AI Log Refiner Production Mode (`Completed`)
+- [x] Phase 96: Shadow Pentest Hardening (`Completed`)
+- [x] Phase 97: Connector-Native Feed Adapters & Detection-Gap Correlation (`Completed`)
+- [x] Phase 98: ROI Native Binary Renderer & Template Packs (`Completed`)
+- [x] Phase 99: Social Provider Callback Ingestion (`Completed`)
+- [x] Phase 100: SOAR Marketplace Packs & Post-Action Verification (`Completed`)
+- [x] Phase 101: Shadow Pentest Asset Inventory & Deploy Trigger (`Completed`)
+- [x] Phase 102: Direct SIEM Callback & Continuous Refinement Scheduler (`Completed`)
+- [x] Phase 103: Threat Localizer Stakeholder Routing & Gap Promotion (`Completed`)
+- [x] Phase 104: SOAR Connector Result Contracts & Callback Ingestion (`Completed`)
+- [x] Phase 105: Purple Binary Export & Final Report Release Workflow (`Completed`)
+- [x] Phase 106: Shadow Pentest Pack-to-Asset Validation Chaining (`Completed`)
+- [x] Phase 107: Red Plugin External Sync & Threat-Pack Publish Bridge (`Completed`)
 
 ## Phase 0 Checklist: Foundation & Governance
-- [ ] สร้าง repo structure ตามมาตรฐาน (frontend/backend/agents/infra/docs)
-- [ ] กำหนด tenant data model และ RBAC model
-- [ ] นิยาม event schema กลาง (`red_event`, `detection_event`, `response_event`, `purple_report_event`)
-- [ ] เพิ่ม `tenant_id`, `correlation_id`, `trace_id` ในทุก event
-- [ ] ตั้งค่า centralized logging + metrics baseline (Prometheus/Grafana/Loki)
-- [ ] ระบุ policy ด้าน legal/ethical สำหรับ simulation-only
-- [ ] เพิ่ม kill-switch สำหรับหยุด automated actions ทั้งระบบ
-- [ ] เอกสาร architecture decision record (ADR) ฉบับแรกครบ
+- [x] สร้าง repo structure ตามมาตรฐาน (frontend/backend/agents/infra/docs)
+- [x] กำหนด tenant data model และ RBAC model
+- [x] นิยาม event schema กลาง (`red_event`, `detection_event`, `response_event`, `purple_report_event`)
+- [x] เพิ่ม `tenant_id`, `correlation_id`, `trace_id` ในทุก event
+- [x] ตั้งค่า centralized logging + metrics baseline (Prometheus/Grafana/Loki)
+- [x] ระบุ policy ด้าน legal/ethical สำหรับ simulation-only
+- [x] เพิ่ม kill-switch สำหรับหยุด automated actions ทั้งระบบ
+- [x] เอกสาร architecture decision record (ADR) ฉบับแรกครบ
 
 ## Phase 1 Checklist: Blue Core
-- [ ] รับ log จาก WAF/Auth/System ได้อย่างน้อย 3 source
-- [ ] Detection rule พื้นฐานทำงานได้ (failed login burst ต่อ IP)
-- [ ] Auto-response ไป firewall API ได้สำเร็จ
-- [ ] ตรวจ allowlist ก่อน block ทุกครั้ง
-- [ ] ส่งแจ้งเตือน Telegram/LINE พร้อม incident summary
-- [ ] บันทึก audit trail ของ action ทุกเหตุการณ์
-- [ ] มี dashboard แสดง incident timeline ต่อ tenant
-- [ ] วัดค่า latency detect/mitigate ได้ (P50/P95)
+- [x] รับ log จาก WAF/Auth/System ได้อย่างน้อย 3 source
+- [x] Detection rule พื้นฐานทำงานได้ (failed login burst ต่อ IP)
+- [x] Auto-response ไป firewall API ได้สำเร็จ
+- [x] ตรวจ allowlist ก่อน block ทุกครั้ง
+- [x] ส่งแจ้งเตือน Telegram/LINE พร้อม incident summary
+- [x] บันทึก audit trail ของ action ทุกเหตุการณ์
+- [x] มี dashboard แสดง incident timeline ต่อ tenant
+- [x] วัดค่า latency detect/mitigate ได้ (P50/P95)
 
 ## Phase 2 Checklist: Purple Core
-- [ ] Correlate event ระหว่าง Red/Blue ได้ด้วย correlation_id/time window
-- [ ] สร้าง KPI: MTTD, MTTR, coverage, block effectiveness
-- [ ] สร้าง report รายวันต่อ tenant (JSON/PDF)
-- [ ] แสดง gap analysis (detect miss / response delay)
-- [ ] Recommendation engine สร้างข้อเสนอปรับ rule ได้
-- [ ] มีสถานะติดตามว่า recommendation ถูกนำไปใช้หรือไม่
-- [ ] Dashboard ผู้บริหารดูภาพรวมราย tenant ได้
+- [x] Correlate event ระหว่าง Red/Blue ได้ด้วย correlation_id/time window
+- [x] สร้าง KPI: MTTD, MTTR, coverage, block effectiveness
+- [x] สร้าง report รายวันต่อ tenant (JSON/PDF)
+- [x] แสดง gap analysis (detect miss / response delay)
+- [x] Recommendation engine สร้างข้อเสนอปรับ rule ได้
+- [x] มีสถานะติดตามว่า recommendation ถูกนำไปใช้หรือไม่
+- [x] Dashboard ผู้บริหารดูภาพรวมราย tenant ได้
 
 ## Phase 3 Checklist: Red Simulation Core
-- [ ] สร้าง scenario library แบบปลอดภัย (simulation/replay/emulation)
-- [ ] เพิ่ม scheduler สำหรับรัน scenario ต่อ tenant
-- [ ] จำกัด rate + concurrency ตาม policy
-- [ ] บังคับ target allowlist ก่อนเริ่มทุก scenario
-- [ ] Tag ทุก event ว่าเป็น simulation เพื่อป้องกันสับสนกับ attack จริง
-- [ ] ส่ง red activity log ไป Purple แบบ near real-time
-- [ ] ทดสอบว่าไม่มี service disruption จาก simulation
+- [x] สร้าง scenario library แบบปลอดภัย (simulation/replay/emulation)
+- [x] เพิ่ม scheduler สำหรับรัน scenario ต่อ tenant
+- [x] จำกัด rate + concurrency ตาม policy
+- [x] บังคับ target allowlist ก่อนเริ่มทุก scenario
+- [x] Tag ทุก event ว่าเป็น simulation เพื่อป้องกันสับสนกับ attack จริง
+- [x] ส่ง red activity log ไป Purple แบบ near real-time
+- [x] ทดสอบว่าไม่มี service disruption จาก simulation
 
 ## Phase 4 Checklist: Full Red/Blue/Purple Orchestration
-- [ ] LangGraph orchestration flow ครบสามบทบาท
-- [ ] Purple สั่งปรับ Blue threshold/rules ได้ผ่าน policy API
-- [ ] Purple สั่งปรับ Red scenario profile ได้
-- [ ] มี conflict resolution (priority, cooldown, approval mode)
-- [ ] รัน continuous loop ต่อ tenant ได้อย่างเสถียร
-- [ ] มีหลักฐาน measurable improvement อย่างน้อย 1 KPI ต่อรอบ
-- [ ] มี rollback plan หาก recommendation ทำให้ระบบแย่ลง
+- [x] LangGraph orchestration flow ครบสามบทบาท
+- [x] Purple สั่งปรับ Blue threshold/rules ได้ผ่าน policy API
+- [x] Purple สั่งปรับ Red scenario profile ได้
+- [x] มี conflict resolution (priority, cooldown, approval mode)
+- [x] รัน continuous loop ต่อ tenant ได้อย่างเสถียร
+- [x] มีหลักฐาน measurable improvement อย่างน้อย 1 KPI ต่อรอบ
+- [x] มี rollback plan หาก recommendation ทำให้ระบบแย่ลง
 
 ## Phase 5 Checklist: Enterprise-Scale Readiness
-- [ ] รองรับ multi-tenant onboarding แบบอัตโนมัติ
-- [ ] ทดสอบ load พร้อม queue partitioning + autoscaling
-- [ ] ทดสอบ data isolation (no cross-tenant leakage)
-- [ ] ตั้ง per-tenant quotas (events, actions, model tokens)
-- [ ] มี model routing (SLM-first, escalate to larger model)
-- [ ] มี cost dashboard (`cost per tenant`, `cost per 10k events`)
-- [ ] ตั้งค่า SLO/SLA monitoring + alerting
-- [ ] มี DR plan และ backup/restore test ผ่าน
+- [x] รองรับ multi-tenant onboarding แบบอัตโนมัติ
+- [x] ทดสอบ load พร้อม queue partitioning + autoscaling
+- [x] ทดสอบ data isolation (no cross-tenant leakage)
+- [x] ตั้ง per-tenant quotas (events, actions, model tokens)
+- [x] มี model routing (SLM-first, escalate to larger model)
+- [x] มี cost dashboard (`cost per tenant`, `cost per 10k events`)
+- [x] ตั้งค่า SLO/SLA monitoring + alerting
+- [x] มี DR plan และ backup/restore test ผ่าน
 
 ## Phase 6 Checklist: Control Plane & Operational Readiness
 - [x] Control plane onboarding + lifecycle + key rotation ครบ
@@ -715,7 +747,7 @@
 - [x] เพิ่ม Purple Team panel ให้รวมผล Red/Blue ต่อ Site พร้อม AI analysis report
 - [x] ผูกหน้า dashboard หลักให้แสดง Red/Blue/Purple panels แบบ site-centric
 - [x] เพิ่ม test coverage สำหรับ autonomous runtime service
-- [ ] เพิ่ม role-based UI control แยกสิทธิ์ Red/Blue/Purple operator
+- [x] เพิ่ม role-based UI control แยกสิทธิ์ Red/Blue/Purple operator
 - [x] เพิ่ม incident/report outbound action center (Telegram/Line routing control)
 
 ## Phase 63 Checklist: Universal Integration Layer & ISO Gap Automation
@@ -728,7 +760,7 @@
 - [x] เพิ่ม Configuration UI ให้เห็น adapter list และ ingest sample external event
 - [x] เพิ่ม Purple UI ให้เรียก/แสดง ISO gap summary ได้จาก evidence จริง
 - [x] เพิ่ม tests สำหรับ adapter normalization และ webhook signature verification
-- [ ] เพิ่ม connector credential vault abstraction + key rotation policy ต่อ connector
+- [x] เพิ่ม connector credential vault abstraction + key rotation policy ต่อ connector
 - [x] เพิ่ม connector health telemetry/retry/dead-letter UI สำหรับ production operations
 
 ## Phase 64 Checklist: Competitive Engine Foundations (Objective-Scoped)
@@ -743,7 +775,7 @@
 - [x] เพิ่ม configuration actions สำหรับ threat-pack seed และ phase scope check
 - [x] เพิ่ม unit tests สำหรับ objective scope evaluation
 - [x] เพิ่ม SOAR playbook marketplace objects + approval lifecycle
-- [ ] เพิ่ม high-speed SecOps data tier benchmark + performance/cost dashboards
+- [x] เพิ่ม high-speed SecOps data tier benchmark + performance/cost dashboards
 
 ## Phase 65 Checklist: SOAR Marketplace + Connector Reliability Operations
 - [x] เพิ่ม SOAR playbook model (`soar_playbooks`) พร้อม scope/category/version metadata
@@ -851,3 +883,309 @@
 - [x] เพิ่ม competitive APIs สำหรับ pipeline policy/run/runs/scheduler/federation พร้อม RBAC gate
 - [x] เพิ่ม Red Team UI controls สำหรับ pipeline policy + manual run + scheduler + federation snapshot
 - [x] เพิ่ม tests สำหรับ service logic, runtime integration, และ RBAC endpoint behavior
+
+## Phase 76 Checklist: AI Co-worker Plugin Foundation & Plugin-First Control Surface
+- [x] เพิ่ม plugin catalog model (`ai_coworker_plugins`) สำหรับ Red/Blue/Purple co-workers
+- [x] เพิ่ม per-site binding model (`site_ai_coworker_plugin_bindings`) สำหรับ enable/auto-run/schedule/notify/config
+- [x] เพิ่ม plugin run history model (`ai_coworker_plugin_runs`) สำหรับ output evidence + alert routing
+- [x] เพิ่ม service สำหรับ builtin plugin catalog, binding upsert, manual run, และ recent runs
+- [x] เพิ่ม scheduler service สำหรับ plugin auto-run และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม competitive APIs สำหรับ plugin catalog/site bindings/run/runs/scheduler พร้อม RBAC gate
+- [x] เพิ่ม dashboard AI Co-worker Plugin panel สำหรับ install/configure/run plugins ต่อ site
+- [x] เพิ่ม tests สำหรับ service logic, runtime integration, และ RBAC endpoint behavior
+
+## Phase 77 Checklist: Thai-Native Co-worker Delivery Layer & Category Dashboard
+- [x] ปรับ dashboard ให้แยก Service Categories ชัดเจน (`Red/Blue/Purple`) จากบนลงล่าง
+- [x] ปรับ plugin surface ให้แยก `Red Plugins Category`, `Blue Plugins Category`, `Purple Plugins Category`
+- [x] เพิ่ม delivery profile model ต่อ site/channel (`telegram/line/teams/webhook`)
+- [x] เพิ่ม delivery event audit model สำหรับ AI co-worker outbound delivery
+- [x] เพิ่ม service สำหรับ Thai delivery preview + dispatch จาก latest plugin run
+- [x] เพิ่ม competitive APIs สำหรับ delivery profile/preview/dispatch/events พร้อม RBAC gate
+- [x] เพิ่ม dashboard Phase 77 delivery panel สำหรับ config/save/preview/send output
+- [x] เพิ่ม notifier webhook channel support สำหรับ Teams/generic webhook delivery
+- [x] เพิ่ม tests สำหรับ delivery service + RBAC endpoint behavior
+
+## Phase 78 Checklist: Virtual Expert Workflow Activation
+- [x] เพิ่ม Red Social Engineering Simulator workflow พร้อม run history ต่อ site
+- [x] เพิ่ม Blue Threat Intelligence Localizer workflow พร้อม localized Thai brief ต่อ site
+- [x] เพิ่ม Purple ROI Security Dashboard snapshot workflow พร้อม board metrics ต่อ site
+- [x] เพิ่ม competitive APIs สำหรับ run/list ของทั้ง 3 workflow พร้อม RBAC gate
+- [x] ผูกหน้า `Red Service`, `Blue Service`, `Purple Service` ให้เรียก workflow ใหม่ได้จริงจาก UI
+- [x] อัปเดต status ของ service menus ที่กลายเป็น live (`Social Engineering Simulator`, `Threat Intelligence Localizer`, `ROI Security Dashboard`)
+- [x] เพิ่ม tests ครอบคลุม service logic และ API permission behavior ของ workflow ใหม่
+
+## Phase 79 Checklist: Service-Page Workflow Closure for Red/Blue Execution
+- [x] ผูก `Nuclei AI-Template Writer` เข้ากับหน้า `Red Service` โดยตรงพร้อม preview จาก latest run
+- [x] ผูก `Exploit Code Generator` เข้ากับหน้า `Red Service` โดยตรงพร้อม Python PoC preview
+- [x] reuse binding/config surface เดิมเพื่อส่ง `target_surface` จาก Red page เข้า plugin run
+- [x] เพิ่ม `Managed AI Responder` บนหน้า `Blue Service` ให้ execute AI recommendation กับ event ล่าสุดได้แบบ one-click
+- [x] ผูก `Auto-Playbook Executor` เข้ากับหน้า `Blue Service` โดยตรงพร้อม webhook payload preview
+- [x] เพิ่ม SOAR dry-run dispatch จากหน้า `Blue Service` โดยใช้ payload จาก plugin run ล่าสุด
+- [x] อัปเดต status ของ service menu ที่กลายเป็น live (`Managed AI Responder`)
+- [x] ตรวจสอบ frontend compile ผ่านหลัง integration (`tsc --noEmit`)
+
+## Phase 80 Checklist: Embedded Workflow API + Webhook Trigger Surface
+- [x] เพิ่ม endpoint config model ต่อ site สำหรับ embedded invoke (`endpoint_code/plugin_code/connector_source/event_kind/secret`)
+- [x] เพิ่ม invocation audit model สำหรับ embedded workflow calls
+- [x] เพิ่ม admin APIs สำหรับ list/upsert embedded endpoints และ list invocation history พร้อม RBAC gate
+- [x] เพิ่ม public invoke API สำหรับ external tools โดยใช้ shared secret header แทน bearer admin token
+- [x] ต่อ preprocess path ให้ blue/purple plugin ingest event ผ่าน integration layer ก่อน run
+- [x] ต่อ preprocess path ให้ red plugin สร้าง embedded red finding context ก่อน run
+- [x] เพิ่ม Configuration page สำหรับสร้าง endpoint, รับ token, และดู curl invoke example
+- [x] เพิ่ม tests ครอบคลุม service logic และ public/admin API behavior
+
+## Phase 81 Checklist: Managed AI Responder Persistence & Embedded Adapter Templates
+- [x] เพิ่ม managed responder policy model ต่อ site (`min_severity/action_mode/playbook/approval/dry_run/enabled`)
+- [x] เพิ่ม managed responder run history model สำหรับ audit ของ action/playbook decision
+- [x] เพิ่ม service สำหรับ get/upsert policy + policy-aware responder execution กับ candidate event ล่าสุด
+- [x] เพิ่ม competitive APIs สำหรับ managed responder policy/run/runs พร้อม RBAC gate
+- [x] ปรับหน้า `Blue Service` ให้ load/save policy จาก DB และแสดง run history จริง
+- [x] เพิ่ม integration adapter invoke templates สำหรับ `Splunk`, `CrowdStrike`, `Cloudflare`
+- [x] เพิ่ม `/integrations/adapters/templates` เพื่อ expose payload templates สำหรับ embedded workflow clients
+- [x] เพิ่ม Configuration page panel สำหรับดู field mapping และ sample invoke payload ต่อ adapter
+- [x] เพิ่ม tests ครอบคลุม service logic, RBAC/API behavior, และ adapter template route
+
+## Phase 82 Checklist: Managed Responder Scheduler, Guardrails & Vendor Presets
+- [x] เพิ่ม guardrails ใน managed responder (`allowlist`, `max runs/hour`, `apply min severity`, `ignore-action skip`)
+- [x] เก็บ `guardrail_blocked` ลง run history เพื่อ audit decision ได้
+- [x] เพิ่ม scheduler service สำหรับ managed responder policy ที่ enabled อยู่
+- [x] ผูก managed responder scheduler เข้ากับ autonomous runtime
+- [x] เพิ่ม competitive API สำหรับ managed responder scheduler run
+- [x] เพิ่ม env/config flags สำหรับ scheduler และ global auto-remediation guardrails
+- [x] ปรับหน้า `Blue Service` ให้สั่ง scheduler ได้และเห็น scheduler summary
+- [x] เพิ่ม vendor preset surface ใน `Configuration` สำหรับ Splunk/CrowdStrike/Cloudflare embedded endpoints
+- [x] เพิ่ม tests ครอบคลุม guardrail logic, scheduler route, และ runtime integration
+
+## Phase 83 Checklist: Embedded Invoke Packs, Response Evidence Chain & Rollback Controls
+- [x] เพิ่ม embedded invoke pack view ต่อ endpoint/site โดย reuse adapter template + invoke path จริง
+- [x] เพิ่ม managed responder evidence chain แบบ HMAC-linked ต่อ run โดยไม่ต้องเพิ่มตารางใหม่
+- [x] เพิ่ม evidence-chain verify service และ competitive API สำหรับตรวจความถูกต้องของ responder history
+- [x] เพิ่ม approval review route สำหรับ managed responder pending approval (`approve/reject`)
+- [x] เพิ่ม rollback route สำหรับ managed responder run ที่ applied/pending เพื่อ restore event state และ cancel linked playbook
+- [x] ปรับ SOAR approval path ให้ bind กลับ event เดิมจาก `event_id` และไม่ overwrite action เดิมโดยไม่จำเป็น
+- [x] ปรับหน้า `Blue Service` ให้ approve/reject/rollback ได้จาก recent responder runs พร้อมเห็น evidence summary
+- [x] ปรับหน้า `Configuration` ให้เห็น connector-specific invoke packs/curl examples ต่อ endpoint ที่ config ไว้จริง
+- [x] เพิ่ม tests ครอบคลุม service logic, API permission behavior, และ embedded invoke-pack route
+
+## Phase 84 Checklist: Delivery Approval SLA, Vendor-Native Presets & Embedded Automation Hardening
+- [x] เพิ่ม delivery approval review route สำหรับ AI co-worker delivery events (`approve/reject`)
+- [x] เพิ่ม delivery approval SLA summary service/API ต่อ site พร้อม pending/overdue/latency metrics
+- [x] ปรับหน้า `Delivery Layer` ให้เห็น SLA summary และ approve/reject pending delivery ได้จากหน้าเดียว
+- [x] ปรับ dispatch path ปกติไม่ bypass approval อีกต่อไป เพื่อให้ policy/SLA มีผลจริง
+- [x] เพิ่ม global config/env สำหรับ delivery approval SLA และ embedded workflow guardrails
+- [x] เพิ่ม embedded guardrail-to-HTTP mapping (`403/409/429/422`) บน public invoke API
+- [x] เพิ่ม vendor-native preset metadata (`vendor_preset_code`, `activation_steps`) ให้ adapter templates และ invoke packs
+- [x] ปรับหน้า `Configuration` ให้เห็น preset code, activation steps, และ effective guardrails ของแต่ละ endpoint
+- [x] เพิ่ม tests ครอบคลุม delivery approval flow, SLA summary, embedded actor guardrail, และ public HTTP mapping
+
+## Phase 85 Checklist: Direct Vendor Automation Packs, Verification & Delivery Escalation Scheduler
+- [x] ปรับหน้า `Configuration` ให้ vendor preset เลือก `workflow_type` ได้จริง (`coworker_plugin`/`soar_playbook`)
+- [x] เพิ่ม field สำหรับ `playbook_code`, `allowed_playbook_codes`, และ `require_playbook_approval` บน embedded endpoint form
+- [x] ทำให้ direct vendor preset ของ `CrowdStrike` และ `Cloudflare` save เป็น SOAR endpoint ได้จริงโดยไม่ต้อง bind plugin ปลอม
+- [x] เพิ่ม backend normalization สำหรับ embedded SOAR config เพื่อ auto-populate `default_playbook_code` และ allowlist ให้สอดคล้องกัน
+- [x] เพิ่ม automation-pack verification service/API ต่อ endpoint เพื่อเช็ค plugin/playbook/policy readiness ก่อนส่งให้ลูกค้าใช้
+- [x] ปรับหน้า `Configuration` ให้แสดง verification status, issues, และ recommendations ของแต่ละ endpoint
+- [x] เพิ่ม delivery escalation scheduler service/API สำหรับ sweep policy ที่ enabled พร้อม filter ตาม site/plugin
+- [x] ผูก delivery escalation scheduler เข้ากับ autonomous runtime และเพิ่ม env/config flags
+- [x] ปรับหน้า `Delivery Layer` ให้รัน scheduler ได้จาก UI และเห็น scheduler summary
+- [x] เพิ่ม tests ครอบคลุม embedded SOAR preset path, automation verification, delivery escalation scheduler, และ runtime integration
+
+## Phase 86 Checklist: Vendor Activation Bundles & Federation Readiness Posture
+- [x] เพิ่ม backend service/API สำหรับ `activation bundles` ต่อ site โดย merge invoke pack + verification + operator handoff checklist
+- [x] เพิ่ม embedded federation readiness snapshot ข้าม site พร้อมสถานะ `ready/warning/error/not_configured`
+- [x] สรุปจำนวน endpoint, approval-required endpoint, และ preset coverage ระดับ federation
+- [x] เพิ่ม delivery escalation federation snapshot ข้าม site พร้อม backlog/overdue/healthy posture
+- [x] ปรับหน้า `Configuration` ให้เห็น federation readiness summary และ activation bundles ที่ส่งต่อให้ลูกค้าได้จริง
+- [x] ปรับหน้า `Delivery Layer` ให้เห็น cross-site escalation posture และสถานะของ site ที่กำลังเลือกอยู่
+- [x] เพิ่ม tests ครอบคลุม embedded bundle merge, federation readiness summary, delivery escalation federation, และ competitive API RBAC
+
+## Phase 87 Checklist: Vulnerability Auto-Validator Completion
+- [x] เพิ่ม `Nessus/Burp/generic` finding import path เข้าสู่ Red validator
+- [x] เพิ่ม normalized finding schema + dedupe fingerprint ต่อ site
+- [x] เพิ่ม exploitability / false-positive scoring และ verdict ต่อ finding
+- [x] เพิ่ม remediation export กลับไปยัง scanner/source tool
+- [x] ผูกหน้า `Red Service` ให้ import/validate/export ได้จาก UI เดียว
+- [x] เพิ่ม targeted tests สำหรับ service และ RBAC/API behavior
+
+## Phase 88 Checklist: Managed Responder Vendor Closure
+- [x] เพิ่ม connector-aware action confirmation baseline สำหรับ `Cloudflare`, `CrowdStrike`, `Splunk`, `generic`
+- [x] เพิ่ม connector rollback confirmation baseline ใน responder history
+- [x] ขยาย Blue run history ให้เห็น connector source/action/confirmation/rollback status
+- [x] ปรับหน้า `Blue Service` ให้ operator เห็น vendor closure signal ได้ตรงจาก recent runs
+- [x] เพิ่ม targeted tests ครอบคลุม vendor confirmation/rollback behavior
+
+## Phase 89 Checklist: ISO/NIST Gap Baseline Completion
+- [x] เพิ่ม shared compliance context สำหรับ Purple gap analysis
+- [x] เพิ่ม `NIST CSF 2.0` gap template จาก evidence จริงของ Red/Blue/Purple
+- [x] เพิ่ม API `GET /sites/{site_id}/purple/nist-csf-gap-template`
+- [x] ปรับหน้า `Purple Service` ให้ trigger ทั้ง ISO และ NIST จาก panel เดียว
+- [x] อัปเดต Virtual Expert checklist ให้ `Automated ISO/NIST Gap Analysis` เป็น implemented baseline
+
+## Phase 90 Checklist: Social Engineering Production Path
+- [x] เพิ่ม social roster model/import/list ต่อ site
+- [x] เพิ่ม social campaign policy model ต่อ site (`connector_type/sender/approval/tracking/kill_switch`)
+- [x] เพิ่ม social campaign execution + recipient telemetry models โดยไม่แก้ column ของ table เก่า
+- [x] เพิ่ม service สำหรับ roster import, policy upsert/get, campaign review, campaign kill, telemetry list
+- [x] ขยาย social simulator ให้ bind roster + policy + approval flow + telemetry summary
+- [x] เพิ่ม connector abstraction baseline (`simulated` / `smtp` / `webhook`) พร้อม delivery audit
+- [x] เพิ่ม competitive APIs สำหรับ social roster/policy/review/kill/telemetry พร้อม RBAC gate
+- [x] ปรับหน้า `Red Service` ให้มี roster import, connector policy, approval/reject, kill switch, telemetry view
+- [x] เพิ่ม targeted tests สำหรับ social production service + API behavior
+
+## Phase 91 Checklist: Threat Intelligence Localizer External Feeds & Digest Scheduler
+- [x] เพิ่ม threat localizer policy model ต่อ site (`focus_region/sector/categories/digest interval/min priority/enabled`)
+- [x] เพิ่ม threat feed item model พร้อม baseline import/upsert สำหรับ Thai/SEA feed rows
+- [x] เพิ่ม sector profile library (`general/finance/government/healthcare/education`)
+- [x] เพิ่ม service สำหรับ feed import/list, policy get/upsert, site impact scoring, และ recurring digest scheduler
+- [x] ผูก scheduler เข้ากับ autonomous runtime และเพิ่ม env/config flags
+- [x] เพิ่ม competitive APIs สำหรับ feed import/list, sector profiles, policy get/upsert, และ scheduler run
+- [x] ปรับหน้า `Blue Service` ให้จัดการ threat localizer policy, feed import, sector profiles, และ digest scheduler ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, API permission behavior, workflow regression, และ runtime integration
+- [x] อัปเดต Virtual Expert checklist ให้ `Threat Intelligence Localizer` เป็น implemented baseline พร้อมระบุ gap ที่ยังเหลือ
+
+## Phase 92 Checklist: ROI Executive Export Layer
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` เทียบ implementation จริงก่อนเริ่ม phase ใหม่
+- [x] เพิ่ม ROI trend service จาก snapshot history พร้อม delta summary (`validated/automation/noise/cost saved`)
+- [x] เพิ่ม tenant portfolio roll-up service จาก latest ROI snapshot ต่อ site
+- [x] เพิ่ม board-pack export service baseline สำหรับ `pdf/ppt` content structure
+- [x] เพิ่ม competitive APIs สำหรับ ROI trends, portfolio roll-up, และ export pack
+- [x] ปรับหน้า `Purple Service` ให้แสดง trend, portfolio roll-up, และ export preview จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม ROI trend/portfolio/export service และ API permission behavior
+- [x] อัปเดต Virtual Expert checklist ให้สะท้อน P2 status ใหม่และ build order ถัดไป
+
+## Phase 93 Checklist: Red Plugin Intelligence Upgrade
+- [x] เพิ่ม model สำหรับ `red_plugin_intelligence_items` และ `red_plugin_safety_policies`
+- [x] เพิ่ม service สำหรับ import/list CVE/news/article intelligence ต่อ site
+- [x] เพิ่ม service สำหรับ get/upsert exploit safety policy per target type
+- [x] ผูก intelligence + safety policy เข้า `Exploit Code Generator` และ `Nuclei AI-Template Writer`
+- [x] เพิ่ม lint baseline สำหรับ template/exploit artifact จาก latest plugin run
+- [x] เพิ่ม export baseline สำหรับ template/exploit artifact พร้อม metadata/lint summary
+- [x] เพิ่ม competitive APIs สำหรับ intelligence import/list, safety policy, lint, และ export
+- [x] ปรับหน้า `Red Service` ให้ import intelligence, save safety policy, lint, และ export ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, API permission behavior, และ Red regression ชุดที่เกี่ยวข้อง
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `R4` สะท้อน implementation จริงและเลื่อน build order ไป phase ถัดไป
+
+## Phase 94 Checklist: Purple Plugin Export Layer
+- [x] เพิ่ม Purple export template pack catalog สำหรับ incident/regulatory outputs
+- [x] เพิ่ม MITRE heatmap export baseline สำหรับ `markdown`, `csv`, และ `attack_layer_json`
+- [x] เพิ่ม incident report export baseline พร้อม company/board/regulator template packs
+- [x] เพิ่ม regulated report export baseline พร้อม ISO/NIST snapshot และ incident context
+- [x] เพิ่ม competitive APIs สำหรับ template-pack listing และ Purple export generation
+- [x] ปรับหน้า `Purple Service` ให้ export MITRE, incident report, และ regulated report พร้อม preview ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม export service logic และ RBAC/API behavior
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้สถานะ Purple exports ตรงกับ implementation จริง
+
+## Phase 95 Checklist: AI Log Refiner Production Mode
+- [x] เพิ่ม model สำหรับ `blue_log_refiner_policies`, `blue_log_refiner_runs`, และ `blue_log_refiner_feedback`
+- [x] เพิ่ม service สำหรับ policy get/upsert, KPI run, feedback submit/list, และ vendor mapping packs
+- [x] เพิ่ม competitive APIs สำหรับ Blue log refiner policy, run, feedback, และ mapping-pack preview
+- [x] ปรับหน้า `Blue Service` ให้จัดการ log refiner policy, KPI run, feedback loop, และ vendor mapping packs ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic และ RBAC/API behavior
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `B1` สะท้อน implementation จริงและเลื่อน build order ไป item ถัดไป
+
+## Phase 96 Checklist: Shadow Pentest Hardening
+- [x] เพิ่ม model สำหรับ `red_shadow_pentest_policies` และ `red_shadow_pentest_runs`
+- [x] เพิ่ม passive crawl service พร้อม page/content diff detection baseline
+- [x] เพิ่ม per-site policy สำหรับ `crawl_depth`, `max_pages`, `change_threshold`, และ `schedule_interval_minutes`
+- [x] เพิ่ม zero-day pack auto-assignment baseline จาก drift signal
+- [x] เพิ่ม manual run, run history, และ scheduler สำหรับ Shadow Pentest
+- [x] ผูก scheduler เข้ากับ autonomous runtime และเพิ่ม env/config flags
+- [x] เพิ่ม competitive APIs สำหรับ policy/run/history/scheduler พร้อม RBAC
+- [x] ปรับหน้า `Red Service` ให้ตั้ง policy, run, และดู drift history ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, RBAC/API behavior, และ runtime integration
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `24/7 Shadow Pentest` เป็น implemented baseline
+
+## Phase 97 Checklist: Connector-Native Feed Adapters & Detection-Gap Correlation
+- [x] เพิ่ม adapter template catalog สำหรับ `Splunk`, `CrowdStrike`, `Cloudflare`, และ `generic`
+- [x] เพิ่ม service/API สำหรับ import vendor payload ผ่าน adapter แล้ว normalize เข้า threat feed rows
+- [x] เพิ่ม detection-gap summary เทียบ threat categories กับ site detection rules และ embedded connectors
+- [x] ปรับหน้า `Blue Service` ให้เลือก adapter, preview field mapping, import payload, และเห็น coverage rows ใน localizer summary
+- [x] เพิ่ม targeted tests ครอบคลุม adapter normalization, RBAC/API behavior, และ detection-gap correlation
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `B3` สะท้อน implementation จริงและเลื่อนไป item ถัดไป
+
+## Phase 98 Checklist: ROI Native Binary Renderer & Template Packs
+- [x] เพิ่ม native binary renderer สำหรับ `pdf` export โดยไม่พึ่ง dependency ภายนอก
+- [x] เพิ่ม native binary renderer สำหรับ `pptx` export โดยสร้าง OOXML package baseline
+- [x] เพิ่ม ROI board template packs สำหรับ `board`, `risk_committee`, และ `mssp_monthly`
+- [x] เพิ่ม competitive API สำหรับ list ROI template packs และส่ง `template_pack` เข้า export
+- [x] ปรับหน้า `Purple Service` ให้เลือก template pack และดาวน์โหลด binary export ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม template-pack listing และ binary export output (`%PDF` / `PK`)
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `P2` สะท้อน implementation จริง
+
+## Phase 99 Checklist: Social Provider Callback Ingestion
+- [x] เพิ่ม service path สำหรับ ingest callback จาก provider เข้า social campaign telemetry
+- [x] เพิ่ม competitive API `/competitive/sites/{site_id}/red/social-simulator/provider-callback`
+- [x] ปรับหน้า `Red Service` ให้กรอก callback event, recipient, metadata, และ refresh telemetry ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม callback service logic และ RBAC/API behavior
+- [x] อัปเดต `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `R2 external provider callback ingestion` เป็น implemented baseline
+
+## Phase 100 Checklist: SOAR Marketplace Packs & Post-Action Verification
+- [x] เพิ่ม marketplace pack catalog สำหรับ SOAR playbook starter bundles
+- [x] เพิ่ม service/API สำหรับ install pack แล้ว upsert playbooks เข้า catalog เดิม
+- [x] เพิ่ม post-action verification baseline ที่ผูกกับ SOAR execution result เดิม
+- [x] เพิ่ม API สำหรับ verify execution ซ้ำหลังมี connector side-effect
+- [x] ปรับหน้า `Blue Service` ให้ install pack และ verify execution ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม pack listing/install, verification service, และ API permission behavior
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `B4` สะท้อน implementation จริง
+
+## Phase 101 Checklist: Shadow Pentest Asset Inventory & Deploy Trigger
+- [x] เพิ่ม asset inventory baseline จาก passive crawl pages ใน Shadow Pentest
+- [x] เพิ่ม API สำหรับดึง asset inventory ล่าสุดต่อ site
+- [x] เพิ่ม deploy-event trigger API เพื่อ force shadow scan จาก release pipeline
+- [x] ผูก deploy trigger context เข้า run details เพื่อ trace back ว่ารันเพราะ deploy ไหน
+- [x] ปรับหน้า `Red Service` ให้ trigger deploy event และดู asset inventory ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม asset inventory summary, deploy trigger service, และ RBAC/API behavior
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ `R1` สะท้อน implementation จริง
+
+## Phase 102 Checklist: Direct SIEM Callback & Continuous Refinement Scheduler
+- [x] เพิ่ม model สำหรับ `blue_log_refiner_schedule_policies` และ `blue_log_refiner_callback_events`
+- [x] เพิ่ม schedule policy service/API ต่อ site+connector source สำหรับ continuous refinement mode
+- [x] เพิ่ม scheduler service สำหรับ Blue log refiner และผูกเข้ากับ autonomous runtime
+- [x] เพิ่ม callback ingestion path ทั้งแบบ competitive API และ public integration API สำหรับ source SIEM
+- [x] เพิ่ม callback correlation กับ latest refiner run เพื่อเทียบ refined KPI กับ source-side outcome จริง
+- [x] ปรับหน้า `Blue Service` ให้ save schedule policy, ingest callback, และดู callback history ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, scheduler route, public callback route, และ RBAC/API behavior
+
+## Phase 103 Checklist: Threat Localizer Stakeholder Routing & Gap Promotion
+- [x] เพิ่ม routing policy model/service ต่อ site สำหรับ stakeholder groups, group channels, และ category-group map
+- [x] เพิ่ม promotion run history model สำหรับ auditability ของ gap routing/autotune/playbook promotion
+- [x] เพิ่ม promotion path จาก detection-gap summary ไปสู่ stakeholder alert routing
+- [x] เพิ่ม optional follow-up path ไปยัง detection autotune และ SOAR playbook promotion
+- [x] เพิ่ม competitive APIs สำหรับ routing-policy get/upsert, gap promotion, และ promotion history
+- [x] ปรับหน้า `Blue Service` ให้จัดการ routing policy และเรียก promote-gap ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม routing normalization, promotion behavior, และ RBAC/API behavior
+
+## Phase 104 Checklist: SOAR Connector Result Contracts & Callback Ingestion
+- [x] เพิ่ม connector result contract catalog สำหรับ `Splunk`, `CrowdStrike`, `Cloudflare`, และ `generic`
+- [x] เพิ่ม model `soar_execution_connector_results` สำหรับเก็บ vendor callback/result evidence ต่อ execution
+- [x] เพิ่ม service/API สำหรับ ingest connector result ทั้งแบบ admin route และ public integration callback
+- [x] เพิ่ม API สำหรับ list connector results ต่อ execution และ contract listing ต่อ connector source
+- [x] ผูก connector result callback เข้ากับ SOAR post-action verification summary
+- [x] ปรับหน้า `Blue Service` ให้ดู connector callback/result rows และ verification posture ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม result contract listing, callback ingest, result listing, และ integration callback behavior
+
+## Phase 105 Checklist: Purple Binary Export & Final Report Release Workflow
+- [x] ขยาย incident/regulatory export ให้รองรับ native binary `pdf` และ `docx`
+- [x] เพิ่ม model `purple_report_releases` สำหรับ final release approval workflow
+- [x] เพิ่ม service/API สำหรับ request/list/review report release
+- [x] ปรับหน้า `Purple Service` ให้ request final release, approve/reject, และดาวน์โหลด binary output ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม native binary export และ release approval workflow
+
+## Phase 106 Checklist: Shadow Pentest Pack-to-Asset Validation Chaining
+- [x] ยกระดับ Shadow Pentest run ให้สร้าง pack-to-asset validation summary จาก latest asset inventory + selected threat pack
+- [x] เพิ่ม matched/targeted/coverage metrics และ validation steps ต่อ asset row
+- [x] เพิ่ม API สำหรับดึง latest pack validation summary ต่อ site
+- [x] ขยาย asset inventory response ให้มี `pack_validation` summary/rows จาก latest run
+- [x] ปรับหน้า `Red Service` ให้เห็น coverage, targeted assets, rationale, และ validation steps จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic และ RBAC/API behavior ของ pack validation
+
+## Phase 107 Checklist: Red Plugin External Sync & Threat-Pack Publish Bridge
+- [x] เพิ่ม model สำหรับ `red_plugin_intelligence_sync_sources` และ `red_plugin_intelligence_sync_runs`
+- [x] เพิ่ม service สำหรับ list/upsert sync source ต่อ site และ sync run history
+- [x] เพิ่ม fetch/import path จาก external JSON feed/JSONL feed เข้า plugin intelligence
+- [x] เพิ่ม scheduler สำหรับ Red plugin sync และผูกเข้ากับ autonomous runtime + env flags
+- [x] เพิ่ม one-click publish จาก `red_template_writer` output ไปเป็น `ThreatContentPack`
+- [x] เพิ่ม competitive APIs สำหรับ sync source, sync run, scheduler, และ publish threat pack
+- [x] ปรับหน้า `Red Service` ให้ save sync source, run sync, run scheduler, และ publish threat pack ได้จากหน้าเดียว
+- [x] เพิ่ม targeted tests ครอบคลุม service logic, RBAC/API behavior, และ runtime integration
+- [x] re-audit `VIRTUAL_EXPERT_CHECKLIST.md` ให้ย้าย Red sync/publish items ออกจาก future backlog

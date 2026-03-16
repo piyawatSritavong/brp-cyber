@@ -1,6 +1,6 @@
 # BRP-Cyber
 
-AI-driven Red/Blue/Purple Orchestration platform (enterprise-scale, multi-tenant).
+AI-driven Red/Blue/Purple Orchestration platform with plugin-first AI co-workers (enterprise-scale, multi-tenant).
 
 ## One-Line Setup
 Run from a fresh machine:
@@ -74,6 +74,9 @@ curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/set
 - Phase 59 complete: cost anomaly detection and preemptive throttling controls
 - Phase 60 complete: cost anomaly federation and production v1 final go-live closure
 - Phase 61 complete: post-go-live SLO burn-rate guard and auto rollback gate
+- Phase 62 complete: autonomous team console, site-centric dashboard, and operator UX controls
+- Phase 63 complete: universal integration layer and ISO gap automation
+- Phase 64 complete: competitive engine foundations with objective-scoped roadmap enforcement
 - Phase 65 complete: SOAR marketplace and connector reliability operations
 - Phase 66 complete: tenant policy matrix and action-center governance surface
 - Phase 67 complete: secops data tier and connector credential hardening
@@ -85,6 +88,38 @@ curl -fsSL https://raw.githubusercontent.com/piyawatSritavong/brp-cyber/main/set
 - Phase 73 complete: blue detection autotune policy scheduler and closed-loop guardrails
 - Phase 74 complete: red exploit autopilot policy scheduler and autonomous validation guardrails
 - Phase 75 complete: continuous threat-content pipeline automation with scheduler and federation freshness view
+- Phase 76 complete: AI co-worker plugin foundation with per-site bindings, manual runs, and autonomous scheduler
+- Phase 77 complete: Thai-native co-worker delivery layer, category-grouped dashboard, and channel delivery profiles
+- Phase 78 complete: Virtual Expert workflows for social engineering, localized threat intelligence, and ROI dashboard snapshots
+- Phase 79 complete: service-page closure for Red execution previews and Blue one-click response flows
+- Phase 80 complete: embedded workflow API and shared-secret webhook trigger surface for external tools
+- Phase 81 complete: managed AI responder policy persistence and adapter invoke templates for Splunk/CrowdStrike/Cloudflare
+- Phase 82 complete: managed responder scheduler, execution guardrails, and vendor preset setup for embedded workflows
+- Phase 83 complete: connector-specific embedded invoke packs, responder evidence chain verification, and approval/rollback controls
+- Phase 84 complete: delivery approval SLA, vendor-native invoke presets, and embedded automation hardening
+- Phase 85 complete: direct vendor automation packs, automation-pack verification, and delivery escalation scheduler integration
+- Phase 86 complete: vendor activation bundles, embedded federation readiness, and delivery escalation posture federation
+- Phase 87 complete: Red vulnerability auto-validator with Nessus/Burp import, per-finding verdicts, and remediation export
+- Phase 88 complete: managed responder vendor closure with connector-aware action confirmation and rollback status
+- Phase 89 complete: Purple ISO/NIST gap baseline with NIST CSF template support
+- Phase 90 complete: Red social engineering production path with employee roster import, connector policy, approval/kill switch, and recipient telemetry
+- Phase 91 complete: Blue threat intelligence localizer external feeds, sector profiles, site impact scoring, and recurring digest scheduler
+- Phase 92 complete: Purple ROI executive export layer with trends, tenant portfolio roll-up, and board-pack export baseline
+- Phase 93 complete: Red plugin intelligence upgrade with CVE/news/article import baseline, exploit safety policy, and lint/export surfaces
+- Phase 94 complete: Purple plugin export layer with MITRE heatmap exports, incident template packs, and regulated report outputs
+- Phase 95 complete: Blue AI Log Refiner production mode with persistent policy, KPI runs, operator feedback loop, and vendor mapping packs
+- Phase 96 complete: Red Shadow Pentest hardening with passive crawl/diff, zero-day pack assignment, scheduler integration, and per-site policy/history
+- Phase 97 complete: Blue connector-native threat feed adapters with detection-gap correlation against site rules and embedded connectors
+- Phase 98 complete: Purple ROI native binary export layer with template-pack selection and downloadable PDF/PPTX board packs
+- Phase 99 complete: Red social provider callback ingestion with callback telemetry refresh, UI ingestion controls, and RBAC coverage
+- Phase 100 complete: SOAR marketplace pack install flow and post-action verification loop for Auto-Playbook execution maturity
+- Phase 101 complete: Red Shadow Pentest asset inventory and deploy-event trigger mode for CI/CD-driven drift validation
+- Phase 102 complete: Blue direct SIEM callback ingestion and continuous log-refiner scheduler policies
+- Phase 103 complete: Blue threat-localizer stakeholder routing packs and gap-promotion loop into autotune/playbook follow-up
+- Phase 104 complete: SOAR connector result contracts, vendor callback ingestion, and execution-level result evidence
+- Phase 105 complete: Purple native incident/regulatory PDF-DOCX export and final report release approval workflow
+- Phase 106 complete: Red Shadow Pentest pack-to-asset validation chaining with coverage/targeted-asset evidence
+- Phase 107 complete: Red plugin external intelligence sync, autonomous feed scheduler, and one-click threat-pack publishing from template output
 
 ## Competitive RBAC Scopes
 - `competitive:read` -> viewer (read federation/policy/events)

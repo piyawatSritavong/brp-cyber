@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.site_ops import (
     apply_blue_recommendation,
+    generate_nist_csf_gap_template,
     generate_iso27001_gap_template,
     generate_purple_executive_scorecard,
     generate_purple_site_report,
@@ -83,6 +84,11 @@ def purple_reports(site_id: UUID, limit: int = 30, db: Session = Depends(get_db)
 @router.get("/{site_id}/purple/iso27001-gap-template")
 def purple_iso27001_gap_template(site_id: UUID, limit: int = 200, db: Session = Depends(get_db)) -> dict[str, object]:
     return generate_iso27001_gap_template(db, site_id, limit=limit)
+
+
+@router.get("/{site_id}/purple/nist-csf-gap-template")
+def purple_nist_csf_gap_template(site_id: UUID, limit: int = 200, db: Session = Depends(get_db)) -> dict[str, object]:
+    return generate_nist_csf_gap_template(db, site_id, limit=limit)
 
 
 @router.get("/{site_id}/purple/executive-scorecard")

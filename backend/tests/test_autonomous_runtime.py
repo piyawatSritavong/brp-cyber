@@ -13,8 +13,15 @@ def test_autonomous_runtime_run_once_executes_tick_and_schedule() -> None:
         "hygiene": 0,
         "replay": 0,
         "autotune": 0,
+        "log_refiner": 0,
+        "managed_responder": 0,
+        "threat_localizer": 0,
         "red_autopilot": 0,
+        "red_shadow": 0,
+        "red_plugin_sync": 0,
         "threat_pipeline": 0,
+        "coworker_plugin": 0,
+        "delivery_escalation": 0,
     }
 
     def _tick(limit: int) -> dict[str, object]:
@@ -37,13 +44,41 @@ def test_autonomous_runtime_run_once_executes_tick_and_schedule() -> None:
         calls["autotune"] += 1
         return {"limit": limit, "executed_count": 4}
 
+    def _log_refiner(limit: int) -> dict[str, object]:
+        calls["log_refiner"] += 1
+        return {"limit": limit, "executed_count": 5}
+
+    def _managed_responder(limit: int) -> dict[str, object]:
+        calls["managed_responder"] += 1
+        return {"limit": limit, "executed_count": 2}
+
+    def _threat_localizer(limit: int) -> dict[str, object]:
+        calls["threat_localizer"] += 1
+        return {"limit": limit, "executed_count": 7}
+
     def _red_autopilot(limit: int) -> dict[str, object]:
         calls["red_autopilot"] += 1
         return {"limit": limit, "executed_count": 5}
 
+    def _red_shadow(limit: int) -> dict[str, object]:
+        calls["red_shadow"] += 1
+        return {"limit": limit, "executed_count": 4}
+
+    def _red_plugin_sync(limit: int) -> dict[str, object]:
+        calls["red_plugin_sync"] += 1
+        return {"limit": limit, "executed_count": 3}
+
     def _threat_pipeline(limit: int) -> dict[str, object]:
         calls["threat_pipeline"] += 1
         return {"limit": limit, "executed_count": 1}
+
+    def _coworker_plugin(limit: int) -> dict[str, object]:
+        calls["coworker_plugin"] += 1
+        return {"limit": limit, "executed_count": 6}
+
+    def _delivery_escalation(limit: int) -> dict[str, object]:
+        calls["delivery_escalation"] += 1
+        return {"limit": limit, "executed_count": 2}
 
     runtime = AutonomousRuntime(
         tick_runner=_tick,
@@ -51,8 +86,15 @@ def test_autonomous_runtime_run_once_executes_tick_and_schedule() -> None:
         hygiene_schedule_runner=_hygiene,
         replay_schedule_runner=_replay,
         detection_autotune_schedule_runner=_autotune,
+        blue_log_refiner_schedule_runner=_log_refiner,
+        blue_managed_responder_schedule_runner=_managed_responder,
+        blue_threat_localizer_schedule_runner=_threat_localizer,
         red_exploit_autopilot_schedule_runner=_red_autopilot,
+        red_shadow_pentest_schedule_runner=_red_shadow,
+        red_plugin_sync_schedule_runner=_red_plugin_sync,
         threat_content_pipeline_schedule_runner=_threat_pipeline,
+        coworker_plugin_schedule_runner=_coworker_plugin,
+        coworker_delivery_escalation_schedule_runner=_delivery_escalation,
     )
     state = runtime.run_once()
     assert calls["tick"] == 1
@@ -60,16 +102,30 @@ def test_autonomous_runtime_run_once_executes_tick_and_schedule() -> None:
     assert calls["hygiene"] == 1
     assert calls["replay"] == 1
     assert calls["autotune"] == 1
+    assert calls["log_refiner"] == 1
+    assert calls["managed_responder"] == 1
+    assert calls["threat_localizer"] == 1
     assert calls["red_autopilot"] == 1
+    assert calls["red_shadow"] == 1
+    assert calls["red_plugin_sync"] == 1
     assert calls["threat_pipeline"] == 1
+    assert calls["coworker_plugin"] == 1
+    assert calls["delivery_escalation"] == 1
     assert state["iterations"] == 1
     assert state["last_result"]["tick"]["executed_count"] == 1
     assert state["last_result"]["red_schedule"]["processed"] == 2
     assert state["last_result"]["hygiene_schedule"]["executed_count"] == 3
     assert state["last_result"]["replay_schedule"]["executed_count"] == 2
     assert state["last_result"]["detection_autotune_schedule"]["executed_count"] == 4
+    assert state["last_result"]["blue_log_refiner_schedule"]["executed_count"] == 5
+    assert state["last_result"]["blue_managed_responder_schedule"]["executed_count"] == 2
+    assert state["last_result"]["blue_threat_localizer_schedule"]["executed_count"] == 7
     assert state["last_result"]["red_exploit_autopilot_schedule"]["executed_count"] == 5
+    assert state["last_result"]["red_shadow_pentest_schedule"]["executed_count"] == 4
+    assert state["last_result"]["red_plugin_sync_schedule"]["executed_count"] == 3
     assert state["last_result"]["threat_content_pipeline_schedule"]["executed_count"] == 1
+    assert state["last_result"]["coworker_plugin_schedule"]["executed_count"] == 6
+    assert state["last_result"]["coworker_delivery_escalation_schedule"]["executed_count"] == 2
 
 
 def test_autonomous_runtime_start_and_stop() -> None:
@@ -85,8 +141,15 @@ def test_autonomous_runtime_start_and_stop() -> None:
             hygiene_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
             replay_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
             detection_autotune_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            blue_log_refiner_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            blue_managed_responder_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            blue_threat_localizer_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
             red_exploit_autopilot_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            red_shadow_pentest_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            red_plugin_sync_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
             threat_content_pipeline_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            coworker_plugin_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
+            coworker_delivery_escalation_schedule_runner=lambda limit: {"executed_count": 0, "limit": limit},
         )
         started = runtime.start()
         assert started["running"] is True
