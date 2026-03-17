@@ -1,5 +1,5 @@
-import { CompetitiveWorkspace } from "@/components/CompetitiveWorkspace";
+import { OrchestratorPanel } from "@/components/OrchestratorPanel";
 
 export default function HomePage() {
-  return <CompetitiveWorkspace mode="overview" />;
+  return <OrchestratorPanel />;
 }

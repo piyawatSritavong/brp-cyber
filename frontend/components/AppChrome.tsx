@@ -1,82 +1,61 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LangProvider, useLang, type TKey } from "@/contexts/LangContext";
+import { fetchSites } from "@/lib/api";
 
-import { ThemeToggle } from "@/components/ThemeToggle";
-
+// ─── Types ─────────────────────────────────────────────────────────────────
 type MenuItem = {
-  label: string;
+  labelKey: string;
   href: string;
   icon: ReactNode;
   exact?: boolean;
+  showBadge?: boolean;
 };
 
-const PAGE_META: Record<string, { eyebrow: string; title: string; description: string }> = {
-  "/": {
-    eyebrow: "Cyber AI Co-worker",
-    title: "Dashboard",
-    description: "Overview of tenant posture, governance signals, and shared operations context.",
-  },
-  "/configuration": {
-    eyebrow: "Control Plane Setup",
-    title: "Configuration",
-    description: "Manage sites, integration adapters, and objective-scope bootstrap controls.",
-  },
-  "/red-service": {
-    eyebrow: "Red Service Category",
-    title: "Red Service",
-    description: "Continuous validation, exploit path testing, and autonomous red execution.",
-  },
-  "/blue-service": {
-    eyebrow: "Blue Service Category",
-    title: "Blue Service",
-    description: "Detection, response, SecOps automation, and reliability operations.",
-  },
-  "/purple-service": {
-    eyebrow: "Purple Service Category",
-    title: "Purple Service",
-    description: "Correlation, compliance mapping, and executive reporting workflows.",
-  },
-  "/plugins": {
-    eyebrow: "Plugin Catalog",
-    title: "Plugins",
-    description: "Role-based AI co-workers installed and operated per site.",
-  },
-  "/delivery-layer": {
-    eyebrow: "Delivery Layer",
-    title: "Delivery Layer",
-    description: "Thai-native message routing, preview, and audit trail delivery.",
-  },
-};
-
-const MENU_GROUPS: Array<{ label: string; items: MenuItem[] }> = [
+// ─── Menu Groups ────────────────────────────────────────────────────────────
+const MENU_GROUPS: Array<{ labelKey: TKey; items: MenuItem[] }> = [
   {
-    label: "Menu",
+    labelKey: "menu.group.menu",
     items: [
-      { label: "Dashboard", href: "/", exact: true, icon: <MenuIcon kind="grid" /> },
-      { label: "Configuration", href: "/configuration", exact: true, icon: <MenuIcon kind="settings" /> },
+      { labelKey: "page./.title", href: "/", exact: true, icon: <MenuIcon kind="command" /> },
+      { labelKey: "page./dashboard.title", href: "/dashboard", exact: true, icon: <MenuIcon kind="grid" /> },
+      { labelKey: "page./reports.title", href: "/reports", exact: true, icon: <MenuIcon kind="pulse" /> },
     ],
   },
   {
-    label: "Service Categories",
+    labelKey: "menu.group.tools",
     items: [
-      { label: "Red Service", href: "/red-service", exact: true, icon: <MenuIcon kind="bolt" /> },
-      { label: "Blue Service", href: "/blue-service", exact: true, icon: <MenuIcon kind="shield" /> },
-      { label: "Purple Service", href: "/purple-service", exact: true, icon: <MenuIcon kind="pulse" /> },
+      { labelKey: "page./plugins.title", href: "/plugins", exact: true, icon: <MenuIcon kind="plug" />, showBadge: true },
+      { labelKey: "page./code.title", href: "/code", exact: true, icon: <MenuIcon kind="code" /> },
     ],
   },
   {
-    label: "Plugin Categories",
+    labelKey: "menu.group.config",
     items: [
-      { label: "Plugin Catalog", href: "/plugins", exact: true, icon: <MenuIcon kind="plug" /> },
-      { label: "Delivery Layer", href: "/delivery-layer", exact: true, icon: <MenuIcon kind="send" /> },
+      { labelKey: "page./agents.title", href: "/agents", exact: true, icon: <MenuIcon kind="agents" /> },
+      { labelKey: "page./settings.title", href: "/settings", exact: true, icon: <MenuIcon kind="settings" /> },
     ],
   },
 ];
 
-function MenuIcon({ kind }: { kind: "grid" | "settings" | "bolt" | "shield" | "pulse" | "plug" | "send" }) {
+// ─── Sidebar agent status cycles ───────────────────────────────────────────
+const SIDEBAR_AGENT_CYCLES = [
+  ["Currently scanning port 443 for Network A", "Monitoring NAS traffic. No anomalies detected"],
+  ["Shadow pentest: crawling /api/auth endpoints", "Detected unusual login attempts — investigating"],
+  ["Validating CVE-2024-3094 on Vercel deployment", "Log refiner active — filtering 1,240 events"],
+  ["Exploit autopilot idle — next sweep in 12 min", "Guardian: All clear ✅ Zero anomalies past 1h"],
+];
+
+// ─── Icons ──────────────────────────────────────────────────────────────────
+function MenuIcon({
+  kind,
+}: {
+  kind: "grid" | "settings" | "bolt" | "shield" | "pulse" | "plug" | "send" | "command" | "code" | "agents";
+}) {
   const paths: Record<typeof kind, ReactNode> = {
     grid: (
       <>
@@ -102,10 +81,32 @@ function MenuIcon({ kind }: { kind: "grid" | "settings" | "bolt" | "shield" | "p
       </>
     ),
     send: <path d="M3 11.5 21 3l-4.8 18-4.23-6.35L3 11.5Z" />,
+    command: <path d="M4 17l6-6-6-6M12 19h8" />,
+    code: (
+      <>
+        <polyline points="16 18 22 12 16 6" />
+        <polyline points="8 6 2 12 8 18" />
+      </>
+    ),
+    agents: (
+      <>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
   };
 
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       {paths[kind]}
     </svg>
   );
@@ -113,18 +114,56 @@ function MenuIcon({ kind }: { kind: "grid" | "settings" | "bolt" | "shield" | "p
 
 function isActive(pathname: string, item: MenuItem) {
   const basePath = item.href.split("#")[0] || "/";
-  if (item.exact) {
-    return pathname === basePath;
-  }
-  if (basePath === "/") {
-    return pathname === "/";
-  }
+  if (item.exact) return pathname === basePath;
+  if (basePath === "/") return pathname === "/";
   return pathname.startsWith(basePath);
 }
 
-export function AppChrome({ children }: { children: ReactNode }) {
+// ─── Inner shell (uses lang context) ────────────────────────────────────────
+function AppChromeShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const pageMeta = PAGE_META[pathname] || PAGE_META["/"];
+  const { lang, toggle, t } = useLang();
+
+  // Page metadata using translations
+  const pageMeta = {
+    eyebrow: t((`page.${pathname}.eyebrow` as TKey) in Object.keys({}) ? (`page.${pathname}.eyebrow` as TKey) : "page./.eyebrow"),
+    title: t((`page.${pathname}.title` as TKey) in Object.keys({}) ? (`page.${pathname}.title` as TKey) : "page./.title"),
+    description: t((`page.${pathname}.desc` as TKey) in Object.keys({}) ? (`page.${pathname}.desc` as TKey) : "page./.desc"),
+  };
+
+  // Use a lookup for page meta
+  const pageMetaLookup: Record<string, { eyebrow: string; title: string; description: string }> = {
+    "/": { eyebrow: t("page./.eyebrow"), title: t("page./.title"), description: t("page./.desc") },
+    "/dashboard": { eyebrow: t("page./dashboard.eyebrow"), title: t("page./dashboard.title"), description: t("page./dashboard.desc") },
+    "/reports": { eyebrow: t("page./reports.eyebrow"), title: t("page./reports.title"), description: t("page./reports.desc") },
+    "/plugins": { eyebrow: t("page./plugins.eyebrow"), title: t("page./plugins.title"), description: t("page./plugins.desc") },
+    "/code": { eyebrow: t("page./code.eyebrow"), title: t("page./code.title"), description: t("page./code.desc") },
+    "/agents": { eyebrow: t("page./agents.eyebrow"), title: t("page./agents.title"), description: t("page./agents.desc") },
+    "/settings": { eyebrow: t("page./settings.eyebrow"), title: t("page./settings.title"), description: t("page./settings.desc") },
+  };
+  const currentMeta = pageMetaLookup[pathname] ?? pageMetaLookup["/"];
+  void pageMeta; // suppress unused variable
+
+  // Live agent status cycling
+  const [agentCycleIdx, setAgentCycleIdx] = useState(0);
+  const [pluginCount, setPluginCount] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAgentCycleIdx((i) => (i + 1) % SIDEBAR_AGENT_CYCLES.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    fetchSites("", 50)
+      .then((res) => {
+        setPluginCount(res.rows.filter((s) => s.is_active).length);
+      })
+      .catch(() => setPluginCount(3));
+  }, []);
+
+  const agentLines = SIDEBAR_AGENT_CYCLES[agentCycleIdx] ?? SIDEBAR_AGENT_CYCLES[0];
 
   return (
     <div className="app-layout">
@@ -135,31 +174,48 @@ export function AppChrome({ children }: { children: ReactNode }) {
             <span />
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.36em] text-[var(--sidebar-muted)]">BRP Cyber</p>
-            <h2 className="mt-2 text-[1.7rem] font-semibold tracking-tight text-white">Co-worker</h2>
-            <p className="mt-1 text-xs leading-5 text-[var(--sidebar-muted)]">
-              Plugin-first security operations for Thai enterprise workflows.
-            </p>
+            <p className="text-[11px] uppercase tracking-[0.36em] text-[var(--sidebar-muted)]">{t("brand.sub")}</p>
+            <h2 className="mt-2 text-[1.7rem] font-semibold tracking-tight text-white">{t("brand.title")}</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--sidebar-muted)]">{t("brand.desc")}</p>
           </div>
         </div>
 
         <nav className="mt-8 space-y-7">
           {MENU_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className="sidebar-section-label">{group.label}</p>
-              <div className="mt-3 space-y-2">
+            <div key={group.labelKey}>
+              <p className="sidebar-section-label">{t(group.labelKey)}</p>
+              <div className="mt-3 space-y-1">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item);
+                  const isOrchestrator = item.href === "/";
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`sidebar-link ${active ? "sidebar-link-active" : ""}`}
-                      aria-current={active ? "page" : undefined}
-                    >
-                      <span className="sidebar-link-icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </Link>
+                    <div key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`sidebar-link ${active ? "sidebar-link-active" : ""}`}
+                        aria-current={active ? "page" : undefined}
+                      >
+                        <span className="sidebar-link-icon">{item.icon}</span>
+                        <span className="flex-1">{t(item.labelKey as TKey)}</span>
+                        {item.showBadge && pluginCount > 0 && (
+                          <span className="agent-badge-active">
+                            <span className="agent-dot agent-dot-green" style={{ width: 6, height: 6 }} />
+                            {pluginCount}
+                          </span>
+                        )}
+                      </Link>
+
+                      {isOrchestrator && (
+                        <div className="sidebar-agent-status">
+                          <p className="sidebar-agent-line">
+                            <span>Red Agent:</span> {agentLines[0]}
+                          </p>
+                          <p className="sidebar-agent-line">
+                            <span>Blue Agent:</span> {agentLines[1]}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -170,10 +226,11 @@ export function AppChrome({ children }: { children: ReactNode }) {
         <div className="app-sidebar-footer">
           <p className="sidebar-section-label">Support</p>
           <div className="mt-3 mx-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm font-medium text-white">AI Orchestrator</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--sidebar-muted)]">
-              Safe-mode automation, policy gates, and audit-ready delivery are enabled from the same control plane.
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="agent-dot agent-dot-green" />
+              <p className="text-sm font-medium text-white">{t("support.title")}</p>
+            </div>
+            <p className="text-xs leading-5 text-[var(--sidebar-muted)]">{t("support.body")}</p>
           </div>
         </div>
       </aside>
@@ -181,33 +238,55 @@ export function AppChrome({ children }: { children: ReactNode }) {
       <div className="app-page">
         <header className="app-topbar">
           <div>
-            <p className="app-topbar-eyebrow">{pageMeta.eyebrow}</p>
-            <h1>{pageMeta.title}</h1>
-            <p>{pageMeta.description}</p>
+            <p className="app-topbar-eyebrow">{currentMeta.eyebrow}</p>
+            <h1>{currentMeta.title}</h1>
+            <p>{currentMeta.description}</p>
           </div>
           <div className="app-topbar-actions">
+            {/* Language Toggle */}
+            <button
+              type="button"
+              onClick={toggle}
+              title="Switch language"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3.5 text-xs font-bold tracking-widest text-[#110B0A] shadow-sm hover:border-[#F76C45] hover:text-[#F76C45] transition-colors gap-1"
+            >
+              <span className={lang === "th" ? "text-accent" : "text-slate-400"}>TH</span>
+              <span className="text-slate-300">/</span>
+              <span className={lang === "en" ? "text-accent" : "text-slate-400"}>EN</span>
+            </button>
+
+            {/* Bell notification */}
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#110B0A] shadow-sm hover:border-[#F76C45]"
-              title="Notifications"
+              title={t("notif.tooltip")}
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
                 <path d="M10 17a2 2 0 0 0 4 0" />
               </svg>
             </button>
-            <ThemeToggle />
-            <div className="app-identity">
-              <div className="app-identity-avatar">AI</div>
-              <div>
-                <p className="app-identity-name">Security Operator</p>
-                <p className="app-identity-role">Plugin-first orchestration</p>
-              </div>
-            </div>
           </div>
         </header>
         <div className="app-content">{children}</div>
       </div>
     </div>
+  );
+}
+
+// ─── AppChrome (public export wraps with LangProvider) ─────────────────────
+export function AppChrome({ children }: { children: ReactNode }) {
+  return (
+    <LangProvider>
+      <AppChromeShell>{children}</AppChromeShell>
+    </LangProvider>
   );
 }

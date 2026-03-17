@@ -187,7 +187,12 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
       setControlFamilyMap(controlRows);
       setAttackLayerWorkspaces(layerRows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "purple_reports_load_failed");
+      const msg = err instanceof Error ? err.message : "purple_reports_load_failed";
+      if (msg.includes("fetch") || msg.includes("network") || msg.toLowerCase().includes("failed to fetch")) {
+        setError("ยังไม่มีการเชื่อมต่อ Backend · ระบบอยู่ใน Demo Mode — เพิ่ม Site ใน Settings เพื่อเริ่มใช้งานจริง");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

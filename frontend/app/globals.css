@@ -467,3 +467,452 @@ html[data-theme="dark"] .hero-visual-card {
     padding-right: 16px;
   }
 }
+
+/* ─── Agent Status Dot System ─────────────────────────────────────────── */
+.agent-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.agent-dot-green {
+  background: #17c964;
+  animation: agentPulseGreen 2s ease-in-out infinite;
+}
+
+.agent-dot-yellow {
+  background: #f5a623;
+  animation: agentPulseYellow 2s ease-in-out infinite;
+}
+
+.agent-dot-red {
+  background: #f31260;
+  animation: agentPulseRed 2s ease-in-out infinite;
+}
+
+@keyframes agentPulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(23, 201, 100, 0); }
+  50%       { box-shadow: 0 0 0 5px rgba(23, 201, 100, 0.28); }
+}
+
+@keyframes agentPulseYellow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 166, 35, 0); }
+  50%       { box-shadow: 0 0 0 5px rgba(245, 166, 35, 0.28); }
+}
+
+@keyframes agentPulseRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(243, 18, 96, 0); }
+  50%       { box-shadow: 0 0 0 5px rgba(243, 18, 96, 0.28); }
+}
+
+/* ─── Plugin Badge ────────────────────────────────────────────────────── */
+.agent-badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: rgba(23, 201, 100, 0.14);
+  border: 1px solid rgba(23, 201, 100, 0.3);
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #17c964;
+}
+
+/* ─── Sidebar Agent Status Lines ─────────────────────────────────────── */
+.sidebar-agent-status {
+  padding: 4px 14px 2px 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 14px;
+}
+
+.sidebar-agent-line {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.38);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.sidebar-agent-line span {
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+}
+
+/* ─── Action Loop Steps ───────────────────────────────────────────────── */
+.action-loop-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.action-loop-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+  min-width: 90px;
+}
+
+.action-loop-step::after {
+  content: "";
+  position: absolute;
+  left: 60%;
+  top: 21px;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(247,108,69,0.35), rgba(247,108,69,0.08));
+}
+
+.action-loop-step:last-child::after {
+  display: none;
+}
+
+.action-loop-step-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(247, 108, 69, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.action-loop-step-active .action-loop-step-icon {
+  background: var(--accent);
+  box-shadow: 0 0 0 6px rgba(247, 108, 69, 0.22);
+  animation: loopStepPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes loopStepPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(247, 108, 69, 0.18); }
+  50%       { box-shadow: 0 0 0 10px rgba(247, 108, 69, 0.08); }
+}
+
+.action-loop-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--shell-text);
+  opacity: 0.85;
+}
+
+.action-loop-step-desc {
+  font-size: 10px;
+  text-align: center;
+  color: var(--shell-text);
+  opacity: 0.5;
+  line-height: 1.4;
+  max-width: 88px;
+}
+
+/* ─── Empty State Card ────────────────────────────────────────────────── */
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-state-blob {
+  width: 76px;
+  height: 76px;
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  background: var(--accent-soft);
+  border: 1px solid rgba(247, 108, 69, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: blobMorph 7s ease-in-out infinite;
+}
+
+@keyframes blobMorph {
+  0%   { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+}
+
+/* ─── Chat Bubbles ────────────────────────────────────────────────────── */
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 14px 4px;
+}
+
+.chat-bubble-user {
+  align-self: flex-end;
+  max-width: 80%;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.chat-bubble-agent {
+  align-self: flex-start;
+  max-width: 82%;
+  background: var(--muted-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.chat-typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.chat-typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+
+.chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+  40%           { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Agent Status Cards ──────────────────────────────────────────────── */
+.agent-card {
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--muted-surface);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.2s;
+}
+
+.agent-card:hover {
+  border-color: rgba(247, 108, 69, 0.25);
+}
+
+.agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-card-activity {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--shell-text);
+  opacity: 0.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Command Board Items ─────────────────────────────────────────────── */
+.cmd-item {
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: var(--muted-surface);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left-width: 3px;
+}
+
+.cmd-item-warning { border-left-color: #f5a623; }
+.cmd-item-success { border-left-color: #17c964; }
+.cmd-item-danger  { border-left-color: #f31260; }
+.cmd-item-info    { border-left-color: var(--accent); }
+
+/* ─── Code Scanner ────────────────────────────────────────────────────── */
+.code-textarea {
+  width: 100%;
+  min-height: 180px;
+  border-radius: 14px;
+  border: 1px solid var(--card-border);
+  background: var(--muted-surface);
+  color: var(--shell-text);
+  padding: 14px;
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.code-textarea:focus {
+  border-color: rgba(247, 108, 69, 0.45);
+}
+
+/* ─── Settings Tabs ───────────────────────────────────────────────────── */
+.settings-tab {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--shell-text);
+  opacity: 0.6;
+  transition: all 0.15s;
+}
+
+.settings-tab:hover {
+  opacity: 0.85;
+  background: var(--accent-soft);
+}
+
+.settings-tab-active {
+  border-color: rgba(247, 108, 69, 0.35);
+  background: var(--accent-soft);
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* ─── Toggle Switch ───────────────────────────────────────────────────── */
+.toggle-track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--card-border);
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+}
+
+.toggle-track-on {
+  background: #17c964;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.toggle-track-on .toggle-thumb {
+  transform: translateX(18px);
+}
+
+/* ─── AI Eyes ──────────────────────────────────────────────────────────────── */
+.ai-eyes-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  min-height: 100%;
+  background: #0a0a0a;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.ai-eyes-wrapper {
+  display: flex;
+  gap: 48px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-eye-container {
+  width: 110px;
+  height: 110px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ai-eye {
+  width: 56px;
+  height: 56px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: relative;
+  box-shadow:
+    0 0 18px rgba(255, 255, 255, 0.85),
+    0 0 36px rgba(255, 255, 255, 0.3);
+  transition:
+    width 0.15s,
+    height 0.15s,
+    transform 0.04s ease-out,
+    border-radius 0.15s;
+}
+
+.ai-eye::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+.ai-eye-blink {
+  height: 2px !important;
+}
+
+.ai-eye-suspicious {
+  height: 14px !important;
+  border-radius: 10px !important;
+}
+
+.ai-eyes-hint {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+
+.ai-eyes-hint-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  max-width: 240px;
+  line-height: 1.6;
+}

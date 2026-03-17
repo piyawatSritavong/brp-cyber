@@ -3,6 +3,34 @@ export type GateBlocker = {
   reason: string;
 };
 
+// ─── Orchestrator / Chat Types (added for new UI) ──────────────────────────
+export type AgentStatusData = {
+  id: "red" | "blue" | "purple" | "orchestrator";
+  label: string;
+  shortLabel: string;
+  status: "active" | "idle" | "warning";
+  currentActivity: string;
+  lastUpdated: string;
+};
+
+export type CommandItem = {
+  id: string;
+  severity: "warning" | "info" | "success" | "danger";
+  emoji: string;
+  title: string;
+  body: string;
+  actionLabel?: string;
+  actionType?: "red_scan" | "blue_check" | "block_ip" | "report" | null;
+  loading?: boolean;
+};
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "agent";
+  text: string;
+  timestamp: string;
+};
+
 export type DashboardRow = {
   tenant_id: string;
   overall_pass: boolean;

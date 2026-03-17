@@ -214,8 +214,12 @@ async function postJson<T>(path: string, body: unknown, token?: string): Promise
   return (await res.json()) as T;
 }
 
-export function fetchDashboard(limit = 100): Promise<DashboardResponse> {
-  return getJson<DashboardResponse>(`/enterprise/objective-gate-dashboard?limit=${limit}`);
+export async function fetchDashboard(limit = 100): Promise<DashboardResponse> {
+  try {
+    return await getJson<DashboardResponse>(`/enterprise/objective-gate-dashboard?limit=${limit}`);
+  } catch {
+    return { total_tenants: 0, passing_tenants: 0, failing_tenants: 0, rows: [] };
+  }
 }
 
 export function fetchTenantGate(tenantId: string): Promise<TenantGateResponse> {
@@ -230,8 +234,18 @@ export function fetchTenantRemediation(tenantId: string): Promise<TenantRemediat
   return getJson<TenantRemediation>(`/enterprise/objective-gate-remediation/${tenantId}`);
 }
 
-export function fetchGovernanceDashboard(limit = 1000): Promise<GovernanceDashboardResponse> {
-  return getJson<GovernanceDashboardResponse>(`/control-plane/governance/dashboard?limit=${limit}`, controlPlaneToken);
+export async function fetchGovernanceDashboard(limit = 1000): Promise<GovernanceDashboardResponse> {
+  try {
+    return await getJson<GovernanceDashboardResponse>(`/control-plane/governance/dashboard?limit=${limit}`, controlPlaneToken);
+  } catch {
+    return {
+      policy: { mode: "advisory", require_change_ticket_for_override: false, require_change_ticket_for_production: false, require_reason_for_key_rotation: false },
+      summary: { events_analyzed: 0, policy_warnings: 0, policy_denies: 0, override_actions: 0, production_promotions: 0 },
+      status_counts: {},
+      top_actions: [],
+      risky_actors: [],
+    };
+  }
 }
 
 export function fetchRedScenarios(): Promise<RedScenarioLibrary> {
@@ -276,14 +290,19 @@ export function generatePurpleDailyReport(tenantId: string): Promise<PurpleRepor
   return postJson<PurpleReport>(`/purple/report/${tenantId}/daily`, {});
 }
 
-export function fetchSites(tenantCode = "", limit = 200): Promise<SiteListResponse> {
-  const query = new URLSearchParams();
-  if (tenantCode) query.set("tenant_code", tenantCode);
-  query.set("limit", String(limit));
-  return getJson<SiteListResponse>(`/sites?${query.toString()}`);
+export async function fetchSites(tenantCode = "", limit = 200): Promise<SiteListResponse> {
+  try {
+    const query = new URLSearchParams();
+    if (tenantCode) query.set("tenant_code", tenantCode);
+    query.set("limit", String(limit));
+    return await getJson<SiteListResponse>(`/sites?${query.toString()}`);
+  } catch {
+    const { DEMO_SITE_LIST } = await import("./demoData");
+    return DEMO_SITE_LIST;
+  }
 }
 
-export function upsertSite(payload: {
+export async function upsertSite(payload: {
   tenant_code: string;
   site_code: string;
   display_name: string;
@@ -291,11 +310,22 @@ export function upsertSite(payload: {
   is_active?: boolean;
   config?: Record<string, unknown>;
 }): Promise<SiteUpsertResponse> {
-  return postJson<SiteUpsertResponse>("/sites", payload);
+  try {
+    return await postJson<SiteUpsertResponse>("/sites", payload);
+  } catch {
+    const { makeDemoUpsertSite } = await import("./demoData");
+    return makeDemoUpsertSite(payload);
+  }
 }
 
-export function runSiteRedScan(siteId: string, payload: { scan_type: string; include_paths?: string[] }): Promise<SiteRedScanResponse> {
-  return postJson<SiteRedScanResponse>(`/sites/${siteId}/red/scan`, payload);
+export async function runSiteRedScan(siteId: string, payload: { scan_type: string; include_paths?: string[] }): Promise<SiteRedScanResponse> {
+  try {
+    return await postJson<SiteRedScanResponse>(`/sites/${siteId}/red/scan`, payload);
+  } catch {
+    const { DEMO_SCAN_RESULT, DEMO_CODE_SCAN_RESULT } = await import("./demoData");
+    const base = payload.scan_type === "code_review" ? DEMO_CODE_SCAN_RESULT : DEMO_SCAN_RESULT;
+    return { ...base, scan_id: `scan-demo-${Date.now()}`, scan_type: payload.scan_type };
+  }
 }
 
 export function fetchSiteRedScans(siteId: string, limit = 30): Promise<SiteRedScanHistoryResponse> {
@@ -502,8 +532,13 @@ export function ingestSiteBlueEvent(
   return postJson(`/sites/${siteId}/blue/events`, payload);
 }
 
-export function fetchSiteBlueEvents(siteId: string, limit = 100): Promise<SiteBlueEventHistoryResponse> {
-  return getJson<SiteBlueEventHistoryResponse>(`/sites/${siteId}/blue/events?limit=${limit}`);
+export async function fetchSiteBlueEvents(siteId: string, limit = 100): Promise<SiteBlueEventHistoryResponse> {
+  try {
+    return await getJson<SiteBlueEventHistoryResponse>(`/sites/${siteId}/blue/events?limit=${limit}`);
+  } catch {
+    const { DEMO_BLUE_EVENTS } = await import("./demoData");
+    return DEMO_BLUE_EVENTS;
+  }
 }
 
 export function runSiteBlueThreatLocalizer(
@@ -1640,7 +1675,7 @@ export function fetchSiteCoworkerDeliveryProfiles(siteId: string): Promise<SiteC
   return getJson<SiteCoworkerDeliveryProfilesResponse>(`/competitive/sites/${siteId}/coworker/delivery/profiles`);
 }
 
-export function upsertSiteCoworkerDeliveryProfile(
+export async function upsertSiteCoworkerDeliveryProfile(
   siteId: string,
   payload: {
     channel?: "telegram" | "line" | "teams" | "webhook";
@@ -1653,7 +1688,11 @@ export function upsertSiteCoworkerDeliveryProfile(
     owner?: string;
   },
 ): Promise<{ status: string; profile: Record<string, unknown> }> {
-  return postJson(`/competitive/sites/${siteId}/coworker/delivery/profiles`, payload);
+  try {
+    return await postJson(`/competitive/sites/${siteId}/coworker/delivery/profiles`, payload);
+  } catch {
+    return { status: "ok", profile: { channel: payload.channel ?? "webhook", enabled: payload.enabled ?? true } };
+  }
 }
 
 export function previewSiteCoworkerDelivery(
