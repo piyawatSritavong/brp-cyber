@@ -42,6 +42,9 @@ const T = {
     "page./settings.eyebrow": "System Configuration",
     "page./settings.title": "Settings",
     "page./settings.desc": "Alert channels, client connections และ system preferences",
+    "page./n8n-agents.eyebrow": "Workflow Automation",
+    "page./n8n-agents.title": "n8n Agents",
+    "page./n8n-agents.desc": "Automation workflow สำหรับแต่ละ Agent — นำเข้า n8n เพื่อรัน automation อัตโนมัติ",
     "notif.tooltip": "การแจ้งเตือน",
   },
   en: {
@@ -81,6 +84,9 @@ const T = {
     "page./settings.eyebrow": "System Configuration",
     "page./settings.title": "Settings",
     "page./settings.desc": "Alert channels, client connections, and system preferences.",
+    "page./n8n-agents.eyebrow": "Workflow Automation",
+    "page./n8n-agents.title": "n8n Agents",
+    "page./n8n-agents.desc": "Per-agent automation workflows — import into n8n and run fully automated security operations.",
     "notif.tooltip": "Notifications",
   },
 } as const;

@@ -1,14 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AgentStatusWidget, type AgentStatusData } from "@/components/AgentStatusWidget";
 import { CommandBoardPanel, type CommandItem } from "@/components/CommandBoardPanel";
 import { ChatInteractivePanel } from "@/components/ChatInteractivePanel";
-import { ActionLoopPanel } from "@/components/ActionLoopPanel";
-import { runSiteRedScan, fetchSites } from "@/lib/api";
-import type { SiteRow } from "@/lib/types";
+import { N8nWorkflowsSection } from "@/components/N8nWorkflowsSection";
+import { runSiteRedScan } from "@/lib/api";
 
-// ─── Mock Agent Status Cycles ─────────────────────────────────────────────
+// ─── Mock Agent Status Cycles ─────────────────────────────────────────────────
 const AGENT_CYCLES: AgentStatusData[][] = [
   [
     { id: "red", label: "Scout Agent (Red)", shortLabel: "Red Agent", status: "active", currentActivity: "Currently scanning port 443 for Network A vulnerabilities", lastUpdated: new Date().toISOString() },
@@ -30,7 +29,7 @@ const AGENT_CYCLES: AgentStatusData[][] = [
   ],
 ];
 
-// ─── Initial Command Board Items ───────────────────────────────────────────
+// ─── Initial Command Board Items ───────────────────────────────────────────────
 const INITIAL_ITEMS: CommandItem[] = [
   {
     id: "c1",
@@ -73,180 +72,65 @@ function uid(): string {
 }
 
 export function OrchestratorPanel() {
-  const [sites, setSites] = useState<SiteRow[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState("");
   const [agentCycleIdx, setAgentCycleIdx] = useState(0);
   const [commandItems, setCommandItems] = useState<CommandItem[]>(INITIAL_ITEMS);
-  const [activeLoopStep, setActiveLoopStep] = useState(0);
-
-  const loadSites = useCallback(async () => {
-    try {
-      const res = await fetchSites("", 300);
-      setSites(res.rows || []);
-      if (!selectedSiteId && res.rows.length > 0) {
-        setSelectedSiteId(res.rows[0].site_id);
-      }
-    } catch {
-      // silent – demo mode
-    }
-  }, [selectedSiteId]);
 
   useEffect(() => {
-    void loadSites();
-
-    // Cycle agent statuses
     const agentTimer = setInterval(() => {
       setAgentCycleIdx((i) => (i + 1) % AGENT_CYCLES.length);
     }, 8000);
-
-    // Demo action loop cycling
-    const loopTimer = setInterval(() => {
-      setActiveLoopStep((s) => (s >= 5 ? 0 : s + 1));
-    }, 4000);
-
-    return () => {
-      clearInterval(agentTimer);
-      clearInterval(loopTimer);
-    };
-  }, [loadSites]);
+    return () => clearInterval(agentTimer);
+  }, []);
 
   const currentAgents = AGENT_CYCLES[agentCycleIdx] ?? AGENT_CYCLES[0];
 
   async function handleCommandAction(item: CommandItem) {
-    // Mark as loading
     setCommandItems((prev) =>
       prev.map((i) => (i.id === item.id ? { ...i, loading: true } : i))
     );
 
     try {
-      if (item.actionType === "red_scan" && selectedSiteId) {
-        const res = await runSiteRedScan(selectedSiteId, { scan_type: "full" });
-        // Replace item with result summary
+      if (item.actionType === "red_scan") {
+        const res = await runSiteRedScan("demo-duck-sec-ai-01", { scan_type: "full" });
         setCommandItems((prev) =>
           prev.map((i) =>
             i.id === item.id
-              ? {
-                  ...i,
-                  loading: false,
-                  emoji: "🔍",
-                  severity: "info" as const,
-                  title: "Scan เสร็จสิ้น",
-                  body: res.ai_summary || `Scan ID: ${res.scan_id} · Status: ${res.status}`,
-                  actionLabel: undefined,
-                  actionType: null,
-                }
+              ? { ...i, loading: false, emoji: "🔍", severity: "info" as const, title: "Scan เสร็จสิ้น", body: res.ai_summary || `Scan ID: ${res.scan_id} · Status: ${res.status}`, actionLabel: undefined, actionType: null }
               : i
           )
         );
       } else if (item.actionType === "block_ip") {
-        // Simulate block action
         await new Promise((r) => setTimeout(r, 1200));
         setCommandItems((prev) =>
           prev.map((i) =>
             i.id === item.id
-              ? {
-                  ...i,
-                  loading: false,
-                  emoji: "🛡️",
-                  severity: "success" as const,
-                  title: "IP ถูก Block แล้ว",
-                  body: "Guardian Agent สั่ง Firewall API Block IP 185.220.x.x เรียบร้อยแล้ว Incident Report กำลังร่าง…",
-                  actionLabel: undefined,
-                  actionType: null,
-                }
+              ? { ...i, loading: false, emoji: "🛡️", severity: "success" as const, title: "IP ถูก Block แล้ว", body: "Guardian Agent สั่ง Firewall API Block IP 185.220.x.x เรียบร้อยแล้ว Incident Report กำลังร่าง…", actionLabel: undefined, actionType: null }
               : i
           )
         );
-        // Add new post-incident item
         setCommandItems((prev) => [
           ...prev,
-          {
-            id: uid(),
-            severity: "info" as const,
-            emoji: "📋",
-            title: "Incident Report พร้อมส่ง",
-            body: "Architect Agent ร่างรายงานเหตุการณ์ Brute Force เสร็จแล้ว ต้องการส่ง Email ถึงทีมไหม?",
-            actionLabel: "Send Report",
-            actionType: "report",
-          },
+          { id: uid(), severity: "info" as const, emoji: "📋", title: "Incident Report พร้อมส่ง", body: "Architect Agent ร่างรายงานเหตุการณ์ Brute Force เสร็จแล้ว ต้องการส่ง Email ถึงทีมไหม?", actionLabel: "Send Report", actionType: "report" },
         ]);
       } else if (item.actionType === "report") {
         await new Promise((r) => setTimeout(r, 800));
         setCommandItems((prev) =>
           prev.map((i) =>
             i.id === item.id
-              ? {
-                  ...i,
-                  loading: false,
-                  emoji: "✅",
-                  severity: "success" as const,
-                  title: "Report ส่งแล้ว",
-                  body: "Incident Report ถูกส่ง Email ให้ทีมแล้ว และบันทึกใน Audit Log เรียบร้อย",
-                  actionLabel: undefined,
-                  actionType: null,
-                }
+              ? { ...i, loading: false, emoji: "✅", severity: "success" as const, title: "Report ส่งแล้ว", body: "Incident Report ถูกส่ง Email ให้ทีมแล้ว และบันทึกใน Audit Log เรียบร้อย", actionLabel: undefined, actionType: null }
               : i
           )
         );
       } else {
-        setCommandItems((prev) =>
-          prev.map((i) => (i.id === item.id ? { ...i, loading: false } : i))
-        );
+        setCommandItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, loading: false } : i)));
       }
     } catch {
-      setCommandItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, loading: false } : i))
-      );
+      setCommandItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, loading: false } : i)));
     }
   }
 
   return (
     <main className="space-y-5">
-      {/* Hero strip */}
-      <section className="dashboard-hero px-6 py-5 lg:px-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.26em] text-accent">AI Command Center</p>
-            <h2 className="mt-2 text-[2rem] font-semibold leading-tight text-ink sm:text-[2.2rem]">
-              Orchestrator — AI ทำงาน{" "}
-              <span className="text-accent">ตลอดเวลา</span>
-            </h2>
-            <p className="mt-2 text-sm leading-7 text-slate-500">
-              Scout · Guardian · Architect ทำงานอัตโนมัติ 24/7 และรายงานผลให้คุณในทันที
-            </p>
-            {sites.length > 0 && (
-              <div className="mt-3 flex items-center gap-3 flex-wrap">
-                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">
-                  Site
-                  <select
-                    value={selectedSiteId}
-                    onChange={(e) => setSelectedSiteId(e.target.value)}
-                    className="min-w-[140px] bg-transparent text-sm font-medium text-ink outline-none"
-                  >
-                    {sites.map((s) => (
-                      <option key={s.site_id} value={s.site_id}>
-                        {s.display_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-semibold text-green-700">
-                  <span className="agent-dot agent-dot-green" style={{ width: 6, height: 6 }} />
-                  {sites.filter((s) => s.is_active).length} Sites Online
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="hero-visual flex-shrink-0">
-            <div className="hero-visual-card hero-visual-card-secondary" />
-            <div className="hero-visual-card hero-visual-card-primary" />
-            <div className="hero-visual-orbit" />
-            <span className="hero-visual-dot hero-visual-dot-a" />
-            <span className="hero-visual-dot hero-visual-dot-b" />
-          </div>
-        </div>
-      </section>
-
       {/* Agent status chips */}
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -259,18 +143,18 @@ export function OrchestratorPanel() {
         <AgentStatusWidget agents={currentAgents} variant="card" />
       </section>
 
+      {/* n8n Workflow cards — aligned under each agent */}
+      <N8nWorkflowsSection />
+
       {/* Command Board + Chat side by side */}
       <section className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2 flex flex-col" style={{ minHeight: 360 }}>
           <CommandBoardPanel items={commandItems} onAction={handleCommandAction} />
         </div>
         <div className="lg:col-span-3 flex flex-col" style={{ minHeight: 360 }}>
-          <ChatInteractivePanel siteId={selectedSiteId} />
+          <ChatInteractivePanel siteId="" />
         </div>
       </section>
-
-      {/* Action Loop */}
-      <ActionLoopPanel activeStep={activeLoopStep} />
     </main>
   );
 }

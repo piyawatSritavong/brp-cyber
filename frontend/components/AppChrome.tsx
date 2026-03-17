@@ -31,6 +31,7 @@ const MENU_GROUPS: Array<{ labelKey: TKey; items: MenuItem[] }> = [
     items: [
       { labelKey: "page./plugins.title", href: "/plugins", exact: true, icon: <MenuIcon kind="plug" />, showBadge: true },
       { labelKey: "page./code.title", href: "/code", exact: true, icon: <MenuIcon kind="code" /> },
+      { labelKey: "page./n8n-agents.title", href: "/n8n-agents", exact: true, icon: <MenuIcon kind="n8n" /> },
     ],
   },
   {
@@ -54,7 +55,7 @@ const SIDEBAR_AGENT_CYCLES = [
 function MenuIcon({
   kind,
 }: {
-  kind: "grid" | "settings" | "bolt" | "shield" | "pulse" | "plug" | "send" | "command" | "code" | "agents";
+  kind: "grid" | "settings" | "bolt" | "shield" | "pulse" | "plug" | "send" | "command" | "code" | "agents" | "n8n";
 }) {
   const paths: Record<typeof kind, ReactNode> = {
     grid: (
@@ -94,6 +95,14 @@ function MenuIcon({
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
+    n8n: (
+      <>
+        <circle cx="5" cy="12" r="2.5" />
+        <circle cx="19" cy="6" r="2.5" />
+        <circle cx="19" cy="18" r="2.5" />
+        <path d="M7.5 12h4l2-6M7.5 12l2 6h4" />
       </>
     ),
   };
@@ -140,6 +149,7 @@ function AppChromeShell({ children }: { children: ReactNode }) {
     "/code": { eyebrow: t("page./code.eyebrow"), title: t("page./code.title"), description: t("page./code.desc") },
     "/agents": { eyebrow: t("page./agents.eyebrow"), title: t("page./agents.title"), description: t("page./agents.desc") },
     "/settings": { eyebrow: t("page./settings.eyebrow"), title: t("page./settings.title"), description: t("page./settings.desc") },
+    "/n8n-agents": { eyebrow: t("page./n8n-agents.eyebrow"), title: t("page./n8n-agents.title"), description: t("page./n8n-agents.desc") },
   };
   const currentMeta = pageMetaLookup[pathname] ?? pageMetaLookup["/"];
   void pageMeta; // suppress unused variable
