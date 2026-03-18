@@ -6,14 +6,11 @@ export type Lang = "th" | "en";
 
 const T = {
   th: {
-    "brand.sub": "BRP Cyber",
-    "brand.title": "Co-worker",
-    "brand.desc": "AI Security Co-worker ที่ทำงานตลอด 24/7 สำหรับองค์กรไทย",
+    "brand.sub": "Cyber Coworker",
+    "brand.title": "Ducker",
     "menu.group.menu": "เมนู",
     "menu.group.tools": "เครื่องมือ",
     "menu.group.config": "ตั้งค่า",
-    "support.title": "AI Orchestrator",
-    "support.body": "ระบบอัตโนมัติ, policy gates, และ audit-ready delivery พร้อมใช้งาน",
     "chat.header.eyebrow": "Natural Language",
     "chat.header.title": "Chat with AI",
     "chat.header.sub": "พิมพ์คำสั่งภาษาไทยหรืออังกฤษ เช่น 'สแกน URL นี้' หรือ 'ตรวจ Traffic'",
@@ -48,14 +45,11 @@ const T = {
     "notif.tooltip": "การแจ้งเตือน",
   },
   en: {
-    "brand.sub": "BRP Cyber",
-    "brand.title": "Co-worker",
-    "brand.desc": "AI Security Co-worker operating 24/7 for your organization",
+    "brand.sub": "Cyber Coworker",
+    "brand.title": "Ducker",
     "menu.group.menu": "Menu",
     "menu.group.tools": "Tools",
     "menu.group.config": "Configuration",
-    "support.title": "AI Orchestrator",
-    "support.body": "Safe-mode automation, policy gates, and audit-ready delivery are enabled.",
     "chat.header.eyebrow": "Natural Language",
     "chat.header.title": "Chat with AI",
     "chat.header.sub": "Type commands in Thai or English, e.g. 'scan this URL' or 'check traffic'",

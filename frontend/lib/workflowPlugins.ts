@@ -92,7 +92,7 @@ export function getPlugin(type: string): PluginDef {
 // ─── Default pre-loaded workflows per agent ───────────────────────────────────
 export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
   red: {
-    name: "Scout Agent — Red Team",
+    name: "Scout Agent (Red)",
     active: true,
     nodes: [
       { id: "r1", pluginType: "trigger_webhook", label: "BRP Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
@@ -112,7 +112,7 @@ export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
   },
 
   blue: {
-    name: "Guardian Agent — Blue Team",
+    name: "Guardian Agent (Blue)",
     active: true,
     nodes: [
       { id: "b1", pluginType: "trigger_webhook", label: "BRP Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
@@ -132,7 +132,7 @@ export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
   },
 
   purple: {
-    name: "Architect Agent — Purple Team",
+    name: "Architect Agent (Purple)",
     active: true,
     nodes: [
       { id: "p1", pluginType: "trigger_schedule", label: "Weekly Schedule", icon: "⏱", color: "#17c964", subtitle: "Every Monday 08:00", x: 160, y: 260 },
@@ -150,7 +150,7 @@ export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
   },
 
   orchestrator: {
-    name: "Orchestrator — Policy Gate",
+    name: "Orchestrator",
     active: true,
     nodes: [
       { id: "o1", pluginType: "trigger_webhook", label: "All Events", icon: "🪝", color: "#17c964", subtitle: "Any agent event", x: 160, y: 300 },

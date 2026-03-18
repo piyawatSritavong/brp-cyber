@@ -185,12 +185,11 @@ function AppChromeShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.36em] text-[var(--sidebar-muted)]">{t("brand.sub")}</p>
-            <h2 className="mt-2 text-[1.7rem] font-semibold tracking-tight text-white">{t("brand.title")}</h2>
-            <p className="mt-1 text-xs leading-5 text-[var(--sidebar-muted)]">{t("brand.desc")}</p>
+            <h2 className="mt-2 text-[1.7rem] uppercase font-semibold tracking-tight text-white">{t("brand.title")}</h2>
           </div>
         </div>
 
-        <nav className="mt-8 space-y-7">
+        <nav className="space-y-7">
           {MENU_GROUPS.map((group) => (
             <div key={group.labelKey}>
               <p className="sidebar-section-label">{t(group.labelKey)}</p>
@@ -232,17 +231,6 @@ function AppChromeShell({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
-
-        <div className="app-sidebar-footer">
-          <p className="sidebar-section-label">Support</p>
-          <div className="mt-3 mx-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="agent-dot agent-dot-green" />
-              <p className="text-sm font-medium text-white">{t("support.title")}</p>
-            </div>
-            <p className="text-xs leading-5 text-[var(--sidebar-muted)]">{t("support.body")}</p>
-          </div>
-        </div>
       </aside>
 
       <div className="app-page">
