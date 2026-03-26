@@ -401,7 +401,7 @@ function SystemTab() {
         <div className="flex items-center justify-between py-3">
           <div>
             <p className="text-sm font-medium text-ink">Platform Version</p>
-            <p className="text-xs text-slate-400">BRP Cyber Co-worker · Phase 114</p>
+            <p className="text-xs text-slate-400">CyberWitcher · Phase 114</p>
           </div>
           <span className="text-xs text-slate-400 bg-slate-100 rounded-full px-3 py-1">v1.14.0</span>
         </div>

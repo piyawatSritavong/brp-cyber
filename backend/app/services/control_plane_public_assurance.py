@@ -49,6 +49,10 @@ def public_assurance_summary() -> dict[str, Any]:
                 "evidence_id": legal_row.get("evidence_id", ""),
                 "path": legal_row.get("path", ""),
                 "notarization_provider": legal_row.get("notarization_provider", ""),
+                "notarization_provider_name": legal_row.get("notarization_provider_name", ""),
+                "notarization_profile_id": legal_row.get("notarization_profile_id", ""),
+                "notarization_eidas_profile": legal_row.get("notarization_eidas_profile", ""),
+                "notarization_etsi_profile": legal_row.get("notarization_etsi_profile", ""),
                 "generated_at": legal_row.get("generated_at", ""),
             },
             "orchestration_objectives": {

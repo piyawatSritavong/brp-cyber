@@ -138,10 +138,10 @@ export function PurpleReportsPanel({ selectedSite }: Props) {
   const [purpleRegulatedExportFormat, setPurpleRegulatedExportFormat] = useState<"markdown" | "json" | "pdf" | "docx">("markdown");
   const [controlFamilyFramework, setControlFamilyFramework] = useState<"combined" | "iso27001" | "nist_csf">("combined");
   const [controlFamilyExportFormat, setControlFamilyExportFormat] = useState<"markdown" | "csv" | "json">("markdown");
-  const [attackLayerImportName, setAttackLayerImportName] = useState("BRP Imported Layer");
+  const [attackLayerImportName, setAttackLayerImportName] = useState("CyberWitcher Imported Layer");
   const [attackLayerImportNotes, setAttackLayerImportNotes] = useState("");
   const [attackLayerImportJson, setAttackLayerImportJson] = useState(
-    '{\n  "name": "BRP Imported Layer",\n  "domain": "enterprise-attack",\n  "techniques": [\n    {"techniqueID": "T1110", "score": 80, "comment": "Brute force coverage", "enabled": true}\n  ]\n}',
+    '{\n  "name": "CyberWitcher Imported Layer",\n  "domain": "enterprise-attack",\n  "techniques": [\n    {"techniqueID": "T1110", "score": 80, "comment": "Brute force coverage", "enabled": true}\n  ]\n}',
   );
   const [attackLayerOverrideJson, setAttackLayerOverrideJson] = useState(
     '[\n  {"techniqueID": "T1110", "score": 95, "color": "#F76C45", "comment": "Validated by purple team"}\n]',

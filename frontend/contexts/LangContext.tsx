@@ -7,7 +7,7 @@ export type Lang = "th" | "en";
 const T = {
   th: {
     "brand.sub": "Cyber Coworker",
-    "brand.title": "Ducker",
+    "brand.title": "CyberWitcher",
     "menu.group.menu": "เมนู",
     "menu.group.tools": "เครื่องมือ",
     "menu.group.config": "ตั้งค่า",
@@ -46,7 +46,7 @@ const T = {
   },
   en: {
     "brand.sub": "Cyber Coworker",
-    "brand.title": "Ducker",
+    "brand.title": "CyberWitcher",
     "menu.group.menu": "Menu",
     "menu.group.tools": "Tools",
     "menu.group.config": "Configuration",

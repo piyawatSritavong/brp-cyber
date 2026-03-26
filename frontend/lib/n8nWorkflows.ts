@@ -31,7 +31,7 @@ function httpNode(id: string, name: string, url: string, method: "GET" | "POST",
       genericAuthType: "httpHeaderAuth",
       sendHeaders: true,
       headerParameters: {
-        parameters: [{ name: "Authorization", value: "Bearer {{$env.BRP_BEARER}}" }],
+        parameters: [{ name: "Authorization", value: "Bearer {{$env.CW_BEARER}}" }],
       },
     },
   };
@@ -64,7 +64,7 @@ const SCOUT_WORKFLOW: AgentWorkflow = {
     { id: "s7", icon: "📢", label: "Slack Alert", type: "output" },
   ],
   json: {
-    name: "BRP — Scout Agent (Red Team)",
+    name: "CyberWitcher — Scout Agent (Red Team)",
     nodes: [
       {
         id: "s1",
@@ -74,7 +74,7 @@ const SCOUT_WORKFLOW: AgentWorkflow = {
         position: [80, 300],
         parameters: { rule: { interval: [{ field: "hours", intervalValue: 6 }] } },
       },
-      httpNode("s2", "Fetch Sites", "{{ $env.BRP_API_URL }}/sites?limit=100", "GET", 280, 300),
+      httpNode("s2", "Fetch Sites", "{{ $env.CW_API_URL }}/sites?limit=100", "GET", 280, 300),
       {
         id: "s3",
         name: "Scout AI Agent",
@@ -88,8 +88,8 @@ const SCOUT_WORKFLOW: AgentWorkflow = {
         },
       },
       ollamaNode("s3m", 480, 500),
-      httpNode("s4", "Run Red Scan", "{{ $env.BRP_API_URL }}/sites/{{ $json.site_id }}/red/scan", "POST", 680, 300),
-      httpNode("s5", "CVE Validate", "{{ $env.BRP_API_URL }}/sites/{{ $json.site_id }}/competitive/red/validate", "POST", 880, 300),
+      httpNode("s4", "Run Red Scan", "{{ $env.CW_API_URL }}/sites/{{ $json.site_id }}/red/scan", "POST", 680, 300),
+      httpNode("s5", "CVE Validate", "{{ $env.CW_API_URL }}/sites/{{ $json.site_id }}/competitive/red/validate", "POST", 880, 300),
       {
         id: "s6",
         name: "Is Critical?",
@@ -116,7 +116,7 @@ const SCOUT_WORKFLOW: AgentWorkflow = {
           text: "=🚨 *[Scout Agent]* Critical CVE detected on *{{ $json.site_id }}*\n\n{{ $json.recommendation }}",
         },
       },
-      httpNode("s8", "Log to BRP", "{{ $env.BRP_API_URL }}/events/ingest", "POST", 1280, 400),
+      httpNode("s8", "Log to CyberWitcher", "{{ $env.CW_API_URL }}/events/ingest", "POST", 1280, 400),
     ],
     connections: {
       "Every 6 Hours": { main: [[{ node: "Fetch Sites", type: "main", index: 0 }]] },
@@ -128,13 +128,13 @@ const SCOUT_WORKFLOW: AgentWorkflow = {
       "Is Critical?": {
         main: [
           [{ node: "Slack: Alert Security Team", type: "main", index: 0 }],
-          [{ node: "Log to BRP", type: "main", index: 0 }],
+          [{ node: "Log to CyberWitcher", type: "main", index: 0 }],
         ],
       },
     },
     pinData: {},
     settings: { executionOrder: "v1" },
-    meta: { templateCreatedBy: "BRP Cyber Co-worker" },
+    meta: { templateCreatedBy: "CyberWitcher" },
   },
 };
 
@@ -145,7 +145,7 @@ const GUARDIAN_WORKFLOW: AgentWorkflow = {
   name: "Guardian Agent — Blue Team",
   description: "รับ Event Webhook จาก SIEM, วิเคราะห์ด้วย AI, Block IP อัตโนมัติ + แจ้งเตือนทีม",
   nodes: [
-    { id: "g1", icon: "🪝", label: "BRP Webhook", type: "trigger" },
+    { id: "g1", icon: "🪝", label: "CyberWitcher Webhook", type: "trigger" },
     { id: "g2", icon: "🤖", label: "Guardian AI", type: "ai" },
     { id: "g3", icon: "🔍", label: "Log Refiner", type: "tool" },
     { id: "g4", icon: "🕵️", label: "Threat Intel", type: "tool" },
@@ -154,16 +154,16 @@ const GUARDIAN_WORKFLOW: AgentWorkflow = {
     { id: "g7", icon: "📢", label: "LINE/Slack", type: "output" },
   ],
   json: {
-    name: "BRP — Guardian Agent (Blue Team)",
+    name: "CyberWitcher — Guardian Agent (Blue Team)",
     nodes: [
       {
         id: "g1",
-        name: "BRP Event Webhook",
+        name: "CyberWitcher Event Webhook",
         type: "n8n-nodes-base.webhook",
         typeVersion: 2,
         position: [80, 300],
-        webhookId: "brp-blue-events",
-        parameters: { httpMethod: "POST", path: "brp-blue-events", responseMode: "onReceived", responseData: "firstEntryJson" },
+        webhookId: "cyberwitcher-blue-events",
+        parameters: { httpMethod: "POST", path: "cyberwitcher-blue-events", responseMode: "onReceived", responseData: "firstEntryJson" },
       },
       {
         id: "g2",
@@ -178,8 +178,8 @@ const GUARDIAN_WORKFLOW: AgentWorkflow = {
         },
       },
       ollamaNode("g2m", 280, 500),
-      httpNode("g3", "Log Refiner API", "{{ $env.BRP_API_URL }}/sites/{{ $json.body.site_id }}/blue/events?limit=50", "GET", 480, 300),
-      httpNode("g4", "Threat Intel", "{{ $env.BRP_API_URL }}/sites/{{ $json.body.site_id }}/competitive/blue/threat-intel", "POST", 680, 300),
+      httpNode("g3", "Log Refiner API", "{{ $env.CW_API_URL }}/sites/{{ $json.body.site_id }}/blue/events?limit=50", "GET", 480, 300),
+      httpNode("g4", "Threat Intel", "{{ $env.CW_API_URL }}/sites/{{ $json.body.site_id }}/competitive/blue/threat-intel", "POST", 680, 300),
       {
         id: "g5",
         name: "Is High Risk?",
@@ -192,7 +192,7 @@ const GUARDIAN_WORKFLOW: AgentWorkflow = {
           },
         },
       },
-      httpNode("g6", "Block IP via BRP", "{{ $env.BRP_API_URL }}/guardrails/block-ip", "POST", 1080, 200),
+      httpNode("g6", "Block IP via CyberWitcher", "{{ $env.CW_API_URL }}/guardrails/block-ip", "POST", 1080, 200),
       {
         id: "g7",
         name: "Notify Team (Slack)",
@@ -208,20 +208,20 @@ const GUARDIAN_WORKFLOW: AgentWorkflow = {
       },
     ],
     connections: {
-      "BRP Event Webhook": { main: [[{ node: "Guardian AI Agent", type: "main", index: 0 }]] },
+      "CyberWitcher Event Webhook": { main: [[{ node: "Guardian AI Agent", type: "main", index: 0 }]] },
       "Guardian AI Agent": { main: [[{ node: "Log Refiner API", type: "main", index: 0 }]] },
       "Ollama (llama3.2)": { ai_languageModel: [[{ node: "Guardian AI Agent", type: "ai_languageModel", index: 0 }]] },
       "Log Refiner API": { main: [[{ node: "Threat Intel", type: "main", index: 0 }]] },
       "Threat Intel": { main: [[{ node: "Is High Risk?", type: "main", index: 0 }]] },
       "Is High Risk?": {
         main: [
-          [{ node: "Block IP via BRP", type: "main", index: 0 }],
+          [{ node: "Block IP via CyberWitcher", type: "main", index: 0 }],
           [{ node: "Notify Team (Slack)", type: "main", index: 0 }],
         ],
       },
     },
     settings: { executionOrder: "v1" },
-    meta: { templateCreatedBy: "BRP Cyber Co-worker" },
+    meta: { templateCreatedBy: "CyberWitcher" },
   },
 };
 
@@ -240,7 +240,7 @@ const ARCHITECT_WORKFLOW: AgentWorkflow = {
     { id: "p6", icon: "📧", label: "Send Report", type: "output" },
   ],
   json: {
-    name: "BRP — Architect Agent (Purple Team)",
+    name: "CyberWitcher — Architect Agent (Purple Team)",
     nodes: [
       {
         id: "p1",
@@ -250,8 +250,8 @@ const ARCHITECT_WORKFLOW: AgentWorkflow = {
         position: [80, 300],
         parameters: { rule: { interval: [{ field: "weeks", intervalValue: 1, triggerAtDay: [1], triggerAtHour: 8 }] } },
       },
-      httpNode("p2a", "Fetch Red Results", "{{ $env.BRP_API_URL }}/sites?limit=100", "GET", 280, 200),
-      httpNode("p2b", "Fetch Blue Events", "{{ $env.BRP_API_URL }}/governance/dashboard", "GET", 280, 400),
+      httpNode("p2a", "Fetch Red Results", "{{ $env.CW_API_URL }}/sites?limit=100", "GET", 280, 200),
+      httpNode("p2b", "Fetch Blue Events", "{{ $env.CW_API_URL }}/governance/dashboard", "GET", 280, 400),
       {
         id: "p3",
         name: "Architect AI Agent",
@@ -265,8 +265,8 @@ const ARCHITECT_WORKFLOW: AgentWorkflow = {
         },
       },
       ollamaNode("p3m", 480, 500),
-      httpNode("p4", "ISO Gap Analysis", "{{ $env.BRP_API_URL }}/purple/governance/gap-analysis", "POST", 680, 300),
-      httpNode("p5", "Incident Ghostwriter", "{{ $env.BRP_API_URL }}/purple/incident-report/draft", "POST", 880, 300),
+      httpNode("p4", "ISO Gap Analysis", "{{ $env.CW_API_URL }}/purple/governance/gap-analysis", "POST", 680, 300),
+      httpNode("p5", "Incident Ghostwriter", "{{ $env.CW_API_URL }}/purple/incident-report/draft", "POST", 880, 300),
       {
         id: "p6",
         name: "Email Weekly Report",
@@ -276,7 +276,7 @@ const ARCHITECT_WORKFLOW: AgentWorkflow = {
         parameters: {
           fromEmail: "security@company.com",
           toEmail: "ciso@company.com",
-          subject: "=BRP Cyber — Weekly Security Brief ({{ $now.format('YYYY-MM-DD') }})",
+          subject: "=CyberWitcher — Weekly Security Brief ({{ $now.format('YYYY-MM-DD') }})",
           emailType: "html",
           message: "={{ $json.report_html }}",
         },
@@ -297,7 +297,7 @@ const ARCHITECT_WORKFLOW: AgentWorkflow = {
       "Incident Ghostwriter": { main: [[{ node: "Email Weekly Report", type: "main", index: 0 }]] },
     },
     settings: { executionOrder: "v1" },
-    meta: { templateCreatedBy: "BRP Cyber Co-worker" },
+    meta: { templateCreatedBy: "CyberWitcher" },
   },
 };
 
@@ -315,16 +315,16 @@ const ORCHESTRATOR_WORKFLOW: AgentWorkflow = {
     { id: "o5", icon: "✅", label: "Execute + Log", type: "output" },
   ],
   json: {
-    name: "BRP — Orchestrator (Policy Gate)",
+    name: "CyberWitcher — Orchestrator (Policy Gate)",
     nodes: [
       {
         id: "o1",
-        name: "All BRP Events",
+        name: "All CyberWitcher Events",
         type: "n8n-nodes-base.webhook",
         typeVersion: 2,
         position: [80, 300],
-        webhookId: "brp-orchestrator",
-        parameters: { httpMethod: "POST", path: "brp-orchestrator", responseMode: "onReceived" },
+        webhookId: "cyberwitcher-orchestrator",
+        parameters: { httpMethod: "POST", path: "cyberwitcher-orchestrator", responseMode: "onReceived" },
       },
       {
         id: "o2",
@@ -346,7 +346,7 @@ const ORCHESTRATOR_WORKFLOW: AgentWorkflow = {
         position: [480, 200],
         parameters: {
           systemMessage:
-            "You are the BRP Cyber Orchestrator. Decide which agent should handle this event (scout/guardian/architect) and what action to take. Consider policy constraints, risk score, and business impact. Return JSON: {agent: string, action: string, requires_human_approval: boolean}",
+            "You are the CyberWitcher Orchestrator. Decide which agent should handle this event (scout/guardian/architect) and what action to take. Consider policy constraints, risk score, and business impact. Return JSON: {agent: string, action: string, requires_human_approval: boolean}",
           options: {},
         },
       },
@@ -363,13 +363,13 @@ const ORCHESTRATOR_WORKFLOW: AgentWorkflow = {
           options: {},
         },
       },
-      httpNode("o5a", "Trigger Scout Scan", "{{ $env.BRP_API_URL }}/sites/{{ $json.site_id }}/red/scan", "POST", 880, 100),
-      httpNode("o5b", "Trigger Guardian Block", "{{ $env.BRP_API_URL }}/guardrails/block-ip", "POST", 880, 250),
-      httpNode("o5c", "Trigger Architect Report", "{{ $env.BRP_API_URL }}/purple/incident-report/draft", "POST", 880, 400),
-      httpNode("o6", "Audit Log", "{{ $env.BRP_API_URL }}/events/ingest", "POST", 1080, 300),
+      httpNode("o5a", "Trigger Scout Scan", "{{ $env.CW_API_URL }}/sites/{{ $json.site_id }}/red/scan", "POST", 880, 100),
+      httpNode("o5b", "Trigger Guardian Block", "{{ $env.CW_API_URL }}/guardrails/block-ip", "POST", 880, 250),
+      httpNode("o5c", "Trigger Architect Report", "{{ $env.CW_API_URL }}/purple/incident-report/draft", "POST", 880, 400),
+      httpNode("o6", "Audit Log", "{{ $env.CW_API_URL }}/events/ingest", "POST", 1080, 300),
     ],
     connections: {
-      "All BRP Events": { main: [[{ node: "Policy Gate", type: "main", index: 0 }]] },
+      "All CyberWitcher Events": { main: [[{ node: "Policy Gate", type: "main", index: 0 }]] },
       "Policy Gate": {
         main: [
           [{ node: "Orchestrator AI", type: "main", index: 0 }],
@@ -387,7 +387,7 @@ const ORCHESTRATOR_WORKFLOW: AgentWorkflow = {
       },
     },
     settings: { executionOrder: "v1" },
-    meta: { templateCreatedBy: "BRP Cyber Co-worker" },
+    meta: { templateCreatedBy: "CyberWitcher" },
   },
 };
 

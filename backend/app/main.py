@@ -28,6 +28,7 @@ from app.core.config import settings
 from app.db.models import Base
 from app.db.session import engine
 from app.services.autonomous_runtime import autonomous_runtime
+from app.services.autonomous_scheduler_worker import embedded_api_runtime_enabled
 from app.services.runtime_state import runtime_state
 from app.services.enterprise.slo import record_http_result
 
@@ -94,15 +95,18 @@ async def startup_event() -> None:
         return
     if settings.auto_init_db_on_startup:
         Base.metadata.create_all(bind=engine)
-    if settings.autonomous_orchestration_enabled:
+    if settings.autonomous_orchestration_enabled and embedded_api_runtime_enabled():
         state = autonomous_runtime.start()
         logger.info("autonomous_runtime_started", extra={"state": state})
+    elif settings.autonomous_orchestration_enabled:
+        logger.info("autonomous_runtime_external_worker_expected", extra={"mode": settings.autonomous_runtime_mode})
 
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
-    state = autonomous_runtime.stop()
-    logger.info("autonomous_runtime_stopped", extra={"state": state})
+    if embedded_api_runtime_enabled():
+        state = autonomous_runtime.stop()
+        logger.info("autonomous_runtime_stopped", extra={"state": state})
 
 
 @app.middleware("http")

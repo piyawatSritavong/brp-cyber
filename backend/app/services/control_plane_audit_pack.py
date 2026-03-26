@@ -6,6 +6,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.services.control_plane_audit_pack_attestation import (
+    MANIFEST_ATTESTATION_BUNDLE_NAME,
+    create_audit_pack_manifest_attestation,
+    verify_audit_pack_manifest_attestation_bundle,
+)
 from app.services.control_plane_compliance import build_control_plane_compliance_evidence
 from app.services.control_plane_governance import governance_dashboard
 from app.services.control_plane_governance_attestation import (
@@ -109,6 +114,46 @@ def generate_external_audit_pack(
     manifest_path = pack_dir / "manifest.json"
     manifest_hash, manifest_size = _write_json(manifest_path, manifest)
 
+    manifest_attestation = create_audit_pack_manifest_attestation(pack_id=pack_id, manifest_path=str(manifest_path))
+    if manifest_attestation.get("status") != "attested":
+        return {
+            "status": "failed",
+            "reason": "manifest_attestation_failed",
+            "manifest_path": str(manifest_path),
+            "details": manifest_attestation,
+        }
+
+    manifest_attestation_path = Path(str(manifest_attestation.get("path", "")))
+    if not manifest_attestation_path.exists():
+        return {
+            "status": "failed",
+            "reason": "manifest_attestation_export_failed",
+            "manifest_path": str(manifest_path),
+        }
+
+    manifest_attestation_bundle = (
+        manifest_attestation.get("bundle", {}) if isinstance(manifest_attestation.get("bundle"), dict) else {}
+    )
+    verify_manifest_attestation = (
+        verify_audit_pack_manifest_attestation_bundle(
+            bundle=manifest_attestation_bundle,
+            expected_manifest_path=str(manifest_path),
+        )
+        if manifest_attestation_bundle
+        else {"valid": False, "reason": "bundle_missing"}
+    )
+    if not verify_manifest_attestation.get("valid", False):
+        return {
+            "status": "failed",
+            "reason": "manifest_attestation_invalid",
+            "manifest_path": str(manifest_path),
+            "details": verify_manifest_attestation,
+        }
+
+    manifest_attestation_hash = _sha256_file(manifest_attestation_path)
+    manifest_attestation_size = manifest_attestation_path.stat().st_size
+    overall_pass = bool(manifest["overall_pass"]) and bool(verify_manifest_attestation.get("valid", False))
+
     summary = {
         "status": "success",
         "pack_id": pack_id,
@@ -116,7 +161,12 @@ def generate_external_audit_pack(
         "manifest_path": str(manifest_path),
         "manifest_sha256": manifest_hash,
         "manifest_size_bytes": manifest_size,
-        "overall_pass": manifest["overall_pass"],
+        "manifest_attestation_id": manifest_attestation.get("attestation_id", ""),
+        "manifest_attestation_path": str(manifest_attestation_path),
+        "manifest_attestation_sha256": manifest_attestation_hash,
+        "manifest_attestation_size_bytes": manifest_attestation_size,
+        "manifest_attestation_valid": bool(verify_manifest_attestation.get("valid", False)),
+        "overall_pass": overall_pass,
     }
 
     redis_client.xadd(
@@ -127,7 +177,11 @@ def generate_external_audit_pack(
             "pack_dir": str(pack_dir),
             "manifest_path": str(manifest_path),
             "manifest_sha256": manifest_hash,
-            "overall_pass": "1" if manifest["overall_pass"] else "0",
+            "manifest_attestation_id": str(manifest_attestation.get("attestation_id", "")),
+            "manifest_attestation_path": str(manifest_attestation_path),
+            "manifest_attestation_sha256": manifest_attestation_hash,
+            "manifest_attestation_valid": "1" if verify_manifest_attestation.get("valid", False) else "0",
+            "overall_pass": "1" if overall_pass else "0",
         },
         maxlen=50000,
         approximate=True,
@@ -144,6 +198,7 @@ def audit_pack_status(limit: int = 100) -> dict[str, Any]:
         row = {"id": event_id}
         row.update(fields)
         row["overall_pass"] = str(fields.get("overall_pass", "0")) == "1"
+        row["manifest_attestation_valid"] = str(fields.get("manifest_attestation_valid", "0")) == "1"
         rows.append(row)
 
     return {"count": len(rows), "rows": rows}
@@ -154,7 +209,17 @@ def verify_external_audit_pack(manifest_path: str) -> dict[str, Any]:
     if not target.exists():
         return {"status": "not_found", "manifest_path": manifest_path}
 
-    manifest = json.loads(target.read_text(encoding="utf-8"))
+    try:
+        manifest = json.loads(target.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {
+            "status": "failed",
+            "manifest_path": manifest_path,
+            "valid": False,
+            "failure_count": 1,
+            "failures": [{"file": manifest_path, "reason": "manifest_json_invalid"}],
+        }
+
     artifacts = manifest.get("artifacts", []) if isinstance(manifest, dict) else []
 
     failures: list[dict[str, str]] = []
@@ -170,11 +235,40 @@ def verify_external_audit_pack(manifest_path: str) -> dict[str, Any]:
         if actual_hash != expected_hash:
             failures.append({"file": str(file_path), "reason": "sha256_mismatch"})
 
+    attestation_path = target.parent / MANIFEST_ATTESTATION_BUNDLE_NAME
+    manifest_attestation_valid = False
+    manifest_attestation_sha256 = ""
+
+    if not attestation_path.exists():
+        failures.append({"file": str(attestation_path), "reason": "manifest_attestation_missing"})
+    else:
+        manifest_attestation_sha256 = _sha256_file(attestation_path)
+        try:
+            bundle = json.loads(attestation_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            failures.append({"file": str(attestation_path), "reason": "manifest_attestation_json_invalid"})
+        else:
+            manifest_attestation_result = verify_audit_pack_manifest_attestation_bundle(
+                bundle=bundle,
+                expected_manifest_path=str(target),
+            )
+            manifest_attestation_valid = bool(manifest_attestation_result.get("valid", False))
+            if not manifest_attestation_valid:
+                failures.append(
+                    {
+                        "file": str(attestation_path),
+                        "reason": f"manifest_attestation_{manifest_attestation_result.get('reason', 'invalid')}",
+                    }
+                )
+
     manifest_hash = _sha256_file(target)
     return {
         "status": "verified" if not failures else "failed",
         "manifest_path": str(target),
         "manifest_sha256": manifest_hash,
+        "manifest_attestation_path": str(attestation_path),
+        "manifest_attestation_sha256": manifest_attestation_sha256,
+        "manifest_attestation_valid": manifest_attestation_valid,
         "valid": len(failures) == 0,
         "failure_count": len(failures),
         "failures": failures,

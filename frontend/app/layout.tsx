@@ -3,8 +3,8 @@ import { AppChrome } from "@/components/AppChrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BRP Cyber Objective Gate",
-  description: "Enterprise orchestration readiness dashboard",
+  title: "CyberWitcher",
+  description: "AI-powered cybersecurity orchestration platform",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

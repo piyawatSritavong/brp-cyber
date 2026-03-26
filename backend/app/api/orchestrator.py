@@ -41,7 +41,7 @@ from app.services.orchestrator import (
     upsert_tenant_scheduler_profile,
     upsert_tenant_safety_policy,
 )
-from app.services.autonomous_runtime import autonomous_runtime
+from app.services.autonomous_scheduler_worker import distributed_autonomous_scheduler
 from app.services.pilot_operator_auth import operator_allows_tenant, operator_has_scope, verify_pilot_operator_token
 from app.services.policy_store import set_blue_policy
 from schemas.orchestration import (
@@ -161,22 +161,22 @@ def tick(limit: int = 200) -> dict[str, object]:
 
 @router.get("/autonomous/status")
 def autonomous_status() -> dict[str, object]:
-    return autonomous_runtime.status()
+    return distributed_autonomous_scheduler.status()
 
 
 @router.post("/autonomous/start")
 def autonomous_start() -> dict[str, object]:
-    return autonomous_runtime.start()
+    return distributed_autonomous_scheduler.start_control()
 
 
 @router.post("/autonomous/stop")
 def autonomous_stop() -> dict[str, object]:
-    return autonomous_runtime.stop()
+    return distributed_autonomous_scheduler.stop_control()
 
 
 @router.post("/autonomous/run-once")
 def autonomous_run_once() -> dict[str, object]:
-    return autonomous_runtime.run_once()
+    return distributed_autonomous_scheduler.run_once_control()
 
 
 @router.post("/pilot/activate")

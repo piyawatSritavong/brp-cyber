@@ -8,7 +8,7 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
-    const saved = (typeof window !== "undefined" ? window.localStorage.getItem("brp-theme") : "") as ThemeMode | null;
+    const saved = (typeof window !== "undefined" ? window.localStorage.getItem("cyberwitcher-theme") : "") as ThemeMode | null;
     const initial: ThemeMode = saved === "dark" ? "dark" : "light";
     setTheme(initial);
     document.documentElement.setAttribute("data-theme", initial);
@@ -18,7 +18,7 @@ export function ThemeToggle() {
     const next: ThemeMode = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
-    window.localStorage.setItem("brp-theme", next);
+    window.localStorage.setItem("cyberwitcher-theme", next);
   };
 
   return (

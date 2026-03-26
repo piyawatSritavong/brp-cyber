@@ -23,9 +23,16 @@ def test_export_legal_evidence_profile() -> None:
     le.notarize_payload = lambda payload: {
         "status": "notarized",
         "provider": "local_digest",
+        "provider_name": "local_digest",
         "receipt_id": "local-1",
+        "compliance_profile": {
+            "profile_id": "local_integrity_only",
+            "eidas": {"profile": "not_supported"},
+            "etsi": {"profile": "none"},
+        },
     }
 
     result = le.export_legal_evidence_profile(destination_dir="./tmp/compliance/test_legal_evidence")
     assert result["status"] == "exported"
     assert result["notarization"]["provider"] == "local_digest"
+    assert result["notarization"]["compliance_profile"]["profile_id"] == "local_integrity_only"

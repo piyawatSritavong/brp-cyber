@@ -4,6 +4,7 @@ from typing import Any
 
 from app.services.control_plane_audit_pack import audit_pack_status
 from app.services.control_plane_audit_pack_publication import publication_status
+from app.services.control_plane_legal_evidence import legal_evidence_status
 from app.services.control_plane_transparency import transparency_status
 
 REGULATORY_TEMPLATES: dict[str, dict[str, Any]] = {
@@ -107,10 +108,14 @@ def regulatory_scorecard(framework: str) -> dict[str, Any]:
     pack = audit_pack_status(limit=1)
     publication = publication_status(limit=1)
     transparency = transparency_status(limit=1)
+    legal = legal_evidence_status(limit=1)
 
     has_pack = pack.get("count", 0) > 0
     has_publication = publication.get("count", 0) > 0
     has_transparency = transparency.get("count", 0) > 0
+    has_legal_evidence = legal.get("count", 0) > 0
+    legal_row = legal.get("rows", [{}])[0] if legal.get("rows") else {}
+    has_notarization_profile = bool(legal_row.get("notarization_profile_id", ""))
 
     readiness = 0
     readiness += 35 if has_pack else 0
@@ -121,6 +126,8 @@ def regulatory_scorecard(framework: str) -> dict[str, Any]:
     for control in profile["controls"]:
         covered = has_pack and has_publication
         if "legal_evidence_profile" in control["evidence_refs"]:
+            covered = covered and has_transparency and has_legal_evidence and has_notarization_profile
+        if "transparency_log" in control["evidence_refs"]:
             covered = covered and has_transparency
         coverage.append(
             {
@@ -145,6 +152,8 @@ def regulatory_scorecard(framework: str) -> dict[str, Any]:
             "has_audit_pack": has_pack,
             "has_publication": has_publication,
             "has_transparency": has_transparency,
+            "has_legal_evidence": has_legal_evidence,
+            "has_notarization_compliance_profile": has_notarization_profile,
         },
         "controls": coverage,
     }

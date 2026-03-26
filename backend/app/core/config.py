@@ -13,7 +13,11 @@ class Settings(BaseSettings):
     cors_allow_methods: str = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     cors_allow_headers: str = "*"
     autonomous_orchestration_enabled: bool = True
+    autonomous_runtime_mode: str = "worker"
+    autonomous_runtime_worker_id: str = ""
     autonomous_tick_interval_seconds: int = 30
+    autonomous_runtime_lease_ttl_seconds: int = 90
+    autonomous_runtime_status_ttl_seconds: int = 300
     autonomous_tick_limit: int = 200
     autonomous_red_schedule_tick_enabled: bool = True
     autonomous_red_schedule_limit: int = 100
@@ -86,6 +90,14 @@ class Settings(BaseSettings):
     allowlist_asns: str = ""
     purple_correlation_window_seconds: int = 300
     purple_target_mttr_seconds: int = 120
+    purple_report_export_mode: str = "filesystem"
+    purple_report_export_filesystem_dir: str = "./tmp/purple_report_exports"
+    purple_report_export_s3_bucket: str = ""
+    purple_report_export_s3_region: str = ""
+    purple_report_export_s3_endpoint_url: str = ""
+    purple_report_export_s3_access_key: str = ""
+    purple_report_export_s3_secret_key: str = ""
+    purple_report_export_s3_prefix: str = "purple-report-exports"
     red_allowed_targets: str = "acb.example.com/admin-login,acb.example.com/ssh-gateway"
     red_max_events_per_run: int = 100
     red_min_delay_ms: int = 50
@@ -173,6 +185,8 @@ class Settings(BaseSettings):
     control_plane_notarization_provider: str = "local_digest"
     control_plane_notarization_webhook_url: str = ""
     control_plane_notarization_api_key: str = ""
+    control_plane_notarization_provider_name: str = ""
+    control_plane_notarization_compliance_profiles: str = ""
     control_plane_idp_introspection_url: str = ""
     control_plane_idp_client_id: str = ""
     control_plane_idp_client_secret: str = ""

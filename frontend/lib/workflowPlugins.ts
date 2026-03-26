@@ -1,4 +1,4 @@
-/** BRP Cyber — Workflow Canvas plugin catalog + default agent workflows */
+/** CyberWitcher — Workflow Canvas plugin catalog + default agent workflows */
 
 export type PluginDef = {
   type: string;
@@ -33,11 +33,11 @@ export type CanvasWorkflow = {
 
 export type AgentId = "red" | "blue" | "purple" | "orchestrator";
 
-// ─── BRP Plugin Catalog ───────────────────────────────────────────────────────
+// ─── CyberWitcher Plugin Catalog ─────────────────────────────────────────────
 export const PLUGIN_CATALOG: PluginDef[] = [
   // Triggers
   { type: "trigger_schedule", label: "Schedule", subtitle: "Run on timer", icon: "⏱", color: "#17c964", category: "Triggers", hasInput: false, hasOutput: true },
-  { type: "trigger_webhook", label: "BRP Webhook", subtitle: "On security event", icon: "🪝", color: "#17c964", category: "Triggers", hasInput: false, hasOutput: true },
+  { type: "trigger_webhook", label: "CyberWitcher Webhook", subtitle: "On security event", icon: "🪝", color: "#17c964", category: "Triggers", hasInput: false, hasOutput: true },
   { type: "trigger_manual", label: "Manual Run", subtitle: "Trigger manually", icon: "▶️", color: "#17c964", category: "Triggers", hasInput: false, hasOutput: true },
 
   // Scout Agent (Red)
@@ -95,7 +95,7 @@ export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
     name: "Scout Agent (Red)",
     active: true,
     nodes: [
-      { id: "r1", pluginType: "trigger_webhook", label: "BRP Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
+      { id: "r1", pluginType: "trigger_webhook", label: "CyberWitcher Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
       { id: "r2", pluginType: "red_scan", label: "Red Scan", icon: "🔍", color: "#f31260", subtitle: "Shadow Pentest", x: 420, y: 260 },
       { id: "r3", pluginType: "red_cve", label: "CVE Validator", icon: "⚠️", color: "#f31260", subtitle: "Auto-validate", x: 680, y: 260 },
       { id: "r4", pluginType: "flow_if", label: "Critical?", icon: "❓", color: "#f5a524", subtitle: "severity === critical", x: 940, y: 260 },
@@ -115,7 +115,7 @@ export const DEFAULT_WORKFLOWS: Record<AgentId, CanvasWorkflow> = {
     name: "Guardian Agent (Blue)",
     active: true,
     nodes: [
-      { id: "b1", pluginType: "trigger_webhook", label: "BRP Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
+      { id: "b1", pluginType: "trigger_webhook", label: "CyberWitcher Webhook", icon: "🪝", color: "#17c964", subtitle: "On security event", x: 160, y: 260 },
       { id: "b2", pluginType: "blue_log", label: "Log Refiner", icon: "🔬", color: "#006FEE", subtitle: "Filter noise events", x: 420, y: 260 },
       { id: "b3", pluginType: "blue_intel", label: "Threat Intel", icon: "🕵️", color: "#006FEE", subtitle: "IOC + localization", x: 680, y: 260 },
       { id: "b4", pluginType: "flow_if", label: "High Risk?", icon: "❓", color: "#f5a524", subtitle: "risk_score > 70", x: 940, y: 260 },

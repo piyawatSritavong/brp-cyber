@@ -40,6 +40,9 @@ def export_legal_evidence_profile(
 
     notarization = notarize_payload(profile)
     profile["notarization"] = notarization
+    compliance_profile = notarization.get("compliance_profile", {})
+    if not isinstance(compliance_profile, dict):
+        compliance_profile = {}
 
     root = Path(destination_dir)
     root.mkdir(parents=True, exist_ok=True)
@@ -57,7 +60,15 @@ def export_legal_evidence_profile(
                 "path": str(target),
                 "generated_at": profile["generated_at"],
                 "notarization_provider": str(notarization.get("provider", "")),
+                "notarization_provider_name": str(notarization.get("provider_name", "")),
                 "notarization_receipt_id": str(notarization.get("receipt_id", "")),
+                "notarization_profile_id": str(compliance_profile.get("profile_id", "")),
+                "notarization_eidas_profile": str(
+                    (compliance_profile.get("eidas", {}) if isinstance(compliance_profile.get("eidas", {}), dict) else {}).get("profile", "")
+                ),
+                "notarization_etsi_profile": str(
+                    (compliance_profile.get("etsi", {}) if isinstance(compliance_profile.get("etsi", {}), dict) else {}).get("profile", "")
+                ),
             },
             maxlen=50000,
             approximate=True,

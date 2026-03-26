@@ -86,7 +86,7 @@ export function N8nWorkflowsSection() {
       <div className="mb-3 flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.26em] text-accent">Agent Workflows</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Drag-and-drop workflow builder สำหรับแต่ละ Agent — ใช้ BRP plugins เป็น nodes</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Drag-and-drop workflow builder สำหรับแต่ละ Agent — ใช้ CyberWitcher plugins เป็น nodes</p>
         </div>
         <Link
           href="/n8n-agents"

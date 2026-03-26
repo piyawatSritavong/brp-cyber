@@ -41,6 +41,10 @@ from app.services.control_plane_audit_pack import (
     generate_external_audit_pack,
     verify_external_audit_pack,
 )
+from app.services.control_plane_audit_pack_attestation import (
+    audit_pack_manifest_attestation_status,
+    verify_audit_pack_manifest_attestation_chain,
+)
 from app.services.control_plane_audit_pack_publication import publication_status, publish_latest_audit_pack
 from app.services.control_plane_legal_evidence import export_legal_evidence_profile
 from app.services.control_plane_assurance_contracts import (
@@ -136,6 +140,7 @@ from app.services.control_plane_production_readiness import (
     upsert_prod_v1_burn_rate_profile,
     upsert_prod_v1_go_live_runbook,
 )
+from app.services.control_plane_production_rollout_playbook import production_rollout_integration_playbook
 from app.services.control_plane_assurance_slo import (
     assurance_executive_risk_digest,
     assurance_slo_breach_history,
@@ -1285,6 +1290,28 @@ def production_v1_readiness_final_endpoint(
     if not token_allows_tenant(admin, tenant_code):
         raise HTTPException(status_code=403, detail="forbidden:tenant_scope")
     return evaluate_prod_v1_readiness_final(db, tenant_code, max_monthly_cost_usd=max_monthly_cost_usd)
+
+
+@router.get("/production-v1/playbook/{tenant_code}")
+def production_v1_playbook_endpoint(
+    tenant_code: str,
+    max_monthly_cost_usd: float = 50.0,
+    handoff_limit: int = 200,
+    closure_limit: int = 20,
+    burn_rate_limit: int = 20,
+    db: Session = Depends(get_db),
+    admin: dict[str, object] = Depends(require_scope("control_plane:read")),
+) -> dict[str, object]:
+    if not token_allows_tenant(admin, tenant_code):
+        raise HTTPException(status_code=403, detail="forbidden:tenant_scope")
+    return production_rollout_integration_playbook(
+        db,
+        tenant_code,
+        max_monthly_cost_usd=max_monthly_cost_usd,
+        handoff_limit=handoff_limit,
+        closure_limit=closure_limit,
+        burn_rate_limit=burn_rate_limit,
+    )
 
 
 @router.post("/production-v1/go-live/close")
@@ -2834,6 +2861,30 @@ def control_plane_audit_pack_status(
     _: dict[str, object] = Depends(require_scope("control_plane:read")),
 ) -> dict[str, object]:
     return audit_pack_status(limit=limit)
+
+
+@router.get("/audit-pack/manifest-attestation/status")
+def control_plane_audit_pack_manifest_attestation_status_route(
+    limit: int = 100,
+    _: dict[str, object] = Depends(require_scope("control_plane:read")),
+) -> dict[str, object]:
+    return audit_pack_manifest_attestation_status(limit=limit)
+
+
+@router.get("/audit-pack/manifest-attestation/verify")
+def control_plane_audit_pack_manifest_attestation_verify(
+    limit: int = 1000,
+    admin: dict[str, object] = Depends(require_scope("control_plane:read")),
+) -> dict[str, object]:
+    result = verify_audit_pack_manifest_attestation_chain(limit=limit)
+    write_control_plane_audit(
+        actor=str(admin.get("actor", "admin")),
+        action="control_plane_audit_pack_manifest_attestation_verify",
+        status="success" if result.get("valid", False) else "failed",
+        target="audit_pack_manifest_attestation_chain",
+        details={"limit": limit, "valid": result.get("valid", False)},
+    )
+    return result
 
 
 @router.post("/audit-pack/verify")

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -42,6 +44,9 @@ def _event(event_type: str, tenant_id: str, ts: datetime, corr_id: str, extra: d
 
 def test_purple_endpoints() -> None:
     fake_redis = FakeRedis()
+    orig_mode = purple_core.settings.purple_report_export_mode
+    orig_dir = purple_core.settings.purple_report_export_filesystem_dir
+    export_dir = tempfile.mkdtemp(prefix="purple_report_exports_api_test_")
     purple_core.redis_client = fake_redis
     event_store.redis_client = fake_redis
     purple_core.persist_event = lambda event: None
@@ -68,18 +73,42 @@ def test_purple_endpoints() -> None:
             },
         )
 
-    with TestClient(app) as client:
-        corr_resp = client.get(f"/purple/correlate/{tenant_str}")
-        assert corr_resp.status_code == 200
-        corr_data = corr_resp.json()
-        assert corr_data["event_counts"]["red"] == 1
+    try:
+        purple_core.settings.purple_report_export_mode = "filesystem"
+        purple_core.settings.purple_report_export_filesystem_dir = export_dir
 
-        report_resp = client.post(f"/purple/report/{tenant_str}/daily")
-        assert report_resp.status_code == 200
-        report_data = report_resp.json()
-        assert report_data["tenant_id"] == tenant_str
+        with TestClient(app) as client:
+            corr_resp = client.get(
+                f"/purple/correlate/{tenant_str}?date_from={t0.date().isoformat()}&date_to={t0.date().isoformat()}&detection_status=detected&page=1&page_size=10"
+            )
+            assert corr_resp.status_code == 200
+            corr_data = corr_resp.json()
+            assert corr_data["event_counts"]["red"] == 1
+            assert corr_data["table_total"] == 1
 
-        list_resp = client.get(f"/purple/report/{tenant_str}")
-        assert list_resp.status_code == 200
-        list_data = list_resp.json()
-        assert list_data["count"] == 1
+            report_resp = client.post(f"/purple/report/{tenant_str}/daily?date={t0.date().isoformat()}")
+            assert report_resp.status_code == 200
+            report_data = report_resp.json()
+            assert report_data["tenant_id"] == tenant_str
+
+            list_resp = client.get(
+                f"/purple/report/{tenant_str}?page=1&page_size=10&min_detection_coverage=0.5&date_from={t0.date().isoformat()}&date_to={t0.date().isoformat()}"
+            )
+            assert list_resp.status_code == 200
+            list_data = list_resp.json()
+            assert list_data["count"] == 1
+            assert list_data["pagination"]["returned"] == 1
+
+            export_resp = client.post(f"/purple/report/{tenant_str}/export?export_format=json")
+            assert export_resp.status_code == 200
+            export_data = export_resp.json()
+            assert export_data["status"] == "exported"
+            assert export_data["export"]["mime_type"] == "application/json"
+
+            export_status_resp = client.get(f"/purple/report/{tenant_str}/export/status?limit=10")
+            assert export_status_resp.status_code == 200
+            assert export_status_resp.json()["count"] == 1
+    finally:
+        purple_core.settings.purple_report_export_mode = orig_mode
+        purple_core.settings.purple_report_export_filesystem_dir = orig_dir
+        shutil.rmtree(export_dir, ignore_errors=True)
